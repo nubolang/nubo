@@ -1,0 +1,47 @@
+- type: import
+  kind: SINGLE
+  content: ./app
+- type: event
+  content: click
+  args:
+    - type: identifier
+      content: id
+      value: string
+    - type: identifier
+      content: data
+      value: any
+- type: event
+  content: mouseover
+  args:
+    - type: identifier
+      content: count
+      value: int
+    - type: identifier
+      content: clickCount
+      value: int
+    - type: identifier
+      content: mouseoverCount
+      value: int
+- type: struct
+  content: User
+  body:
+    - type: identifier
+      content: id
+      value_type:
+        type: identifier
+        kind: TYPE
+        content: string
+        flags:
+            - OPTIONAL
+    - type: identifier
+      content: name
+      value_type:
+        type: identifier
+        kind: TYPE
+        content: string
+    - type: identifier
+      content: email
+      value_type:
+        type: identifier
+        kind: TYPE
+        content: string

@@ -1,0 +1,10 @@
+import App from "./app";
+
+event click(id: string, data: any);
+event mouseover(count: int, clickCount: int, mouseoverCount: int);
+
+struct User {
+    id: string?
+    name: string
+    email: string
+}

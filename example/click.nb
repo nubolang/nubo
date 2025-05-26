@@ -1,0 +1,25 @@
+event click();
+event updateClicks(count: int);
+
+server {
+    clicks = 0;
+
+    sub click() {
+        clicks += 1;
+        pub updateClicks(clicks);
+    }
+
+    return { clicks };
+}
+
+client App(clicks) {
+    fn handleClick() {
+        pub click();
+    }
+
+    sub updateClicks(count) {
+        clicks = count;
+    }
+
+    return <button onClick="handleClick">Clicked { clicks } times.</button>;
+}

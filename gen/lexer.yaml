@@ -1,0 +1,176 @@
+- type: import
+  value: import
+- type: <whitespace>
+  value: ' '
+- type: identifier
+  value: App
+- type: <whitespace>
+  value: ' '
+- type: from
+  value: from
+- type: <whitespace>
+  value: ' '
+- type: string
+  value: ./app
+  map:
+    quote: '"'
+- type: ;
+  value: ;
+- type: <newline>
+  value: |4+
+- type: <newline>
+  value: |4+
+- type: event
+  value: event
+- type: <whitespace>
+  value: ' '
+- type: identifier
+  value: click
+- type: (
+  value: (
+- type: identifier
+  value: id
+- type: ':'
+  value: ':'
+- type: <whitespace>
+  value: ' '
+- type: identifier
+  value: string
+- type: ','
+  value: ','
+- type: <whitespace>
+  value: ' '
+- type: identifier
+  value: data
+- type: ':'
+  value: ':'
+- type: <whitespace>
+  value: ' '
+- type: identifier
+  value: any
+- type: )
+  value: )
+- type: ;
+  value: ;
+- type: <newline>
+  value: |4+
+- type: event
+  value: event
+- type: <whitespace>
+  value: ' '
+- type: identifier
+  value: mouseover
+- type: (
+  value: (
+- type: identifier
+  value: count
+- type: ':'
+  value: ':'
+- type: <whitespace>
+  value: ' '
+- type: identifier
+  value: int
+- type: ','
+  value: ','
+- type: <whitespace>
+  value: ' '
+- type: identifier
+  value: clickCount
+- type: ':'
+  value: ':'
+- type: <whitespace>
+  value: ' '
+- type: identifier
+  value: int
+- type: ','
+  value: ','
+- type: <whitespace>
+  value: ' '
+- type: identifier
+  value: mouseoverCount
+- type: ':'
+  value: ':'
+- type: <whitespace>
+  value: ' '
+- type: identifier
+  value: int
+- type: )
+  value: )
+- type: ;
+  value: ;
+- type: <newline>
+  value: |4+
+- type: <newline>
+  value: |4+
+- type: struct
+  value: struct
+- type: <whitespace>
+  value: ' '
+- type: identifier
+  value: User
+- type: <whitespace>
+  value: ' '
+- type: '{'
+  value: '{'
+- type: <newline>
+  value: |4+
+- type: <whitespace>
+  value: ' '
+- type: <whitespace>
+  value: ' '
+- type: <whitespace>
+  value: ' '
+- type: <whitespace>
+  value: ' '
+- type: identifier
+  value: id
+- type: ':'
+  value: ':'
+- type: <whitespace>
+  value: ' '
+- type: identifier
+  value: string
+- type: '?'
+  value: '?'
+- type: <newline>
+  value: |4+
+- type: <whitespace>
+  value: ' '
+- type: <whitespace>
+  value: ' '
+- type: <whitespace>
+  value: ' '
+- type: <whitespace>
+  value: ' '
+- type: identifier
+  value: name
+- type: ':'
+  value: ':'
+- type: <whitespace>
+  value: ' '
+- type: identifier
+  value: string
+- type: <newline>
+  value: |4+
+- type: <whitespace>
+  value: ' '
+- type: <whitespace>
+  value: ' '
+- type: <whitespace>
+  value: ' '
+- type: <whitespace>
+  value: ' '
+- type: identifier
+  value: email
+- type: ':'
+  value: ':'
+- type: <whitespace>
+  value: ' '
+- type: identifier
+  value: string
+- type: <newline>
+  value: |4+
+- type: '}'
+  value: '}'
+- type: <newline>
+  value: |4+
