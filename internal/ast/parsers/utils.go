@@ -2,17 +2,22 @@ package parsers
 
 import (
 	"fmt"
+	"slices"
 
-	"github.com/bndrmrtn/tea/internal/ast/astnode"
-	"github.com/bndrmrtn/tea/internal/debug"
-	"github.com/bndrmrtn/tea/internal/lexer"
+	"github.com/nubogo/nubo/internal/ast/astnode"
+	"github.com/nubogo/nubo/internal/debug"
+	"github.com/nubogo/nubo/internal/lexer"
 )
 
-func inxPPWs(tokens []*lexer.Token, inx *int) error {
-	*inx++
+var white = []lexer.TokenType{lexer.TokenWhiteSpace, lexer.TokenSingleLineComment, lexer.TokenMultiLineComment}
 
+func inxPPIf(tokens []*lexer.Token, inx *int) error {
 	if *inx >= len(tokens) {
 		return debug.NewError(ErrSyntaxError, "unexpected end of input", tokens[*inx-1].Debug)
+	}
+
+	if slices.Contains(white, tokens[*inx].Type) {
+		return inxPP(tokens, inx)
 	}
 
 	return nil
@@ -21,7 +26,7 @@ func inxPPWs(tokens []*lexer.Token, inx *int) error {
 func inxPP(tokens []*lexer.Token, inx *int) error {
 	*inx++
 
-	for *inx < len(tokens) && tokens[*inx].Type == lexer.TokenWhiteSpace {
+	for *inx < len(tokens) && slices.Contains(white, tokens[*inx].Type) {
 		*inx++
 	}
 
@@ -53,4 +58,10 @@ func nl(tokens []*lexer.Token, inx *int) error {
 	}
 
 	return newErr(ErrUnexpectedToken, fmt.Sprintf("expected newline, got %s", tokens[*inx-1].Type), tokens[*inx-1].Debug)
+}
+
+func safeIncr(tokens []*lexer.Token, inx *int) {
+	if *inx < len(tokens) {
+		*inx++
+	}
 }

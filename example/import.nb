@@ -1,10 +1,11 @@
 import App from "./app";
 
-event click(id: string, data: any);
-event mouseover(count: int, clickCount: int, mouseoverCount: int);
+event click(id: string, data: int);
 
 struct User {
-    id: string?
-    name: string
-    email: string
+    // name: ref string?
+    ctx: nubo.Context
+    others: dict[nbu.Ctx, dict[int.class, dict[string, int]]]
+    list: [][]dict[int, int]
+    handler: fn(int, string, dict[string,int]) -> fn() -> dict[string, int]
 }

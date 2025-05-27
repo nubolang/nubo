@@ -1,8 +1,8 @@
 package astnode
 
 import (
-	"github.com/bndrmrtn/tea/internal/debug"
-	"github.com/bndrmrtn/tea/internal/lexer"
+	"github.com/nubogo/nubo/internal/debug"
+	"github.com/nubogo/nubo/internal/lexer"
 )
 
 type Node struct {

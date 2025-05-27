@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/bndrmrtn/tea/internal/ast"
-	"github.com/bndrmrtn/tea/internal/lexer"
+	"github.com/nubogo/nubo/internal/ast"
+	"github.com/nubogo/nubo/internal/lexer"
 	"gopkg.in/yaml.v3"
 )
 

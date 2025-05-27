@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/bndrmrtn/tea/internal/ast/astnode"
-	"github.com/bndrmrtn/tea/internal/ast/parsers"
-	"github.com/bndrmrtn/tea/internal/lexer"
+	"github.com/nubogo/nubo/internal/ast/astnode"
+	"github.com/nubogo/nubo/internal/ast/parsers"
+	"github.com/nubogo/nubo/internal/lexer"
 )
 
 type Ast struct {
@@ -75,7 +75,7 @@ func (a *Ast) handleToken(tokens []*lexer.Token, inx *int) (*astnode.Node, error
 		return node, nil
 	}
 
-	if token.Type == lexer.TokenWhiteSpace || token.Type == lexer.TokenNewLine {
+	if token.Type == lexer.TokenWhiteSpace || token.Type == lexer.TokenNewLine || token.Type == lexer.TokenSingleLineComment || token.Type == lexer.TokenMultiLineComment {
 		*inx++
 	}
 

@@ -6,42 +6,128 @@
   args:
     - type: identifier
       content: id
-      value: string
+      value_type:
+        type: identifier
+        kind: TYPE
+        content: string
     - type: identifier
       content: data
-      value: any
-- type: event
-  content: mouseover
-  args:
-    - type: identifier
-      content: count
-      value: int
-    - type: identifier
-      content: clickCount
-      value: int
-    - type: identifier
-      content: mouseoverCount
-      value: int
+      value_type:
+        type: identifier
+        kind: TYPE
+        content: int
 - type: struct
   content: User
   body:
     - type: identifier
-      content: id
+      content: ctx
       value_type:
         type: identifier
         kind: TYPE
-        content: string
+        content: nubo.Context
+    - type: identifier
+      content: others
+      value_type:
+        type: identifier
+        kind: TYPE
+        content: dict
+        body:
+            - type: identifier
+              kind: TYPE
+              content: nbu.Ctx
+            - type: identifier
+              kind: TYPE
+              content: dict
+              body:
+                - type: identifier
+                  kind: TYPE
+                  content: int.class
+                - type: identifier
+                  kind: TYPE
+                  content: dict
+                  body:
+                    - type: identifier
+                      kind: TYPE
+                      content: string
+                    - type: identifier
+                      kind: TYPE
+                      content: int
+                  flags:
+                    - DICT
+              flags:
+                - DICT
         flags:
-            - OPTIONAL
+            - DICT
     - type: identifier
-      content: name
+      content: list
       value_type:
         type: identifier
         kind: TYPE
-        content: string
+        content: '[]'
+        body:
+            - type: identifier
+              kind: TYPE
+              content: '[]'
+              body:
+                - type: identifier
+                  kind: TYPE
+                  content: dict
+                  body:
+                    - type: identifier
+                      kind: TYPE
+                      content: int
+                    - type: identifier
+                      kind: TYPE
+                      content: int
+                  flags:
+                    - DICT
+              flags:
+                - LIST
+        flags:
+            - LIST
     - type: identifier
-      content: email
+      content: handler
       value_type:
         type: identifier
         kind: TYPE
-        content: string
+        content: fn
+        value_type:
+            type: identifier
+            kind: TYPE
+            content: fn
+            value_type:
+                type: identifier
+                kind: TYPE
+                content: dict
+                body:
+                    - type: identifier
+                      kind: TYPE
+                      content: string
+                    - type: identifier
+                      kind: TYPE
+                      content: int
+                flags:
+                    - DICT
+            flags:
+                - FN
+        args:
+            - type: identifier
+              kind: TYPE
+              content: int
+            - type: identifier
+              kind: TYPE
+              content: string
+            - type: identifier
+              kind: TYPE
+              content: dict
+              body:
+                - type: identifier
+                  kind: TYPE
+                  content: string
+                - type: identifier
+                  kind: TYPE
+                  content: int
+              flags:
+                - DICT
+        flags:
+            - FN

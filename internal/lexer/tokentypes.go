@@ -57,6 +57,7 @@ const (
 	TokenPercent        TokenType = "%"
 	TokenSelfClosingTag TokenType = "/>"
 	TokenArrow          TokenType = "=>"
+	TokenFnReturnArrow  TokenType = "->"
 
 	// Comparison
 	TokenEqual        TokenType = "=="

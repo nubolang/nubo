@@ -3,8 +3,8 @@ package parsers
 import (
 	"context"
 
-	"github.com/bndrmrtn/tea/internal/ast/astnode"
-	"github.com/bndrmrtn/tea/internal/lexer"
+	"github.com/nubogo/nubo/internal/ast/astnode"
+	"github.com/nubogo/nubo/internal/lexer"
 )
 
 func EventParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
@@ -39,7 +39,7 @@ loop:
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		default:
-			arg, last, err := eventArgumentParser(tokens, inx)
+			arg, last, err := eventArgumentParser(ctx, tokens, inx)
 			if err != nil {
 				return nil, err
 			}
@@ -55,7 +55,7 @@ loop:
 	return skipSemi(tokens, inx, node), nil
 }
 
-func eventArgumentParser(tokens []*lexer.Token, inx *int) (*astnode.Node, bool, error) {
+func eventArgumentParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.Node, bool, error) {
 	if err := inxPP(tokens, inx); err != nil {
 		return nil, false, err
 	}
@@ -82,15 +82,11 @@ func eventArgumentParser(tokens []*lexer.Token, inx *int) (*astnode.Node, bool, 
 		return nil, false, err
 	}
 
-	token = tokens[*inx]
-	if token.Type != lexer.TokenIdentifier {
-		return nil, false, newErr(ErrUnexpectedToken, "expected identifier", token.Debug)
-	}
-	node.Value = token.Value
-
-	if err := inxPP(tokens, inx); err != nil {
+	typ, err := TypeParser(ctx, tokens, inx)
+	if err != nil {
 		return nil, false, err
 	}
+	node.ValueType = typ
 
 	token = tokens[*inx]
 	if token.Type == lexer.TokenComma {

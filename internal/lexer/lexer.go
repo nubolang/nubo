@@ -4,7 +4,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/bndrmrtn/tea/internal/debug"
+	"github.com/nubogo/nubo/internal/debug"
 )
 
 type Lexer struct {
@@ -359,6 +359,17 @@ func (lx *Lexer) parse(s string) ([]*Token, error) {
 				parsed = append(parsed, &Token{
 					Type:  TokenDecrement,
 					Value: "--",
+					Debug: &debug.Debug{
+						Line:   line,
+						Column: col,
+						File:   lx.file,
+					},
+				})
+				pos++
+			} else if pos+1 < len(s) && runes[pos+1] == '>' {
+				parsed = append(parsed, &Token{
+					Type:  TokenFnReturnArrow,
+					Value: "->",
 					Debug: &debug.Debug{
 						Line:   line,
 						Column: col,

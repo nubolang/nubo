@@ -3,7 +3,7 @@ package parsers
 import (
 	"fmt"
 
-	"github.com/bndrmrtn/tea/internal/debug"
+	"github.com/nubogo/nubo/internal/debug"
 )
 
 func newErr(base error, err string, d ...*debug.Debug) error {

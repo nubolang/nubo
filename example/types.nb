@@ -6,7 +6,7 @@ struct User {
     gender: bool
     data: []byte
     initial: char
-    other: map[string]string
+    other: dict[string, string]
     anyVal: any
     list: []any
     greet: fn(User) -> void

@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bndrmrtn/tea/internal/ast/astnode"
-	"github.com/bndrmrtn/tea/internal/lexer"
+	"github.com/nubogo/nubo/internal/ast/astnode"
+	"github.com/nubogo/nubo/internal/lexer"
 )
 
 func StructParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {

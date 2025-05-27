@@ -1,4 +1,4 @@
-module github.com/bndrmrtn/tea
+module github.com/nubogo/nubo
 
 go 1.23.7
 
