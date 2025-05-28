@@ -82,6 +82,18 @@ func (a *Ast) handleToken(tokens []*lexer.Token, inx *int) (*astnode.Node, error
 			return nil, err
 		}
 		return node, nil
+	case lexer.TokenIdentifier:
+		node, err := parsers.IdentifierParser(a.ctx, tokens, inx)
+		if err != nil {
+			return nil, err
+		}
+		return node, nil
+	case lexer.TokenConst, lexer.TokenLet:
+		node, err := parsers.VariableParser(a.ctx, tokens, inx)
+		if err != nil {
+			return nil, err
+		}
+		return node, nil
 	}
 
 	if token.Type == lexer.TokenWhiteSpace || token.Type == lexer.TokenNewLine || token.Type == lexer.TokenSingleLineComment || token.Type == lexer.TokenMultiLineComment {

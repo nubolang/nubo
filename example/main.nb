@@ -1,0 +1,7 @@
+import print from "@nubo/cli"
+
+fn main(ctx: nubo.Context) -> void {
+    print('hello')
+}
+
+return <div></div>

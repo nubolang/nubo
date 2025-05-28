@@ -2,6 +2,7 @@ package parsers
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/nubogo/nubo/internal/ast/astnode"
 	"github.com/nubogo/nubo/internal/lexer"
@@ -18,7 +19,7 @@ func EventParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode
 
 	token := tokens[*inx]
 	if token.Type != lexer.TokenIdentifier {
-		return nil, newErr(ErrUnexpectedToken, "expected identifier", token.Debug)
+		return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("expected identifier, got %s", token.Type), token.Debug)
 	}
 	node.Content = token.Value
 
@@ -62,7 +63,7 @@ func eventArgumentParser(ctx context.Context, tokens []*lexer.Token, inx *int) (
 
 	token := tokens[*inx]
 	if token.Type != lexer.TokenIdentifier {
-		return nil, false, newErr(ErrUnexpectedToken, "expected identifier", token.Debug)
+		return nil, false, newErr(ErrUnexpectedToken, fmt.Sprintf("expected identifier, got %s", token.Type), token.Debug)
 	}
 	node := &astnode.Node{
 		Type:    astnode.NodeTypeEventArgument,

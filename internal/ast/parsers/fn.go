@@ -22,6 +22,8 @@ func FnParser(ctx context.Context, tokens []*lexer.Token, inx *int, p parser) (*
 		return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("expected identifier, got %s", token.Type), token.Debug)
 	}
 
+	node.Content = token.Value
+
 	if err := inxPP(tokens, inx); err != nil {
 		return nil, err
 	}
@@ -43,7 +45,9 @@ loop:
 			if err != nil {
 				return nil, err
 			}
-			args = append(args, arg)
+			if arg != nil {
+				args = append(args, arg)
+			}
 			if last {
 				break loop
 			}
@@ -57,6 +61,21 @@ loop:
 	}
 
 	token = tokens[*inx]
+
+	if token.Type == lexer.TokenFnReturnArrow {
+		if err := inxPP(tokens, inx); err != nil {
+			return nil, err
+		}
+
+		retType, err := TypeParser(ctx, tokens, inx)
+		if err != nil {
+			return nil, err
+		}
+		node.ValueType = retType
+	}
+
+	token = tokens[*inx]
+
 	if token.Type != lexer.TokenOpenBrace {
 		return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("expected '{', got %s", token.Type), token.Debug)
 	}
@@ -114,8 +133,13 @@ func fnArgumentParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*as
 	}
 
 	token := tokens[*inx]
+	if token.Type == lexer.TokenCloseParen {
+		*inx++
+		return nil, true, nil
+	}
+
 	if token.Type != lexer.TokenIdentifier {
-		return nil, false, newErr(ErrUnexpectedToken, "expected identifier", token.Debug)
+		return nil, false, newErr(ErrUnexpectedToken, fmt.Sprintf("expected identifier, got %s", token.Type), token.Debug)
 	}
 	node := &astnode.Node{
 		Type:    astnode.NodeTypeFunctionArgument,

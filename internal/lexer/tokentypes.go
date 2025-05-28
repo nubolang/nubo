@@ -7,6 +7,9 @@ const (
 	TokenStruct TokenType = "struct"
 	TokenImpl   TokenType = "impl"
 
+	TokenLet   TokenType = "let"
+	TokenConst TokenType = "const"
+
 	TokenEvent  TokenType = "event"
 	TokenServer TokenType = "server"
 	TokenClient TokenType = "client"
@@ -31,6 +34,7 @@ const (
 	TokenString     TokenType = "string"
 	TokenNumber     TokenType = "number"
 	TokenBool       TokenType = "bool"
+	TokenNil        TokenType = "nil"
 
 	// Symbols
 	TokenAssign       TokenType = "="
@@ -46,18 +50,19 @@ const (
 	TokenCloseBracket TokenType = "]"
 
 	// Operators
-	TokenPlus           TokenType = "+"
-	TokenIncrement      TokenType = "++"
-	TokenMinus          TokenType = "-"
-	TokenDecrement      TokenType = "--"
-	TokenAsterisk       TokenType = "*"
-	TokenPower          TokenType = "**"
-	TokenSlash          TokenType = "/"
-	TokenBackSlash      TokenType = "\\"
-	TokenPercent        TokenType = "%"
-	TokenSelfClosingTag TokenType = "/>"
-	TokenArrow          TokenType = "=>"
-	TokenFnReturnArrow  TokenType = "->"
+	TokenPlus            TokenType = "+"
+	TokenIncrement       TokenType = "++"
+	TokenMinus           TokenType = "-"
+	TokenDecrement       TokenType = "--"
+	TokenAsterisk        TokenType = "*"
+	TokenPower           TokenType = "**"
+	TokenSlash           TokenType = "/"
+	TokenBackSlash       TokenType = "\\"
+	TokenPercent         TokenType = "%"
+	TokenSelfClosingTag  TokenType = "/>"
+	TokenClosingStartTag TokenType = "</"
+	TokenArrow           TokenType = "=>"
+	TokenFnReturnArrow   TokenType = "->"
 
 	// Comparison
 	TokenEqual        TokenType = "=="
@@ -89,6 +94,9 @@ func Keywords() []TokenType {
 		TokenImpl,
 		TokenStruct,
 
+		TokenLet,
+		TokenConst,
+
 		TokenEvent,
 		TokenServer,
 		TokenClient,
@@ -107,6 +115,8 @@ func Keywords() []TokenType {
 		TokenBreak,
 		TokenContinue,
 		TokenReturn,
+
+		TokenNil,
 	}
 }
 

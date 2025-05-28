@@ -119,6 +119,19 @@ func (lx *Lexer) parse(s string) ([]*Token, error) {
 						pos++
 					}
 				}
+			} else if pos+1 < len(s) && runes[pos+1] == '>' {
+				pos += 2
+
+				parsed = append(parsed, &Token{
+					Type:  TokenSelfClosingTag,
+					Value: "/>",
+					Debug: &debug.Debug{
+						Line:   line,
+						Column: col,
+						File:   lx.file,
+					},
+				})
+				col++
 			} else {
 				parsed = append(parsed, &Token{
 					Type:  TokenSlash,
@@ -418,6 +431,17 @@ func (lx *Lexer) parse(s string) ([]*Token, error) {
 				parsed = append(parsed, &Token{
 					Type:  TokenLessEqual,
 					Value: "<=",
+					Debug: &debug.Debug{
+						Line:   line,
+						Column: col,
+						File:   lx.file,
+					},
+				})
+				pos++
+			} else if pos+1 < len(s) && runes[pos+1] == '/' {
+				parsed = append(parsed, &Token{
+					Type:  TokenClosingStartTag,
+					Value: "</",
 					Debug: &debug.Debug{
 						Line:   line,
 						Column: col,

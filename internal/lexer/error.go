@@ -1,14 +1,13 @@
 package lexer
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/nubogo/nubo/internal/debug"
 )
 
 func newErr(base error, err string, d ...*debug.Debug) error {
-	return fmt.Errorf("%w: %w", base, errors.New(err))
+	return debug.NewError(base, err, d...)
 }
 
 var (

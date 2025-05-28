@@ -38,6 +38,10 @@ func inxPP(tokens []*lexer.Token, inx *int) error {
 }
 
 func skipSemi(tokens []*lexer.Token, inx *int, node *astnode.Node) *astnode.Node {
+	if *inx >= len(tokens) {
+		return node
+	}
+
 	if err := inxPP(tokens, inx); err != nil {
 		return node
 	}

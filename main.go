@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	fileName := "./example/import.nb"
+	fileName := "./example/html.nb"
 
 	file, err := os.Open(fileName)
 	if err != nil {
@@ -21,7 +21,7 @@ func main() {
 	}
 
 	lx := lexer.New(filepath.Base(fileName))
-	tokens, _ := lx.Parse(file)
+	tokens, err := lx.Parse(file)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -19,7 +19,13 @@ type Node struct {
 	Body     []*Node `yaml:"body,omitempty"`
 
 	Attrs map[string]any `yaml:"attrs,omitempty"`
-	Flags []string       `yaml:"flags,omitempty"`
+	Flags AppendFlags    `yaml:"flags,omitempty"`
 
 	Debug *debug.Debug `yaml:"-"`
+}
+
+type AppendFlags []string
+
+func (a *AppendFlags) Append(flags ...string) {
+	*a = append(*a, flags...)
 }

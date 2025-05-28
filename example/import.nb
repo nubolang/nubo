@@ -1,15 +1,22 @@
 import App from "./app";
+import nubo from "@nubo:id";
 
 event click(id: string, data: int);
 
 struct User {
     // name: ref string?
     ctx: nubo.Context
-    others: dict[nbu.Ctx, dict[int.class, dict[string, int]]]
+    others: dict[nubu.ID, dict[int.class, dict[string, int]]]
     list: [][]dict[int, int]
     handler: fn(int, string, dict[string,int]) -> dict[string, int]
 }
 
-fn doStuff(value: int, dg: fn() -> dict[int, string]) {
+fn doStuff(value: int, dg: fn() -> dict[int, string]) -> string {
+    x++
 
+    x = x + 10
+}
+
+struct ID {
+    id: string
 }

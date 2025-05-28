@@ -61,7 +61,7 @@ func TypeParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.
 		return node, nil
 	}
 
-	return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("expected identifier"), tokens[*inx].Debug)
+	return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("expected identifier, got %s", tokens[*inx].Type), tokens[*inx].Debug)
 }
 
 func TypeDictParser(ctx context.Context, node *astnode.Node, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
