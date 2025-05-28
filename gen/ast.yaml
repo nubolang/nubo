@@ -4,130 +4,109 @@
 - type: event
   content: click
   args:
-    - type: identifier
+    - type: event_argument
       content: id
       value_type:
-        type: identifier
-        kind: TYPE
+        type: type
         content: string
-    - type: identifier
+    - type: event_argument
       content: data
       value_type:
-        type: identifier
-        kind: TYPE
+        type: type
         content: int
 - type: struct
   content: User
   body:
-    - type: identifier
+    - type: struct_field
       content: ctx
       value_type:
-        type: identifier
-        kind: TYPE
+        type: type
         content: nubo.Context
-    - type: identifier
+    - type: struct_field
       content: others
       value_type:
-        type: identifier
-        kind: TYPE
+        type: type
+        kind: DICT
         content: dict
         body:
-            - type: identifier
-              kind: TYPE
+            - type: type
               content: nbu.Ctx
-            - type: identifier
-              kind: TYPE
+            - type: type
+              kind: DICT
               content: dict
               body:
-                - type: identifier
-                  kind: TYPE
+                - type: type
                   content: int.class
-                - type: identifier
-                  kind: TYPE
+                - type: type
+                  kind: DICT
                   content: dict
                   body:
-                    - type: identifier
-                      kind: TYPE
+                    - type: type
                       content: string
-                    - type: identifier
-                      kind: TYPE
+                    - type: type
                       content: int
-                  flags:
-                    - DICT
-              flags:
-                - DICT
-        flags:
-            - DICT
-    - type: identifier
+    - type: struct_field
       content: list
       value_type:
-        type: identifier
-        kind: TYPE
-        content: '[]'
+        type: type
+        kind: LIST
         body:
-            - type: identifier
-              kind: TYPE
-              content: '[]'
+            - type: type
+              kind: LIST
               body:
-                - type: identifier
-                  kind: TYPE
+                - type: type
+                  kind: DICT
                   content: dict
                   body:
-                    - type: identifier
-                      kind: TYPE
+                    - type: type
                       content: int
-                    - type: identifier
-                      kind: TYPE
+                    - type: type
                       content: int
-                  flags:
-                    - DICT
-              flags:
-                - LIST
-        flags:
-            - LIST
-    - type: identifier
+    - type: struct_field
       content: handler
       value_type:
-        type: identifier
-        kind: TYPE
-        content: fn
+        type: type
+        kind: FUNCTION
         value_type:
-            type: identifier
-            kind: TYPE
-            content: fn
-            value_type:
-                type: identifier
-                kind: TYPE
-                content: dict
-                body:
-                    - type: identifier
-                      kind: TYPE
-                      content: string
-                    - type: identifier
-                      kind: TYPE
-                      content: int
-                flags:
-                    - DICT
-            flags:
-                - FN
+            type: type
+            kind: DICT
+            content: dict
+            body:
+                - type: type
+                  content: string
+                - type: type
+                  content: int
         args:
-            - type: identifier
-              kind: TYPE
+            - type: type
               content: int
-            - type: identifier
-              kind: TYPE
+            - type: type
               content: string
-            - type: identifier
-              kind: TYPE
+            - type: type
+              kind: DICT
               content: dict
               body:
-                - type: identifier
-                  kind: TYPE
+                - type: type
                   content: string
-                - type: identifier
-                  kind: TYPE
+                - type: type
                   content: int
-              flags:
-                - DICT
-        flags:
-            - FN
+- type: function
+  args:
+    - type: function_argument
+      content: value
+      value_type:
+        type: type
+        content: int
+    - type: function_argument
+      content: dg
+      value_type:
+        type: type
+        kind: FUNCTION
+        value_type:
+            type: type
+            kind: DICT
+            content: dict
+            body:
+                - type: type
+                  content: int
+                - type: type
+                  content: string

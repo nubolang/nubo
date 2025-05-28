@@ -2,14 +2,15 @@ package parsers
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/nubogo/nubo/internal/ast/astnode"
 	"github.com/nubogo/nubo/internal/lexer"
 )
 
-func EventParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
+func FnParser(ctx context.Context, tokens []*lexer.Token, inx *int, p parser) (*astnode.Node, error) {
 	node := &astnode.Node{
-		Type: astnode.NodeTypeEvent,
+		Type: astnode.NodeTypeFunction,
 	}
 
 	if err := inxPP(tokens, inx); err != nil {
@@ -18,9 +19,8 @@ func EventParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode
 
 	token := tokens[*inx]
 	if token.Type != lexer.TokenIdentifier {
-		return nil, newErr(ErrUnexpectedToken, "expected identifier", token.Debug)
+		return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("expected identifier, got %s", token.Type), token.Debug)
 	}
-	node.Content = token.Value
 
 	if err := inxPP(tokens, inx); err != nil {
 		return nil, err
@@ -28,7 +28,7 @@ func EventParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode
 
 	token = tokens[*inx]
 	if token.Type != lexer.TokenOpenParen {
-		return nil, newErr(ErrUnexpectedToken, "expected open parenthesis", token.Debug)
+		return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("expected '(', got %s", token.Type), token.Debug)
 	}
 
 	args := make([]*astnode.Node, 0)
@@ -39,7 +39,7 @@ loop:
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		default:
-			arg, last, err := eventArgumentParser(ctx, tokens, inx)
+			arg, last, err := fnArgumentParser(ctx, tokens, inx)
 			if err != nil {
 				return nil, err
 			}
@@ -52,10 +52,63 @@ loop:
 
 	node.Args = args
 
-	return skipSemi(tokens, inx, node), nil
+	if err := inxPP(tokens, inx); err != nil {
+		return nil, err
+	}
+
+	token = tokens[*inx]
+	if token.Type != lexer.TokenOpenBrace {
+		return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("expected '{', got %s", token.Type), token.Debug)
+	}
+
+	var (
+		body       []*lexer.Token
+		braceCount = 1
+	)
+
+bodyloop:
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+			*inx++
+
+			if *inx >= len(tokens) {
+				return nil, newErr(ErrUnexpectedToken, "unexpected end of input", token.Debug)
+			}
+
+			token = tokens[*inx]
+
+			if token.Type == lexer.TokenCloseBrace {
+				braceCount--
+				if braceCount == 0 {
+					*inx++
+					break bodyloop
+				}
+			} else if token.Type == lexer.TokenOpenBrace {
+				braceCount++
+			}
+
+			body = append(body, token)
+		}
+	}
+
+	if braceCount != 0 {
+		return nil, newErr(ErrUnexpectedToken, "unbalanced braces", token.Debug)
+	}
+
+	bodyNodes, err := p.Parse(body)
+	if err != nil {
+		return nil, err
+	}
+
+	node.Body = bodyNodes
+
+	return node, nil
 }
 
-func eventArgumentParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.Node, bool, error) {
+func fnArgumentParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.Node, bool, error) {
 	if err := inxPP(tokens, inx); err != nil {
 		return nil, false, err
 	}
@@ -65,7 +118,7 @@ func eventArgumentParser(ctx context.Context, tokens []*lexer.Token, inx *int) (
 		return nil, false, newErr(ErrUnexpectedToken, "expected identifier", token.Debug)
 	}
 	node := &astnode.Node{
-		Type:    astnode.NodeTypeEventArgument,
+		Type:    astnode.NodeTypeFunctionArgument,
 		Content: token.Value,
 	}
 

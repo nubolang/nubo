@@ -11,8 +11,7 @@ import (
 
 func TypeParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
 	node := &astnode.Node{
-		Type: lexer.TokenIdentifier,
-		Kind: "TYPE",
+		Type: astnode.NodeTypeType,
 	}
 
 	if tokens[*inx].Type == lexer.TokenFn {
@@ -37,7 +36,7 @@ func TypeParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.
 			if err != nil {
 				return nil, err
 			}
-			node.Flags = append(node.Flags, "REF")
+			node.Kind = "REF"
 			return node, nil
 		}
 
@@ -53,13 +52,12 @@ func TypeParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.
 
 	if tokens[*inx].Type == lexer.TokenOpenBracket && *inx+1 < len(tokens) && tokens[*inx+1].Type == lexer.TokenCloseBracket {
 		*inx += 2
-		node.Content = "[]"
 		typ, err := TypeParser(ctx, tokens, inx)
 		if err != nil {
 			return nil, err
 		}
 		node.Body = append(node.Body, typ)
-		node.Flags = append(node.Flags, "LIST")
+		node.Kind = "LIST"
 		return node, nil
 	}
 
@@ -67,7 +65,7 @@ func TypeParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.
 }
 
 func TypeDictParser(ctx context.Context, node *astnode.Node, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
-	node.Flags = append(node.Flags, "DICT")
+	node.Kind = "DICT"
 
 	if err := inxPP(tokens, inx); err != nil {
 		return nil, err
@@ -168,8 +166,7 @@ loop:
 }
 
 func TypeFnParser(ctx context.Context, node *astnode.Node, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
-	node.Flags = append(node.Flags, "FN")
-	node.Content = "fn"
+	node.Kind = "FUNCTION"
 
 	if err := inxPP(tokens, inx); err != nil {
 		return nil, err

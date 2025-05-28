@@ -10,7 +10,7 @@ import (
 
 func ImportParser(_ context.Context, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
 	node := &astnode.Node{
-		Type: lexer.TokenImport,
+		Type: astnode.NodeTypeImport,
 	}
 
 	if err := inxPP(tokens, inx); err != nil {

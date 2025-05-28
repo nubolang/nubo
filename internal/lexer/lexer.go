@@ -113,6 +113,7 @@ func (lx *Lexer) parse(s string) ([]*Token, error) {
 						sb.WriteByte('\n')
 						line++
 						col = 1
+						pos++
 					} else {
 						sb.WriteByte(s[pos])
 						pos++

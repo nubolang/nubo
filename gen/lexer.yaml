@@ -251,6 +251,54 @@
   value: ->
 - type: <whitespace>
   value: ' '
+- type: identifier
+  value: dict
+- type: '['
+  value: '['
+- type: identifier
+  value: string
+- type: ','
+  value: ','
+- type: <whitespace>
+  value: ' '
+- type: identifier
+  value: int
+- type: ']'
+  value: ']'
+- type: <newline>
+  value: |4+
+- type: '}'
+  value: '}'
+- type: <newline>
+  value: |4+
+- type: <newline>
+  value: |4+
+- type: fn
+  value: fn
+- type: <whitespace>
+  value: ' '
+- type: identifier
+  value: doStuff
+- type: (
+  value: (
+- type: identifier
+  value: value
+- type: ':'
+  value: ':'
+- type: <whitespace>
+  value: ' '
+- type: identifier
+  value: int
+- type: ','
+  value: ','
+- type: <whitespace>
+  value: ' '
+- type: identifier
+  value: dg
+- type: ':'
+  value: ':'
+- type: <whitespace>
+  value: ' '
 - type: fn
   value: fn
 - type: (
@@ -268,15 +316,23 @@
 - type: '['
   value: '['
 - type: identifier
-  value: string
+  value: int
 - type: ','
   value: ','
 - type: <whitespace>
   value: ' '
 - type: identifier
-  value: int
+  value: string
 - type: ']'
   value: ']'
+- type: )
+  value: )
+- type: <whitespace>
+  value: ' '
+- type: '{'
+  value: '{'
+- type: <newline>
+  value: |4+
 - type: <newline>
   value: |4+
 - type: '}'

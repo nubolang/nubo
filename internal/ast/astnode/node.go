@@ -2,14 +2,13 @@ package astnode
 
 import (
 	"github.com/nubogo/nubo/internal/debug"
-	"github.com/nubogo/nubo/internal/lexer"
 )
 
 type Node struct {
-	Type lexer.TokenType `yaml:"type"`
-	Kind string          `yaml:"kind,omitempty"`
+	Type NodeType `yaml:"type"`
+	Kind string   `yaml:"kind,omitempty"`
 
-	Content   string `yaml:"content"`
+	Content   string `yaml:"content,omitempty"`
 	Value     any    `yaml:"value,omitempty"`
 	ValueType *Node  `yaml:"value_type,omitempty"`
 

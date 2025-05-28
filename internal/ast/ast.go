@@ -2,10 +2,13 @@ package ast
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"time"
 
 	"github.com/nubogo/nubo/internal/ast/astnode"
 	"github.com/nubogo/nubo/internal/ast/parsers"
+	"github.com/nubogo/nubo/internal/debug"
 	"github.com/nubogo/nubo/internal/lexer"
 )
 
@@ -73,11 +76,18 @@ func (a *Ast) handleToken(tokens []*lexer.Token, inx *int) (*astnode.Node, error
 			return nil, err
 		}
 		return node, nil
+	case lexer.TokenFn:
+		node, err := parsers.FnParser(a.ctx, tokens, inx, New(a.ctx, time.Second*5))
+		if err != nil {
+			return nil, err
+		}
+		return node, nil
 	}
 
 	if token.Type == lexer.TokenWhiteSpace || token.Type == lexer.TokenNewLine || token.Type == lexer.TokenSingleLineComment || token.Type == lexer.TokenMultiLineComment {
 		*inx++
+		return nil, nil
 	}
 
-	return nil, nil
+	return nil, debug.NewError(errors.New("Ast error"), fmt.Sprintf("Unhandled node: %s", token.Type), token.Debug)
 }
