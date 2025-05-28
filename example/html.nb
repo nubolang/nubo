@@ -1,3 +1,7 @@
-x = <div>
+let x = <div>
     <p>x { 5 < 2 }</p>
 </div>
+
+let y = <nubo.Dashboard>
+    <nubo.Component />
+</nubo.Dashboard>

@@ -2,6 +2,7 @@ package parsers
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/nubogo/nubo/internal/ast/astnode"
@@ -14,7 +15,11 @@ func HTMLParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.
 	var tag string
 	if token.Type == lexer.TokenLessThan && *inx+1 < len(tokens) && tokens[*inx+1].Type == lexer.TokenIdentifier {
 		*inx++
-		tag = tokens[*inx].Value
+		id, err := TypeWholeIDParser(ctx, tokens, inx)
+		if err != nil {
+			return nil, err
+		}
+		tag = id
 	}
 
 	node := &astnode.Node{
@@ -50,8 +55,26 @@ func HTMLParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.
 
 			tok = tokens[*inx]
 
-			if tok.Type == lexer.TokenClosingStartTag && *inx+2 < len(tokens) && tokens[*inx+1].Value == tag && tokens[*inx+2].Type == lexer.TokenGreaterThan {
-				*inx += 3
+			if tok.Type == lexer.TokenClosingStartTag && *inx+2 < len(tokens) {
+				*inx++
+				id, err := TypeWholeIDParser(ctx, tokens, inx)
+				if err != nil {
+					return nil, err
+				}
+				if id != tag {
+					return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("invalid closing tag, expected %s, got %s", tag, id), token.Debug)
+				}
+
+				if err := inxPP(tokens, inx); err != nil {
+					return nil, err
+				}
+
+				tok = tokens[*inx]
+				if tok.Type != lexer.TokenGreaterThan {
+					return nil, newErr(ErrUnexpectedToken, "unexpected token", token.Debug)
+				}
+
+				*inx++
 				return node, nil
 			}
 

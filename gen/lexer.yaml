@@ -1,3 +1,7 @@
+- type: let
+  value: let
+- type: <whitespace>
+  value: ' '
 - type: identifier
   value: x
 - type: <whitespace>
@@ -68,15 +72,63 @@
   value: div
 - type: '>'
   value: '>'
+- type: <newline>
+  value: |4+
+- type: <newline>
+  value: |4+
+- type: let
+  value: let
 - type: <whitespace>
   value: ' '
-- type: +
-  value: +
+- type: identifier
+  value: "y"
 - type: <whitespace>
   value: ' '
-- type: number
-  value: "2"
-  map:
-    isFloat: false
+- type: =
+  value: =
+- type: <whitespace>
+  value: ' '
+- type: <
+  value: <
+- type: identifier
+  value: nubo
+- type: .
+  value: .
+- type: identifier
+  value: Dashboard
+- type: '>'
+  value: '>'
+- type: <newline>
+  value: |4+
+- type: <whitespace>
+  value: ' '
+- type: <whitespace>
+  value: ' '
+- type: <whitespace>
+  value: ' '
+- type: <whitespace>
+  value: ' '
+- type: <
+  value: <
+- type: identifier
+  value: nubo
+- type: .
+  value: .
+- type: identifier
+  value: Component
+- type: <whitespace>
+  value: ' '
+- type: />
+  value: />
+- type: </
+  value: </
+- type: identifier
+  value: nubo
+- type: .
+  value: .
+- type: identifier
+  value: Dashboard
+- type: '>'
+  value: '>'
 - type: <newline>
   value: |4+

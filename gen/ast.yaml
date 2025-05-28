@@ -1,11 +1,27 @@
-- type: assign
-  value: x
-  children:
-    - type: element
-      content: div
-      children:
+- type: variable_decl
+  kind: LET
+  content: x
+  value:
+    type: element
+    content: div
+    children:
         - type: element
           content: p
           children:
             - type: element_raw_text
               content: x { 5 < 2 }
+  flags:
+    - NODEVALUE
+- type: variable_decl
+  kind: LET
+  content: "y"
+  value:
+    type: element
+    content: nubo.Dashboard
+    children:
+        - type: element
+          content: nubo.Component
+          flags:
+            - SELFCLOSING
+  flags:
+    - NODEVALUE
