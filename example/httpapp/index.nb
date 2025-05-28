@@ -1,0 +1,14 @@
+import nubo from "@nubo"
+import events from "./events"
+import client from "./client"
+
+server {
+    let clicks = nubo.sessionValue("clicks", 0)
+
+    sub events.click() {
+        clicks += 1
+        pub events.updateClicks(clicks)
+    }
+
+    return nubo.App(client.App(clicks))
+}

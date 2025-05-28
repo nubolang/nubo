@@ -1,0 +1,13 @@
+import events from "./events"
+
+component App(clicks) {
+    fn handleClick() {
+        pub events.click();
+    }
+
+    sub events.updateClicks(count) {
+        clicks = count
+    }
+
+    return <button onClick="handleClick">Clicked { clicks } times.</button>
+}

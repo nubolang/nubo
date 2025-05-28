@@ -76,18 +76,10 @@
   value: |4+
 - type: <newline>
   value: |4+
-- type: let
-  value: let
-- type: <whitespace>
-  value: ' '
 - type: identifier
-  value: "y"
-- type: <whitespace>
-  value: ' '
-- type: =
-  value: =
-- type: <whitespace>
-  value: ' '
+  value: print
+- type: (
+  value: (
 - type: <
   value: <
 - type: identifier
@@ -96,6 +88,18 @@
   value: .
 - type: identifier
   value: Dashboard
+- type: <whitespace>
+  value: ' '
+- type: ':'
+  value: ':'
+- type: identifier
+  value: class
+- type: =
+  value: =
+- type: string
+  value: xy
+  map:
+    quote: '"'
 - type: '>'
   value: '>'
 - type: <newline>
@@ -130,5 +134,7 @@
   value: Dashboard
 - type: '>'
   value: '>'
+- type: )
+  value: )
 - type: <newline>
   value: |4+

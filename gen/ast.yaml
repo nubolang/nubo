@@ -12,16 +12,17 @@
               content: x { 5 < 2 }
   flags:
     - NODEVALUE
-- type: variable_decl
-  kind: LET
-  content: "y"
-  value:
-    type: element
-    content: nubo.Dashboard
-    children:
-        - type: element
-          content: nubo.Component
-          flags:
-            - SELFCLOSING
-  flags:
-    - NODEVALUE
+- type: function_call
+  content: print
+  args:
+    - type: function_argument
+      value:
+        type: element
+        content: nubo.Dashboard
+        children:
+            - type: element
+              content: nubo.Component
+              flags:
+                - SELFCLOSING
+      flags:
+        - NODEVALUE

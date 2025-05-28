@@ -1,3 +1,5 @@
+import nubo from "@nubo"
+
 event click();
 event updateClicks(count: int);
 
@@ -9,10 +11,10 @@ server {
         pub updateClicks(clicks);
     }
 
-    return { clicks };
+    return nubo.App(App(clicks))
 }
 
-client App(clicks) {
+component App(clicks) {
     fn handleClick() {
         pub click();
     }

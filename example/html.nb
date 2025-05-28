@@ -2,6 +2,12 @@ let x = <div>
     <p>x { 5 < 2 }</p>
 </div>
 
-let y = <nubo.Dashboard>
+print(<nubo.Dashboard :class="xy">
     <nubo.Component />
-</nubo.Dashboard>
+</nubo.Dashboard>)
+
+component App() {
+    return <div>
+        <p>Hello, World!</p>
+    </div>
+}
