@@ -26,5 +26,6 @@ const (
 
 	NodeTypeVariableDecl NodeType = "variable_decl"
 
-	NodeTypeElement NodeType = "element"
+	NodeTypeElement        NodeType = "element"
+	NodeTypeElementRawText NodeType = "element_raw_text"
 )

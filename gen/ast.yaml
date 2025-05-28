@@ -3,3 +3,9 @@
   children:
     - type: element
       content: div
+      children:
+        - type: element
+          content: p
+          children:
+            - type: element_raw_text
+              content: x { 5 < 2 }

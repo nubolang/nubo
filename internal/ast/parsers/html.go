@@ -2,7 +2,7 @@ package parsers
 
 import (
 	"context"
-	"fmt"
+	"strings"
 
 	"github.com/nubogo/nubo/internal/ast/astnode"
 	"github.com/nubogo/nubo/internal/lexer"
@@ -38,34 +38,81 @@ func HTMLParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.
 	}
 
 	for *inx < len(tokens) {
-		tok := tokens[*inx]
-
-		if tok.Type == lexer.TokenNewLine {
-			if err := nl(tokens, inx); err != nil {
-				return nil, err
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+			if *inx >= len(tokens) {
+				return nil, newErr(ErrUnexpectedToken, "unexpected end of tokens", token.Debug)
 			}
-		}
 
-		tok = tokens[*inx]
+			tok := tokens[*inx]
 
-		if tok.Type == lexer.TokenClosingStartTag {
-			if *inx+1 < len(tokens) && tokens[*inx+1].Value == tag {
-				if *inx+2 < len(tokens) && tokens[*inx+2].Type == lexer.TokenGreaterThan {
-					*inx += 3
-					break
+			tok = tokens[*inx]
+
+			if tok.Type == lexer.TokenClosingStartTag && *inx+2 < len(tokens) && tokens[*inx+1].Value == tag && tokens[*inx+2].Type == lexer.TokenGreaterThan {
+				*inx += 3
+				return node, nil
+			}
+
+			if tok.Type == lexer.TokenLessThan {
+				child, err := HTMLParser(ctx, tokens, inx)
+				if err != nil {
+					return nil, err
+				}
+				node.Children = append(node.Children, child)
+			} else {
+				var content strings.Builder
+			textloop:
+				for *inx < len(tokens) {
+					select {
+					case <-ctx.Done():
+						return nil, ctx.Err()
+					default:
+						tok := tokens[*inx]
+
+						if tok.Type == lexer.TokenOpenBrace {
+							var braceCount = 0
+							for *inx < len(tokens) {
+								select {
+								case <-ctx.Done():
+									return nil, ctx.Err()
+								default:
+									tok := tokens[*inx]
+
+									content.WriteString(tok.Value)
+									if tok.Type == lexer.TokenOpenBrace {
+										braceCount++
+									} else if tok.Type == lexer.TokenCloseBrace {
+										braceCount--
+										if braceCount == 0 {
+											*inx++
+											continue textloop
+										}
+									}
+
+									*inx++
+								}
+							}
+						}
+
+						if tok.Type == lexer.TokenLessThan || tok.Type == lexer.TokenClosingStartTag {
+							break textloop
+						}
+						content.WriteString(tok.Value)
+						*inx++
+					}
+				}
+
+				if content.Len() > 0 && strings.TrimSpace(content.String()) != "" {
+					text := &astnode.Node{
+						Type:    astnode.NodeTypeElementRawText,
+						Content: content.String(),
+					}
+					node.Children = append(node.Children, text)
 				}
 			}
 		}
-
-		i := *inx
-		child, err := HTMLParser(ctx, tokens, inx)
-		if err != nil {
-			for _, t := range tokens[i:] {
-				fmt.Printf("%s ", t.Value)
-			}
-			return nil, err
-		}
-		node.Children = append(node.Children, child)
 	}
 
 	return node, nil
