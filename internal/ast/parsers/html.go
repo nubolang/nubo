@@ -3,13 +3,18 @@ package parsers
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/nubogo/nubo/internal/ast/astnode"
 	"github.com/nubogo/nubo/internal/lexer"
 )
 
-func HTMLParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
+type HTMLAttrValueParser interface {
+	ParseHTMLAttrValue(s string) (*astnode.Node, error)
+}
+
+func HTMLParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
 	token := tokens[*inx]
 
 	var tag string
@@ -31,7 +36,7 @@ func HTMLParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.
 		return nil, err
 	}
 
-	attributes, selfClosing, err := createAttributes(ctx, tokens, inx)
+	attributes, selfClosing, err := createAttributes(ctx, sn, tokens, inx)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +84,7 @@ func HTMLParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.
 			}
 
 			if tok.Type == lexer.TokenLessThan {
-				child, err := HTMLParser(ctx, tokens, inx)
+				child, err := HTMLParser(ctx, sn, tokens, inx)
 				if err != nil {
 					return nil, err
 				}
@@ -95,6 +100,17 @@ func HTMLParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.
 						tok := tokens[*inx]
 
 						if tok.Type == lexer.TokenOpenBrace {
+							if content.Len() > 0 && strings.TrimSpace(content.String()) != "" {
+								text := &astnode.Node{
+									Type:    astnode.NodeTypeElementRawText,
+									Content: content.String(),
+								}
+								node.Children = append(node.Children, text)
+								content.Reset()
+							}
+
+							var dynamicText strings.Builder
+
 							var braceCount = 0
 							for *inx < len(tokens) {
 								select {
@@ -103,13 +119,29 @@ func HTMLParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.
 								default:
 									tok := tokens[*inx]
 
-									content.WriteString(tok.Value)
+									dynamicText.WriteString(tok.Value)
 									if tok.Type == lexer.TokenOpenBrace {
 										braceCount++
 									} else if tok.Type == lexer.TokenCloseBrace {
 										braceCount--
 										if braceCount == 0 {
+											dynamicStr := dynamicText.String()
+											dynamicStr = dynamicStr[1 : len(dynamicStr)-1]
+
 											*inx++
+											if dynamicText.Len() > 0 && strings.TrimSpace(dynamicStr) != "" {
+												dynamicTextNode, err := sn.ParseHTMLAttrValue(dynamicStr)
+												if err != nil {
+													return nil, err
+												}
+
+												text := &astnode.Node{
+													Type:  astnode.NodeTypeElementDynamicText,
+													Value: dynamicTextNode,
+												}
+												text.Flags.Append("NODEVALUE")
+												node.Children = append(node.Children, text)
+											}
 											continue textloop
 										}
 									}
@@ -141,7 +173,7 @@ func HTMLParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.
 	return node, nil
 }
 
-func createAttributes(ctx context.Context, tokens []*lexer.Token, inx *int) ([]*astnode.Node, bool, error) {
+func createAttributes(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer.Token, inx *int) ([]*astnode.Node, bool, error) {
 	var (
 		token       = tokens[*inx]
 		attrs       []*lexer.Token
@@ -172,5 +204,98 @@ loop:
 		}
 	}
 
-	return nil, selfClosing, nil
+	attributes, err := attrsToNodeParser(ctx, sn, attrs)
+	if err != nil {
+		return nil, false, err
+	}
+
+	return attributes, selfClosing, nil
+}
+
+func attrsToNodeParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer.Token) ([]*astnode.Node, error) {
+	if len(tokens) == 0 {
+		return nil, nil
+	}
+
+	var (
+		inx   = 0
+		nodes []*astnode.Node
+	)
+
+loop:
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+			if inx >= len(tokens) {
+				break loop
+			}
+
+			node := &astnode.Node{
+				Type: astnode.NodeTypeElementAttribute,
+			}
+
+			token := tokens[inx]
+			for inx < len(tokens) && slices.Contains(white, token.Type) {
+				inx++
+				token = tokens[inx]
+			}
+
+			if token.Type == lexer.TokenColon {
+				node.Kind = "DYNAMIC"
+				inx++
+
+				if inx >= len(tokens) {
+					return nil, newErr(ErrUnexpectedToken, "expected attribute name after colon", token.Debug)
+				}
+
+				token = tokens[inx]
+			} else {
+				node.Kind = "TEXT"
+			}
+
+			if inx >= len(tokens) {
+				return nil, newErr(ErrUnexpectedToken, "expected attribute name", token.Debug)
+			}
+
+			node.Content = token.Value
+
+			inx++
+			if inx >= len(tokens) {
+				break loop
+			}
+
+			token = tokens[inx]
+			if token.Type != lexer.TokenAssign {
+				return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("expected '=', got '%s'", token.Value), token.Debug)
+			}
+
+			inx++
+			if inx >= len(tokens) {
+				return nil, newErr(ErrUnexpectedToken, "expected attribute value", token.Debug)
+			}
+
+			token = tokens[inx]
+			if token.Type != lexer.TokenString {
+				return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("expected string, got '%s'", token.Value), token.Debug)
+			}
+
+			if node.Kind == "DYNAMIC" {
+				val, err := sn.ParseHTMLAttrValue(token.Value)
+				if err != nil {
+					return nil, err
+				}
+				node.Value = val
+			} else {
+				node.Value = token.Value
+			}
+
+			nodes = append(nodes, node)
+
+			inx++
+		}
+	}
+
+	return nodes, nil
 }

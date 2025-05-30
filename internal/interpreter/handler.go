@@ -1,0 +1,21 @@
+package interpreter
+
+import (
+	"fmt"
+
+	"github.com/nubogo/nubo/internal/ast/astnode"
+	"github.com/nubogo/nubo/language"
+)
+
+func (i *Interpreter) handleNode(node *astnode.Node) (language.Object, error) {
+	switch node.Type {
+	/*case astnode.NodeTypeImport:
+	return i.handleImport(node)*/
+	case astnode.NodeTypeVariableDecl:
+		return nil, i.handleVariableDecl(node)
+	case astnode.NodeTypeAssign:
+		return nil, i.handleAssignment(node)
+	default:
+		return nil, newErr(ErrUnknownNode, fmt.Sprintf("%s", node.Type), node.Debug)
+	}
+}

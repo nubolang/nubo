@@ -8,7 +8,7 @@ import (
 	"github.com/nubogo/nubo/internal/lexer"
 )
 
-func VariableParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
+func VariableParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
 	token := tokens[*inx]
 	isConst := token.Type == lexer.TokenConst
 
@@ -60,7 +60,7 @@ func VariableParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astn
 			return nil, err
 		}
 
-		value, err := ValueParser(ctx, tokens, inx)
+		value, err := ValueParser(ctx, sn, tokens, inx)
 		if err != nil {
 			return nil, err
 		}

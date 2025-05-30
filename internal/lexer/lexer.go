@@ -120,8 +120,7 @@ func (lx *Lexer) parse(s string) ([]*Token, error) {
 					}
 				}
 			} else if pos+1 < len(s) && runes[pos+1] == '>' {
-				pos += 2
-
+				pos++
 				parsed = append(parsed, &Token{
 					Type:  TokenSelfClosingTag,
 					Value: "/>",

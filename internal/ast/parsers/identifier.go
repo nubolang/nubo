@@ -8,7 +8,7 @@ import (
 	"github.com/nubogo/nubo/internal/lexer"
 )
 
-func IdentifierParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
+func IdentifierParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
 	firstInx := *inx
 
 	id, err := TypeWholeIDParser(ctx, tokens, inx)
@@ -44,23 +44,24 @@ func IdentifierParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*as
 			return nil, err
 		}
 
-		expr, err := ValueParser(ctx, tokens, inx)
+		expr, err := ValueParser(ctx, sn, tokens, inx)
 		if err != nil {
 			return nil, err
 		}
 
-		node.Children = append(node.Children, expr)
+		node.Value = expr
+		node.Flags.Append("NODEVALUE")
 
 		return skipSemi(tokens, inx, node), nil
 	case lexer.TokenOpenParen:
 		*inx = firstInx
-		return fnCallParser(ctx, tokens, inx)
+		return fnCallParser(ctx, sn, tokens, inx)
 	}
 
 	return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("unexpected token %s", token.Value), token.Debug)
 }
 
-func fnCallParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
+func fnCallParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
 	id, err := TypeWholeIDParser(ctx, tokens, inx)
 	if err != nil {
 		return nil, err
@@ -88,7 +89,7 @@ loop:
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		default:
-			arg, last, err := fnCallArgumentParser(ctx, tokens, inx)
+			arg, last, err := fnCallArgumentParser(ctx, sn, tokens, inx)
 			if err != nil {
 				return nil, err
 			}
@@ -105,10 +106,10 @@ loop:
 
 	_ = inxPP(tokens, inx)
 
-	return node, nil
+	return skipSemi(tokens, inx, node), nil
 }
 
-func fnCallArgumentParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.Node, bool, error) {
+func fnCallArgumentParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer.Token, inx *int) (*astnode.Node, bool, error) {
 	if err := inxPP(tokens, inx); err != nil {
 		return nil, false, err
 	}
@@ -119,7 +120,7 @@ func fnCallArgumentParser(ctx context.Context, tokens []*lexer.Token, inx *int) 
 		return nil, true, nil
 	}
 
-	value, err := ValueParser(ctx, tokens, inx)
+	value, err := ValueParser(ctx, sn, tokens, inx)
 	if err != nil {
 		return nil, false, err
 	}
@@ -145,7 +146,7 @@ func fnCallArgumentParser(ctx context.Context, tokens []*lexer.Token, inx *int) 
 	}
 
 	if token.Type != lexer.TokenCloseParen {
-		return nil, false, newErr(ErrUnexpectedToken, "expected close parenthesis", token.Debug)
+		return nil, false, newErr(ErrUnexpectedToken, fmt.Sprintf("expected close parenthesis, got %s", token.Type), token.Debug)
 	}
 
 	return node, true, nil

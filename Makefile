@@ -1,7 +1,7 @@
 .PHONY: build run
 
 build:
-	@go build -o bin/nubo
+	@go build -o bin/nubo ./cmd/nubo
 
 run: build
-	@./bin/nubo --dev
+	@./bin/nubo run ./example/$(FILE).nb --dev

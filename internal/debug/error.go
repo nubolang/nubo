@@ -3,6 +3,8 @@ package debug
 import (
 	"errors"
 	"fmt"
+
+	"github.com/fatih/color"
 )
 
 type DebugErr struct {
@@ -11,7 +13,15 @@ type DebugErr struct {
 }
 
 func (de *DebugErr) Error() string {
-	return fmt.Sprintf("%v: %v", de.err, de.debug)
+	red := color.New(color.FgRed, color.Bold).SprintFunc()
+	blue := color.New(color.FgHiBlue).SprintFunc()
+
+	var location string
+	if de.debug != nil {
+		location = fmt.Sprintf(": %s:%s:%s", blue(de.debug.File), blue(de.debug.Line), blue(de.debug.Column))
+	}
+
+	return fmt.Sprintf("%s%s", red(de.err.Error()), location)
 }
 
 func NewError(base error, err string, debug ...*Debug) error {

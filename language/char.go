@@ -1,0 +1,56 @@
+package language
+
+import (
+	"fmt"
+	"strconv"
+
+	"github.com/nubogo/nubo/internal/debug"
+)
+
+type Char struct {
+	Data  rune
+	debug *debug.Debug
+}
+
+func NewChar(value rune, debug *debug.Debug) *Char {
+	return &Char{
+		Data:  value,
+		debug: debug,
+	}
+}
+
+func (i *Char) ID() string {
+	return fmt.Sprintf("%p", i)
+}
+
+func (i *Char) Type() ObjectType {
+	return TypeChar
+}
+
+func (i *Char) Inspect() string {
+	return fmt.Sprintf("<Object(Char @ %s)>", strconv.Quote(i.String()))
+}
+
+func (i *Char) TypeString() string {
+	return "<Object(Char)>"
+}
+
+func (i *Char) String() string {
+	return string(i.Data)
+}
+
+func (i *Char) GetPrototype() Prototype {
+	return nil
+}
+
+func (i *Char) Value() rune {
+	return i.Data
+}
+
+func (i *Char) Debug() *debug.Debug {
+	return i.debug
+}
+
+func (i *Char) Clone() *Char {
+	return NewChar(i.Data, i.debug)
+}

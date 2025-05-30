@@ -8,6 +8,7 @@ const (
 	NodeTypeFunction         NodeType = "function"
 	NodeTypeFunctionArgument NodeType = "function_argument"
 	NodeTypeFunctionCall     NodeType = "function_call"
+	NodeTypeReturn           NodeType = "return"
 
 	NodeTypeType        NodeType = "type"
 	NodeTypeStruct      NodeType = "struct"
@@ -26,6 +27,8 @@ const (
 
 	NodeTypeVariableDecl NodeType = "variable_decl"
 
-	NodeTypeElement        NodeType = "element"
-	NodeTypeElementRawText NodeType = "element_raw_text"
+	NodeTypeElement            NodeType = "element"
+	NodeTypeElementRawText     NodeType = "element_raw_text"
+	NodeTypeElementAttribute   NodeType = "element_attribute"
+	NodeTypeElementDynamicText NodeType = "element_dynamic_text"
 )

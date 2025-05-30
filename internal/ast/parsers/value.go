@@ -9,14 +9,14 @@ import (
 	"github.com/nubogo/nubo/internal/lexer"
 )
 
-func ValueParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
+func ValueParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
 	if *inx >= len(tokens) {
 		return nil, newErr(ErrUnexpectedToken, "unexpected end of input")
 	}
 
 	token := tokens[*inx]
 	if token.Type == lexer.TokenLessThan && *inx+1 < len(tokens) && tokens[*inx+1].Type == lexer.TokenIdentifier {
-		return HTMLParser(ctx, tokens, inx)
+		return HTMLParser(ctx, sn, tokens, inx)
 	}
 
 	node := &astnode.Node{
@@ -69,7 +69,7 @@ loop:
 				}
 				body = append(body, value)
 			} else {
-				value, err = singleValueParser(ctx, tokens, inx, token)
+				value, err = singleValueParser(ctx, sn, tokens, inx, token)
 				if err != nil {
 					return nil, err
 				}
@@ -98,7 +98,7 @@ loop:
 	return node, nil
 }
 
-func singleValueParser(ctx context.Context, tokens []*lexer.Token, inx *int, token *lexer.Token) (*astnode.Node, error) {
+func singleValueParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer.Token, inx *int, token *lexer.Token) (*astnode.Node, error) {
 	switch token.Type {
 	default:
 		return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("expected value, got '%v'", token.Value), token.Debug)
@@ -166,7 +166,7 @@ func singleValueParser(ctx context.Context, tokens []*lexer.Token, inx *int, tok
 			tkn := tokens[*inx]
 			if tkn.Type == lexer.TokenOpenParen {
 				*inx = firstInx
-				return fnCallParser(ctx, tokens, inx)
+				return fnCallParser(ctx, sn, tokens, inx)
 			}
 			*inx--
 		}
@@ -185,7 +185,7 @@ func isBinaryOperator(typ lexer.TokenType) bool {
 	default:
 		return false
 	case lexer.TokenPlus, lexer.TokenMinus, lexer.TokenAsterisk,
-		lexer.TokenPower, lexer.TokenSlash, lexer.TokenPercent,
+		lexer.TokenPower, lexer.TokenSlash, lexer.TokenPercent, lexer.TokenIn,
 
 		lexer.TokenEqual, lexer.TokenNotEqual,
 		lexer.TokenLessThan, lexer.TokenLessEqual,

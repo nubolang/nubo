@@ -72,6 +72,7 @@ const (
 	TokenGreaterThan  TokenType = ">"
 	TokenGreaterEqual TokenType = ">="
 	TokenQuestion     TokenType = "?"
+	TokenIn           TokenType = "in"
 
 	// Logical
 	TokenAnd TokenType = "&&"
@@ -117,6 +118,8 @@ func Keywords() []TokenType {
 		TokenReturn,
 
 		TokenNil,
+
+		TokenIn,
 	}
 }
 

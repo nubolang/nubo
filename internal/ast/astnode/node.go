@@ -1,6 +1,8 @@
 package astnode
 
 import (
+	"slices"
+
 	"github.com/nubogo/nubo/internal/debug"
 )
 
@@ -28,4 +30,8 @@ type AppendFlags []string
 
 func (a *AppendFlags) Append(flags ...string) {
 	*a = append(*a, flags...)
+}
+
+func (a *AppendFlags) Contains(flag string) bool {
+	return slices.Contains(*a, flag)
 }

@@ -15,6 +15,7 @@ import (
 type Ast struct {
 	ctx         context.Context
 	nodeTimeout time.Duration
+	lx          *lexer.Lexer
 }
 
 func New(ctx context.Context, nodeTimeout ...time.Duration) *Ast {
@@ -26,6 +27,7 @@ func New(ctx context.Context, nodeTimeout ...time.Duration) *Ast {
 	return &Ast{
 		ctx:         ctx,
 		nodeTimeout: nt,
+		lx:          lexer.New("<htmlattr-parser>"),
 	}
 }
 
@@ -77,19 +79,25 @@ func (a *Ast) handleToken(tokens []*lexer.Token, inx *int) (*astnode.Node, error
 		}
 		return node, nil
 	case lexer.TokenFn:
-		node, err := parsers.FnParser(a.ctx, tokens, inx, New(a.ctx, time.Second*5))
+		node, err := parsers.FnParser(a.ctx, tokens, inx, New(a.ctx, a.nodeTimeout))
 		if err != nil {
 			return nil, err
 		}
 		return node, nil
 	case lexer.TokenIdentifier:
-		node, err := parsers.IdentifierParser(a.ctx, tokens, inx)
+		node, err := parsers.IdentifierParser(a.ctx, a, tokens, inx)
 		if err != nil {
 			return nil, err
 		}
 		return node, nil
 	case lexer.TokenConst, lexer.TokenLet:
-		node, err := parsers.VariableParser(a.ctx, tokens, inx)
+		node, err := parsers.VariableParser(a.ctx, a, tokens, inx)
+		if err != nil {
+			return nil, err
+		}
+		return node, nil
+	case lexer.TokenReturn:
+		node, err := parsers.ReturnParser(a.ctx, a, tokens, inx)
 		if err != nil {
 			return nil, err
 		}

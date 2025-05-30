@@ -180,7 +180,7 @@ func fnArgumentParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*as
 	}
 
 	if token.Type != lexer.TokenCloseParen {
-		return nil, false, newErr(ErrUnexpectedToken, "expected close parenthesis", token.Debug)
+		return nil, false, newErr(ErrUnexpectedToken, fmt.Sprintf("expected close parenthesis, got %s", token.Type), token.Debug)
 	}
 
 	return node, true, nil
