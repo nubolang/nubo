@@ -10,14 +10,17 @@ import (
 type Interpreter struct {
 	currentFile string
 
-	mu      sync.RWMutex
 	objects map[uint32]*entry
+	imports map[string]*Interpreter
+
+	mu sync.RWMutex
 }
 
 func New(currentFile string) *Interpreter {
 	return &Interpreter{
 		currentFile: currentFile,
 		objects:     make(map[uint32]*entry),
+		imports:     make(map[string]*Interpreter),
 	}
 }
 

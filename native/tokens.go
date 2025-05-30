@@ -1,0 +1,38 @@
+package native
+
+import (
+	"context"
+	"os"
+	"path/filepath"
+	"time"
+
+	"github.com/nubogo/nubo/internal/ast"
+	"github.com/nubogo/nubo/internal/ast/astnode"
+	"github.com/nubogo/nubo/internal/lexer"
+)
+
+func NodesFromFile(path string) ([]*astnode.Node, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	lx := lexer.New(filepath.Base(path))
+	tokens, err := lx.Parse(file)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	parser := ast.New(ctx, time.Second*5)
+
+	nodes, err := parser.Parse(tokens)
+	if err != nil {
+		return nil, err
+	}
+
+	return nodes, nil
+}

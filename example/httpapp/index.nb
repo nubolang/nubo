@@ -12,3 +12,10 @@ server {
 
     return nubo.App(client.App(clicks))
 }
+
+/*
+
+Nubo will create a custom endpoint for itself
+called /_nubo.json and /_nubo.socket (for websockets).
+
+*/

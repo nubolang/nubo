@@ -4,7 +4,7 @@ import "github.com/nubogo/nubo/language"
 
 type Arg struct {
 	Name     string
-	Type     language.ObjectType
+	Type     language.ObjectComplexType
 	Optional bool
 	Default  any
 }

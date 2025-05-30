@@ -23,16 +23,16 @@ func (i *Char) ID() string {
 	return fmt.Sprintf("%p", i)
 }
 
-func (i *Char) Type() ObjectType {
+func (i *Char) Type() ObjectComplexType {
 	return TypeChar
 }
 
 func (i *Char) Inspect() string {
-	return fmt.Sprintf("<Object(Char @ %s)>", strconv.Quote(i.String()))
+	return fmt.Sprintf("<Object(char @ %s)>", strconv.Quote(i.String()))
 }
 
 func (i *Char) TypeString() string {
-	return "<Object(Char)>"
+	return "<Object(char)>"
 }
 
 func (i *Char) String() string {

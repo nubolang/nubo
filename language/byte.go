@@ -23,16 +23,16 @@ func (i *Byte) ID() string {
 	return fmt.Sprintf("%p", i)
 }
 
-func (i *Byte) Type() ObjectType {
+func (i *Byte) Type() ObjectComplexType {
 	return TypeByte
 }
 
 func (i *Byte) Inspect() string {
-	return fmt.Sprintf("<Object(Byte @ %s)>", hex.Dump([]byte{i.Data}))
+	return fmt.Sprintf("<Object(byte @ %s)>", hex.Dump([]byte{i.Data}))
 }
 
 func (i *Byte) TypeString() string {
-	return "<Object(Byte)>"
+	return "<Object(byte)>"
 }
 
 func (i *Byte) String() string {

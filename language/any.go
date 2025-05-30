@@ -22,12 +22,12 @@ func (i *Any) ID() string {
 	return fmt.Sprintf("%p", i)
 }
 
-func (i *Any) Type() ObjectType {
+func (i *Any) Type() ObjectComplexType {
 	return i.Data.Type()
 }
 
 func (i *Any) Inspect() string {
-	return fmt.Sprintf("<Object(Any => %s)>", i.Data.Inspect())
+	return fmt.Sprintf("<Object(any => %s)>", i.Data.Inspect())
 }
 
 func (i *Any) TypeString() string {

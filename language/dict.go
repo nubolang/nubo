@@ -9,15 +9,15 @@ import (
 
 type Dict struct {
 	Data      map[any]Object
-	KeyType   ObjectType
-	ValueType ObjectType
+	KeyType   ObjectComplexType
+	ValueType ObjectComplexType
 	debug     *debug.Debug
 }
 
-func NewDict(keys []Object, values []Object, keyType ObjectType, valueType ObjectType, debug *debug.Debug) (*Dict, error) {
+func NewDict(keys []Object, values []Object, keyType ObjectComplexType, valueType ObjectComplexType, debug *debug.Debug) (*Dict, error) {
 	var m = make(map[any]Object, len(keys))
 	for i, key := range keys {
-		if !key.Type().Hashable() {
+		if !key.Type().Base().Hashable() {
 			return nil, fmt.Errorf("key %s is not hashable", key.Inspect())
 		}
 
@@ -36,16 +36,16 @@ func (i *Dict) ID() string {
 	return fmt.Sprintf("%p", i)
 }
 
-func (i *Dict) Type() ObjectType {
+func (i *Dict) Type() ObjectComplexType {
 	return TypeDict
 }
 
 func (i *Dict) Inspect() string {
-	return fmt.Sprintf("<Object(Dict[%s, %s] @ %s)>", i.KeyType.String(), i.ValueType.String(), i.String())
+	return fmt.Sprintf("<Object(dict[%s, %s] @ %s)>", i.KeyType.String(), i.ValueType.String(), i.String())
 }
 
 func (i *Dict) TypeString() string {
-	return fmt.Sprintf("<Object(Dict[%s, %s])>", i.KeyType.String(), i.ValueType.String())
+	return fmt.Sprintf("<Object(dict[%s, %s])>", i.KeyType.String(), i.ValueType.String())
 }
 
 func (i *Dict) String() string {

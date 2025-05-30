@@ -25,7 +25,7 @@ func (lx *Lexer) Parse(r io.Reader) ([]*Token, error) {
 		return nil, newErr(ErrReadFailed, err.Error())
 	}
 
-	return lx.parse(string(b))
+	return lx.parse(string(b) + "\n")
 }
 
 // parse reads the content of the string and returns the tokens

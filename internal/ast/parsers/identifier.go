@@ -36,8 +36,8 @@ func IdentifierParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*lex
 		return skipSemi(tokens, inx, node), nil
 	case lexer.TokenAssign:
 		node := &astnode.Node{
-			Type:  astnode.NodeTypeAssign,
-			Value: id,
+			Type:    astnode.NodeTypeAssign,
+			Content: id,
 		}
 
 		if err := inxPP(tokens, inx); err != nil {

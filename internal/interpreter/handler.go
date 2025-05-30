@@ -9,8 +9,8 @@ import (
 
 func (i *Interpreter) handleNode(node *astnode.Node) (language.Object, error) {
 	switch node.Type {
-	/*case astnode.NodeTypeImport:
-	return i.handleImport(node)*/
+	case astnode.NodeTypeImport:
+		return nil, i.handleImport(node)
 	case astnode.NodeTypeVariableDecl:
 		return nil, i.handleVariableDecl(node)
 	case astnode.NodeTypeAssign:

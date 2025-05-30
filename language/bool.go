@@ -23,16 +23,16 @@ func (i *Bool) ID() string {
 	return fmt.Sprintf("%p", i)
 }
 
-func (i *Bool) Type() ObjectType {
+func (i *Bool) Type() ObjectComplexType {
 	return TypeBool
 }
 
 func (i *Bool) Inspect() string {
-	return fmt.Sprintf("<Object(Bool @ %s)>", i.String())
+	return fmt.Sprintf("<Object(bool @ %s)>", i.String())
 }
 
 func (i *Bool) TypeString() string {
-	return "<Object(Bool)>"
+	return "<Object(bool)>"
 }
 
 func (i *Bool) String() string {

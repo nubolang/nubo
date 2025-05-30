@@ -19,6 +19,10 @@ func ValueParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer.To
 		return HTMLParser(ctx, sn, tokens, inx)
 	}
 
+	if token.Type == lexer.TokenOpenBracket {
+		return ListParser(ctx, sn, tokens, inx)
+	}
+
 	node := &astnode.Node{
 		Type: astnode.NodeTypeExpression,
 	}

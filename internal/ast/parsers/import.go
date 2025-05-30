@@ -45,7 +45,7 @@ func ImportParser(_ context.Context, tokens []*lexer.Token, inx *int) (*astnode.
 		return nil, newErr(ErrSyntaxError, fmt.Sprintf("expected string, got %s", token.Type), token.Debug)
 	}
 
-	node.Content = token.Value
+	node.Value = token.Value
 
 	return skipSemi(tokens, inx, node), nil
 }

@@ -7,14 +7,14 @@ import (
 )
 
 type FnArg interface {
-	Type() ObjectType
+	Type() ObjectComplexType
 	Name() string
 }
 
 type Function struct {
 	Data       func(args []Object) (Object, error)
 	ArgType    []FnArg
-	ReturnType ObjectType
+	ReturnType ObjectComplexType
 	debug      *debug.Debug
 }
 
@@ -29,7 +29,7 @@ func (i *Function) ID() string {
 	return fmt.Sprintf("%p", i)
 }
 
-func (i *Function) Type() ObjectType {
+func (i *Function) Type() ObjectComplexType {
 	return TypeFunction
 }
 
@@ -38,7 +38,7 @@ func (i *Function) Inspect() string {
 }
 
 func (i *Function) TypeString() string {
-	return "<Object(Function)>"
+	return "<Object(fn)>"
 }
 
 func (i *Function) String() string {

@@ -18,4 +18,5 @@ var (
 	ErrUnknownNode       = fmt.Errorf("Unknown node")
 	ErrImmutableVariable = fmt.Errorf("Variable is immutable")
 	ErrExpression        = fmt.Errorf("Expression error")
+	ErrImportError       = fmt.Errorf("Import error")
 )

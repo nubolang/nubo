@@ -22,32 +22,36 @@ const (
 func (ot ObjectType) String() string {
 	switch ot {
 	case TypeInt:
-		return "Int"
+		return "int"
 	case TypeFloat:
-		return "Float"
+		return "float"
 	case TypeBool:
-		return "Bool"
+		return "bool"
 	case TypeString:
-		return "String"
+		return "string"
 	case TypeChar:
-		return "Char"
+		return "char"
 	case TypeByte:
-		return "Byte"
+		return "byte"
 	case TypeList:
-		return "List"
+		return "list"
 	case TypeDict:
-		return "Dict"
+		return "dict"
 	case TypeStructInstance:
-		return "Struct"
+		return "struct"
 	case TypeFunction:
-		return "Function"
+		return "function"
 	case TypeNil:
-		return "Nil"
+		return "nil"
 	case TypeAny:
-		return "Any"
+		return "any"
 	default:
-		return "Unknown"
+		return "unknown"
 	}
+}
+
+func (ot ObjectType) Base() ObjectType {
+	return ot
 }
 
 func (ot ObjectType) Hashable() bool {
@@ -57,6 +61,11 @@ func (ot ObjectType) Hashable() bool {
 	default:
 		return false
 	}
+}
+
+type ObjectComplexType interface {
+	Base() ObjectType
+	String() string
 }
 
 type Prototype interface {
@@ -70,7 +79,7 @@ type Prototype interface {
 type Object interface {
 	ID() string
 
-	Type() ObjectType
+	Type() ObjectComplexType
 	Inspect() string
 
 	TypeString() string

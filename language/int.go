@@ -23,12 +23,12 @@ func (i *Int) ID() string {
 	return fmt.Sprintf("%p", i)
 }
 
-func (i *Int) Type() ObjectType {
+func (i *Int) Type() ObjectComplexType {
 	return TypeInt
 }
 
 func (i *Int) Inspect() string {
-	return fmt.Sprintf("<Object(Int @ %s)>", i.String())
+	return fmt.Sprintf("<Object(int @ %s)>", i.String())
 }
 
 func (i *Int) TypeString() string {

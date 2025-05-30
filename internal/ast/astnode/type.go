@@ -31,4 +31,6 @@ const (
 	NodeTypeElementRawText     NodeType = "element_raw_text"
 	NodeTypeElementAttribute   NodeType = "element_attribute"
 	NodeTypeElementDynamicText NodeType = "element_dynamic_text"
+
+	NodeTypeList NodeType = "list"
 )
