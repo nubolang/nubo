@@ -19,4 +19,8 @@ var (
 	ErrImmutableVariable = fmt.Errorf("Variable is immutable")
 	ErrExpression        = fmt.Errorf("Expression error")
 	ErrImportError       = fmt.Errorf("Import error")
+	ErrUndefinedVariable = fmt.Errorf("Undefined variable")
+	ErrUnsupported       = fmt.Errorf("Unsupported operation")
+	ErrUndefinedFunction = fmt.Errorf("Undefined function")
+	ErrExpectedFunction  = fmt.Errorf("Expected function")
 )

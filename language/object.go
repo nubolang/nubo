@@ -17,6 +17,7 @@ const (
 	TypeFunction
 	TypeNil
 	TypeAny
+	TypeVoid
 )
 
 func (ot ObjectType) String() string {
@@ -69,9 +70,6 @@ type ObjectComplexType interface {
 }
 
 type Prototype interface {
-	GetMethod(name string) (Object, bool)
-	SetMethod(name string, value Object) error
-
 	GetObject(name string) (Object, bool)
 	SetObject(name string, value Object) error
 }

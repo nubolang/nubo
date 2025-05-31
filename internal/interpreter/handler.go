@@ -15,6 +15,8 @@ func (i *Interpreter) handleNode(node *astnode.Node) (language.Object, error) {
 		return nil, i.handleVariableDecl(node)
 	case astnode.NodeTypeAssign:
 		return nil, i.handleAssignment(node)
+	case astnode.NodeTypeFunctionCall:
+		return i.handleFunctionCall(node)
 	default:
 		return nil, newErr(ErrUnknownNode, fmt.Sprintf("%s", node.Type), node.Debug)
 	}

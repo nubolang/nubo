@@ -1,34 +1,8 @@
-import variables from "./variables.nb"
-import hashed from "@nubo/hashed"
+const name = "Martin"
+println(name, name.length())
 
-// let x = []
-// x[0] = 10 --> means it's a language.Listable which has a method: Push(obj, inx ())
-// but actually it means:
-// x.listable.push(obj) or x.listable.pushTo(obj, index) or x.listable.place(obj, index)
-// and also x.listable.get(index)
+println(name.length)
 
-let myList: []any = [1, 3, [3, [4, [5, [6]]]]]
+println(type(name))
 
-let myDict: dict[string, int] = {
-    key: 2,
-}
-
-struct User {
-    id: int
-    name: string
-    password: hashed.String
-}
-
-struct String {
-    value: string
-}
-
-impl String.prototype {
-    fn __value(this) => this.value
-}
-
-let helloWorld = String{
-    value: "Hello, World!"
-}
-
-print(helloWorld) // tries reading from here -> helloWorld.$prototype.__value()
+println(inspect(type))

@@ -8,14 +8,16 @@ import (
 )
 
 type String struct {
-	Data  string
-	debug *debug.Debug
+	Data      string
+	prototype *StringPrototype
+	debug     *debug.Debug
 }
 
 func NewString(value string, debug *debug.Debug) *String {
 	return &String{
-		Data:  value,
-		debug: debug,
+		Data:      value,
+		prototype: nil,
+		debug:     debug,
 	}
 }
 
@@ -28,11 +30,11 @@ func (i *String) Type() ObjectComplexType {
 }
 
 func (i *String) Inspect() string {
-	return fmt.Sprintf("<Object(String @ %s)>", strconv.Quote(i.String()))
+	return fmt.Sprintf("<Object(string @ %s)>", strconv.Quote(i.String()))
 }
 
 func (i *String) TypeString() string {
-	return "<Object(String)>"
+	return "<Object(string)>"
 }
 
 func (i *String) String() string {
@@ -40,7 +42,10 @@ func (i *String) String() string {
 }
 
 func (i *String) GetPrototype() Prototype {
-	return nil
+	if i.prototype == nil {
+		i.prototype = NewStringPrototype(i)
+	}
+	return i.prototype
 }
 
 func (i *String) Value() any {

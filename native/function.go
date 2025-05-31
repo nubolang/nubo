@@ -1,30 +1,34 @@
 package native
 
-import "github.com/nubogo/nubo/language"
+import (
+	"fmt"
 
-type Arg struct {
-	Name     string
-	Type     language.ObjectComplexType
-	Optional bool
-	Default  any
-}
+	"github.com/nubogo/nubo/internal/debug"
+	"github.com/nubogo/nubo/language"
+)
 
 type FnCtx struct {
-	typedArgs    []Arg
+	typedArgs    []language.FnArg
 	providedArgs []language.Object
 }
 
-func (ctx FnCtx) Get(name string) language.Object {
+type FunctionWrapper func(ctx FnCtx) (language.Object, error)
+
+func (ctx FnCtx) Get(name string) (language.Object, error) {
 	for i, arg := range ctx.typedArgs {
-		if arg.Name == name {
-			return ctx.providedArgs[i]
+		if arg.Name() == name {
+			return ctx.providedArgs[i], nil
 		}
 	}
-	return nil
+	return nil, debug.NewError(fmt.Errorf("Undefined function argument"), name, nil)
 }
 
-func NewFunction(typedArgs []Arg, fn func(ctx FnCtx) (language.Object, error)) *language.Function {
-	return language.NewFunction(func(args []language.Object) (language.Object, error) {
+func NewFunction(fn func(args []language.Object) (language.Object, error)) *language.Function {
+	return language.NewFunction(fn, nil)
+}
+
+func NewTypedFunction(typedArgs []language.FnArg, returnType language.ObjectType, fn FunctionWrapper) *language.Function {
+	return language.NewTypedFunction(typedArgs, returnType, func(args []language.Object) (language.Object, error) {
 		ctx := FnCtx{
 			typedArgs:    typedArgs,
 			providedArgs: args,

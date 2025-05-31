@@ -58,8 +58,6 @@ func FromValue(data any) (Object, error) {
 		return NewBool(value, nil), nil
 	case nil:
 		return nil, nil
-	case any:
-		return FromValue(value)
 	}
 	return nil, fmt.Errorf("unsupported type %T", data)
 }

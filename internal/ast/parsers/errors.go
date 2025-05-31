@@ -18,4 +18,5 @@ var (
 	ErrSyntaxError     = fmt.Errorf("Syntax error")
 	ErrUnexpectedToken = fmt.Errorf("Unexpected token")
 	ErrValueError      = fmt.Errorf("Value error")
+	ErrUnexpectedEOF   = fmt.Errorf("Unexpected end of tokens")
 )

@@ -147,7 +147,7 @@ loop:
 			res.WriteString(token.Value)
 
 			if err := inxPP(tokens, inx); err != nil {
-				return "", err
+				break loop
 			}
 
 			token = tokens[*inx]

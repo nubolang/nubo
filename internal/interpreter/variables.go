@@ -74,7 +74,7 @@ func (i *Interpreter) fromExpression(node *astnode.Node) (language.Object, error
 	)
 
 	for _, child := range node.Body {
-		if child.Type == astnode.NodeTypeValue {
+		if child.Type == astnode.NodeTypeValue || child.Type == astnode.NodeTypeFunctionArgument {
 			id := "var_" + fmt.Sprintf("%d", inx)
 			inx++
 			sb.WriteString(id)
@@ -82,14 +82,31 @@ func (i *Interpreter) fromExpression(node *astnode.Node) (language.Object, error
 			if child.IsReference {
 				obj, ok := i.GetObject(child.Value.(string))
 				if !ok {
-					return nil, i.exprEvalHumanError(node.Body, node.Debug)
+					return nil, newErr(ErrUndefinedVariable, child.Value.(string), node.Debug)
 				}
+				if obj.Type() == language.TypeFunction {
+					if len(node.Body) == 1 {
+						return obj, nil
+					} else {
+						return nil, newErr(ErrUnsupported, fmt.Sprintf("cannot operate on type %s", obj.Type()), obj.Debug())
+					}
+				}
+
 				env[id] = obj.Value()
 			} else {
 				env[id] = child.Value
 			}
 		} else if child.Type == astnode.NodeTypeOperator {
 			sb.WriteString(child.Kind)
+		} else if child.Type == astnode.NodeTypeFunctionCall {
+			value, err := i.handleFunctionCall(child)
+			if err != nil {
+				return nil, err
+			}
+			id := "var_" + fmt.Sprintf("%d", inx)
+			inx++
+			sb.WriteString(id)
+			env[id] = value
 		} else {
 			sb.WriteString(child.Value.(string))
 		}

@@ -2,6 +2,7 @@ package parsers
 
 import (
 	"fmt"
+	"runtime"
 	"slices"
 
 	"github.com/nubogo/nubo/internal/ast/astnode"
@@ -24,6 +25,20 @@ func inxPPIf(tokens []*lexer.Token, inx *int) error {
 }
 
 func inxPP(tokens []*lexer.Token, inx *int) error {
+	reportCaller := func() string {
+		pc, file, line, ok := runtime.Caller(2)
+		if !ok {
+			return "unknown caller"
+		}
+		fn := runtime.FuncForPC(pc)
+		return fmt.Sprintf("called from %s (%s:%d)", fn.Name(), file, line)
+	}
+
+	if *inx >= len(tokens) {
+		msg := fmt.Sprintf("unexpected end of input [%s]", reportCaller())
+		return debug.NewError(ErrSyntaxError, msg, tokens[*inx-1].Debug)
+	}
+
 	*inx++
 
 	for *inx < len(tokens) && slices.Contains(white, tokens[*inx].Type) {
@@ -31,7 +46,8 @@ func inxPP(tokens []*lexer.Token, inx *int) error {
 	}
 
 	if *inx >= len(tokens) {
-		return debug.NewError(ErrSyntaxError, "unexpected end of input", tokens[*inx-1].Debug)
+		msg := fmt.Sprintf("unexpected end of input [%s]", reportCaller())
+		return debug.NewError(ErrSyntaxError, msg, tokens[*inx-1].Debug)
 	}
 
 	return nil
@@ -68,4 +84,11 @@ func safeIncr(tokens []*lexer.Token, inx *int) {
 	if *inx < len(tokens) {
 		*inx++
 	}
+}
+
+func tokensPrint(tokens []*lexer.Token) {
+	for _, token := range tokens {
+		fmt.Printf("{[%s : %s]} ", token.Type, token.Value)
+	}
+	fmt.Println()
 }

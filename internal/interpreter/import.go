@@ -38,7 +38,7 @@ func (ir *Interpreter) handleImport(node *astnode.Node) error {
 		return err
 	}
 
-	imported := New(path)
+	imported := New(path, ir.runtime)
 	if _, err := imported.Run(nodes); err != nil {
 		return err
 	}

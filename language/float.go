@@ -32,7 +32,7 @@ func (i *Float) Inspect() string {
 }
 
 func (i *Float) TypeString() string {
-	return "<Object(Float)>"
+	return "<Object(float)>"
 }
 
 func (i *Float) String() string {

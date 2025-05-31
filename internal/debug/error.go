@@ -1,7 +1,6 @@
 package debug
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/fatih/color"
@@ -9,11 +8,13 @@ import (
 
 type DebugErr struct {
 	err   error
+	msg   string
 	debug *Debug
 }
 
 func (de *DebugErr) Error() string {
-	red := color.New(color.FgRed, color.Bold).SprintFunc()
+	redBold := color.New(color.FgRed, color.Bold).SprintFunc()
+	red := color.New(color.FgRed).SprintFunc()
 	blue := color.New(color.FgHiBlue).SprintFunc()
 
 	var location string
@@ -21,7 +22,7 @@ func (de *DebugErr) Error() string {
 		location = fmt.Sprintf(": %s:%s:%s", blue(de.debug.File), blue(de.debug.Line), blue(de.debug.Column))
 	}
 
-	return fmt.Sprintf("%s%s", red(de.err.Error()), location)
+	return fmt.Sprintf("%s %s%s", redBold(de.err.Error()+":"), red(de.msg), location)
 }
 
 func NewError(base error, err string, debug ...*Debug) error {
@@ -31,7 +32,8 @@ func NewError(base error, err string, debug ...*Debug) error {
 	}
 
 	return &DebugErr{
-		err:   fmt.Errorf("%w: %w", base, errors.New(err)),
+		err:   base,
+		msg:   err,
 		debug: d,
 	}
 }

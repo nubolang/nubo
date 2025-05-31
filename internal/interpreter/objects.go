@@ -3,6 +3,7 @@ package interpreter
 import (
 	"fmt"
 	"hash/fnv"
+	"strings"
 
 	"github.com/nubogo/nubo/language"
 )
@@ -21,6 +22,39 @@ func hashKey(key string) uint32 {
 }
 
 func (i *Interpreter) BindObject(name string, value language.Object, mutable bool) error {
+	if strings.Contains(name, ".") {
+		parts := strings.Split(name, ".")
+		i.mu.RLock()
+
+		for j, part := range parts {
+			if imp, ok := i.imports[part]; ok {
+				i.mu.RUnlock()
+				return imp.BindObject(strings.Join(parts[j:], "."), value, mutable)
+			}
+		}
+
+		obj, ok := i.objects[hashKey(parts[0])]
+		i.mu.RUnlock()
+
+		if ok {
+			current := obj.value
+			for _, part := range parts[:len(parts)-1] {
+				prototype := current.GetPrototype()
+				if prototype == nil {
+					return newErr(ErrUndefinedVariable, fmt.Sprintf("Undefined variable %s", name), nil)
+				}
+
+				current, ok = prototype.GetObject(part)
+				if !ok {
+					return newErr(ErrUndefinedVariable, fmt.Sprintf("Undefined variable %s", name), nil)
+				}
+			}
+			return current.GetPrototype().SetObject(parts[len(parts)], value)
+		}
+
+		return newErr(ErrUndefinedVariable, fmt.Sprintf("Undefined variable %s", name), value.Debug())
+	}
+
 	key := hashKey(name)
 	i.mu.RLock()
 	head := i.objects[key]
@@ -46,6 +80,58 @@ func (i *Interpreter) BindObject(name string, value language.Object, mutable boo
 }
 
 func (i *Interpreter) GetObject(name string) (language.Object, bool) {
+	if strings.Contains(name, ".") {
+		parts := strings.Split(name, ".")
+		if len(parts) == 0 {
+			return nil, false
+		}
+
+		i.mu.RLock()
+		for j, part := range parts {
+			if imp, ok := i.imports[part]; ok {
+				i.mu.RUnlock()
+				return imp.GetObject(strings.Join(parts[j:], "."))
+			}
+		}
+
+		obj, ok := i.objects[hashKey(parts[0])]
+		i.mu.RUnlock()
+		if !ok || obj == nil || obj.value == nil {
+			return nil, false
+		}
+
+		if len(parts) == 1 {
+			return obj.value, true
+		}
+
+		current := obj.value
+		for _, part := range parts[1 : len(parts)-1] {
+			if current == nil {
+				return nil, false
+			}
+			prototype := current.GetPrototype()
+			if prototype == nil {
+				return nil, false
+			}
+
+			currentObj, ok := prototype.GetObject(part)
+			if !ok || currentObj == nil {
+				return nil, false
+			}
+			current = currentObj
+		}
+
+		last := parts[len(parts)-1]
+		if current == nil || current.GetPrototype() == nil {
+			return nil, false
+		}
+		return current.GetPrototype().GetObject(last)
+	}
+
+	if obj, ok := i.runtime.GetBuiltin(name); ok {
+		return obj, true
+	}
+
 	key := hashKey(name)
 	i.mu.RLock()
 	head := i.objects[key]

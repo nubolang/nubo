@@ -89,7 +89,7 @@ loop:
 			}
 
 			if err := inxPP(tokens, inx); err != nil {
-				return nil, err
+				break loop
 			}
 		}
 	}
@@ -159,20 +159,24 @@ func singleValueParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*le
 			Value: nil,
 		}, nil
 	case lexer.TokenIdentifier:
-		firstInx := *inx
-
 		id, err := TypeWholeIDParser(ctx, tokens, inx)
 		if err != nil {
 			return nil, err
 		}
 
-		if err := inxPP(tokens, inx); err == nil {
-			tkn := tokens[*inx]
-			if tkn.Type == lexer.TokenOpenParen {
-				*inx = firstInx
-				return fnCallParser(ctx, sn, tokens, inx)
-			}
-			*inx--
+		if err := inxPP(tokens, inx); err != nil {
+			return &astnode.Node{
+				Type:        astnode.NodeTypeValue,
+				Kind:        "IDENTIFIER",
+				Value:       id,
+				IsReference: true,
+			}, nil
+		}
+
+		token := tokens[*inx]
+
+		if token.Type == lexer.TokenOpenParen {
+			return fnCallParser(ctx, sn, id, tokens, inx)
 		}
 
 		return &astnode.Node{

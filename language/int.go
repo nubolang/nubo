@@ -32,7 +32,7 @@ func (i *Int) Inspect() string {
 }
 
 func (i *Int) TypeString() string {
-	return "<Object(Int)>"
+	return "<Object(int)>"
 }
 
 func (i *Int) String() string {
