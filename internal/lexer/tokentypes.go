@@ -14,7 +14,7 @@ const (
 	TokenServer TokenType = "server"
 	TokenClient TokenType = "client"
 
-	TokenPublic  TokenType = "pub"
+	TokenPub     TokenType = "pub"
 	TokenSub     TokenType = "sub"
 	TokenRequest TokenType = "request"
 
@@ -102,7 +102,7 @@ func Keywords() []TokenType {
 		TokenServer,
 		TokenClient,
 
-		TokenPublic,
+		TokenPub,
 		TokenSub,
 		TokenRequest,
 

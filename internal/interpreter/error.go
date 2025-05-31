@@ -23,4 +23,5 @@ var (
 	ErrUnsupported       = fmt.Errorf("Unsupported operation")
 	ErrUndefinedFunction = fmt.Errorf("Undefined function")
 	ErrExpectedFunction  = fmt.Errorf("Expected function")
+	ErrTypeMismatch      = fmt.Errorf("Type mismatch")
 )

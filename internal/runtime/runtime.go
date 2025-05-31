@@ -34,6 +34,10 @@ func (r *Runtime) GetBuiltin(name string) (language.Object, bool) {
 	return obj, ok
 }
 
+func (r *Runtime) GetEventProvider() pubsub.Provider {
+	return r.pubsubProvider
+}
+
 func (r *Runtime) Interpret(file string, nodes []*astnode.Node) (language.Object, error) {
 	r.mu.RLock()
 	if interpreter, ok := r.interpreters[file]; ok {
@@ -44,7 +48,7 @@ func (r *Runtime) Interpret(file string, nodes []*astnode.Node) (language.Object
 
 	r.mu.Lock()
 	interpreter := interpreter.New(file, r)
-	r.interpreters[file] = interpreter
+	r.interpreters[interpreter.ID] = interpreter
 	r.mu.Unlock()
 
 	return interpreter.Run(nodes)

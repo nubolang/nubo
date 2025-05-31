@@ -12,6 +12,24 @@ type FnArg interface {
 	Default() Object
 }
 
+type BasicFnArg struct {
+	TypeVal    ObjectComplexType
+	NameVal    string
+	DefaultVal Object
+}
+
+func (b *BasicFnArg) Type() ObjectComplexType {
+	return b.TypeVal
+}
+
+func (b *BasicFnArg) Name() string {
+	return b.NameVal
+}
+
+func (b *BasicFnArg) Default() Object {
+	return b.DefaultVal
+}
+
 type Function struct {
 	Data       func(args []Object) (Object, error)
 	ArgTypes   []FnArg
@@ -28,23 +46,47 @@ func NewFunction(data func([]Object) (Object, error), debug *debug.Debug) *Funct
 
 func NewTypedFunction(argTypes []FnArg, returnType ObjectComplexType, data func([]Object) (Object, error), debug *debug.Debug) *Function {
 	fn := func(args []Object) (Object, error) {
-		if len(args) != len(argTypes) {
-			return nil, fmt.Errorf("expected %d arguments, got %d", len(argTypes), len(args))
-		}
-
-		for i, arg := range args {
-			if argTypes[i].Type() != TypeAny && arg.Type() != argTypes[i].Type() {
-				return nil, fmt.Errorf("argument %d (%s) expected type %s, got %s", i, argTypes[i].Name(), argTypes[i].Type(), arg.Type())
+		minRequiredArgs := 0
+		for _, arg := range argTypes {
+			if arg.Default() == nil {
+				minRequiredArgs++
 			}
 		}
 
-		value, err := data(args)
+		if len(args) < minRequiredArgs {
+			return nil, fmt.Errorf("expected %d (minimum %d) arguments, got %d", len(argTypes), minRequiredArgs, len(args))
+		}
+
+		provideArgs := make([]Object, len(argTypes))
+		for i, argType := range argTypes {
+			if i < len(args) {
+				arg := args[i]
+				if argType.Type() != TypeAny && arg.Type() != argType.Type() {
+					return nil, fmt.Errorf("argument %d (%s) expected type %s, got %s", i, argType.Name(), argType.Type(), arg.Type())
+				}
+				provideArgs[i] = arg
+			} else {
+				if argType.Default() != nil {
+					provideArgs[i] = argType.Default()
+				} else {
+					return nil, fmt.Errorf("missing required argument %d (%s)", i, argType.Name())
+				}
+			}
+		}
+
+		value, err := data(provideArgs)
 		if err != nil {
 			return nil, err
 		}
 
-		if value.Type() != returnType {
-			return nil, fmt.Errorf("expected return type %s, got %s", returnType.String(), value.Type().String())
+		if value == nil {
+			if returnType != TypeVoid {
+				return nil, fmt.Errorf("expected return type %s, got %s", returnType.String(), TypeVoid.String())
+			}
+		} else {
+			if value.Type() != returnType {
+				return nil, fmt.Errorf("expected return type %s, got %s", returnType.String(), value.Type().String())
+			}
 		}
 
 		return value, nil

@@ -3,6 +3,7 @@ package builtin
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/nubogo/nubo/language"
 	"github.com/nubogo/nubo/native"
@@ -10,9 +11,10 @@ import (
 
 func GetBuiltins() map[string]language.Object {
 	return map[string]language.Object{
-		"println": native.NewFunction(printlnFn),
-		"type":    native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeString, typeFn),
-		"inspect": native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeString, inspectFn),
+		"println":   native.NewFunction(printlnFn),
+		"type":      native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeString, typeFn),
+		"inspect":   native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeString, inspectFn),
+		"keepAlive": native.NewTypedFunction(native.OneArg("ms", language.TypeInt, language.NewInt(0, nil)), language.TypeVoid, keepAliveFn),
 	}
 }
 
@@ -39,4 +41,19 @@ func inspectFn(ctx native.FnCtx) (language.Object, error) {
 		return nil, err
 	}
 	return language.NewString(obj.Inspect(), nil), nil
+}
+
+func keepAliveFn(ctx native.FnCtx) (language.Object, error) {
+	ms, err := ctx.Get("ms")
+	if err != nil {
+		return nil, err
+	}
+
+	value := ms.Value().(int64)
+	if value < 0 {
+		return nil, fmt.Errorf("duration must be non-negative")
+	}
+
+	time.Sleep(time.Duration(value) * time.Millisecond)
+	return nil, nil
 }

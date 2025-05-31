@@ -8,6 +8,7 @@ import (
 
 	"github.com/nubogo/nubo/internal/ast"
 	"github.com/nubogo/nubo/internal/lexer"
+	"github.com/nubogo/nubo/internal/pubsub"
 	"github.com/nubogo/nubo/internal/runtime"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
@@ -99,7 +100,9 @@ func execRun(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	ex := runtime.New(nil)
+	eventProvider := pubsub.NewDefaultProvider()
+
+	ex := runtime.New(eventProvider)
 	if _, err := ex.Interpret(filePath, syntaxTree); err != nil {
 		cmd.PrintErrln(err)
 		return

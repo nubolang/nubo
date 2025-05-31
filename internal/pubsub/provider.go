@@ -82,11 +82,11 @@ func (p *DefaultProvider) startQueueDispatcher(topic string, queue chan Transpor
 	}
 }
 
-func (p *DefaultProvider) Subscribe(topic string, handler func(TransportData)) error {
+func (p *DefaultProvider) Subscribe(topic string, handler func(TransportData)) (UnsubscribeFunc, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if p.closed {
-		return errors.New("provider closed")
+		return nil, errors.New("provider closed")
 	}
 	ch := make(chan TransportData, 10)
 	p.subs[topic] = append(p.subs[topic], ch)
@@ -96,30 +96,22 @@ func (p *DefaultProvider) Subscribe(topic string, handler func(TransportData)) e
 			handler(msg)
 		}
 	}()
-	return nil
-}
 
-func (p *DefaultProvider) Unsubscribe(topic string, handlerCh chan TransportData) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	chans := p.subs[topic]
-	for i, ch := range chans {
-		if ch == handlerCh {
-			close(ch)
-			p.subs[topic] = slices.Delete(p.subs[topic], i, i+1)
-			break
+	unsub := func() error {
+		p.mu.Lock()
+		defer p.mu.Unlock()
+		subs := p.subs[topic]
+		for i, c := range subs {
+			if c == ch {
+				p.subs[topic] = slices.Delete(subs, i, i+1)
+				close(c)
+				return nil
+			}
 		}
+		return errors.New("channel not found")
 	}
 
-	// Delete the channel if there are no more subscribers
-	if len(p.subs[topic]) == 0 {
-		if queue, ok := p.queues[topic]; ok {
-			close(queue)
-			delete(p.queues, topic)
-		}
-		delete(p.subs, topic)
-	}
+	return unsub, nil
 }
 
 func (p *DefaultProvider) Close() error {

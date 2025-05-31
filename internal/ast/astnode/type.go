@@ -16,6 +16,8 @@ const (
 
 	NodeTypeEvent         NodeType = "event"
 	NodeTypeEventArgument NodeType = "event_argument"
+	NodeTypeSubscribe     NodeType = "subscribe"
+	NodeTypePublish       NodeType = "publish"
 
 	NodeTypeExpression NodeType = "expression"
 	NodeTypeOperator   NodeType = "operator"

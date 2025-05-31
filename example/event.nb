@@ -1,0 +1,13 @@
+event like(id: int)
+
+sub like(id) {
+    println("like event", id)
+}
+
+fn likePublisher(id: int) -> void {
+    println("likePublisher called")
+    pub like(id)
+}
+
+likePublisher(123)
+keepAlive(1)

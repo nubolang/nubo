@@ -26,5 +26,10 @@ func (i *Interpreter) handleFunctionCall(node *astnode.Node) (language.Object, e
 		args[j] = value
 	}
 
-	return fn.(*language.Function).Data(args)
+	okFn, ok := fn.(*language.Function)
+	if !ok {
+		return nil, newErr(ErrExpectedFunction, fmt.Sprintf("got %s", node.Type), node.Debug)
+	}
+
+	return okFn.Data(args)
 }
