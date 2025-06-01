@@ -3,7 +3,7 @@ package language
 import (
 	"fmt"
 
-	"github.com/nubogo/nubo/internal/debug"
+	"github.com/nubolang/nubo/internal/debug"
 )
 
 type FnArg interface {

@@ -3,18 +3,19 @@ package runtime
 import (
 	"sync"
 
-	"github.com/nubogo/nubo/internal/ast/astnode"
-	"github.com/nubogo/nubo/internal/builtin"
-	"github.com/nubogo/nubo/internal/interpreter"
-	"github.com/nubogo/nubo/internal/pubsub"
-	"github.com/nubogo/nubo/language"
+	"github.com/nubolang/nubo/internal/ast/astnode"
+	"github.com/nubolang/nubo/internal/builtin"
+	"github.com/nubolang/nubo/internal/interpreter"
+	"github.com/nubolang/nubo/internal/pubsub"
+	"github.com/nubolang/nubo/language"
 )
 
 type Runtime struct {
 	pubsubProvider pubsub.Provider
 
 	mu           sync.RWMutex
-	interpreters map[string]*interpreter.Interpreter
+	interpreters map[uint]*interpreter.Interpreter
+	iid          uint
 
 	builtins map[string]language.Object
 }
@@ -22,7 +23,7 @@ type Runtime struct {
 func New(pubsubProvider pubsub.Provider) *Runtime {
 	return &Runtime{
 		pubsubProvider: pubsubProvider,
-		interpreters:   make(map[string]*interpreter.Interpreter),
+		interpreters:   make(map[uint]*interpreter.Interpreter),
 		builtins:       builtin.GetBuiltins(),
 	}
 }
@@ -39,17 +40,24 @@ func (r *Runtime) GetEventProvider() pubsub.Provider {
 }
 
 func (r *Runtime) Interpret(file string, nodes []*astnode.Node) (language.Object, error) {
-	r.mu.RLock()
-	if interpreter, ok := r.interpreters[file]; ok {
-		r.mu.RUnlock()
-		return interpreter.Run(nodes)
-	}
-	r.mu.RUnlock()
+	interpreter := interpreter.New(file, r, false)
 
 	r.mu.Lock()
-	interpreter := interpreter.New(file, r)
 	r.interpreters[interpreter.ID] = interpreter
 	r.mu.Unlock()
 
 	return interpreter.Run(nodes)
+}
+
+func (r *Runtime) NewID() uint {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.iid++
+	return r.iid
+}
+
+func (r *Runtime) RemoveInterpreter(id uint) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	delete(r.interpreters, id)
 }

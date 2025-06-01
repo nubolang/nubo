@@ -3,8 +3,8 @@ package ast
 import (
 	"strings"
 
-	"github.com/nubogo/nubo/internal/ast/astnode"
-	"github.com/nubogo/nubo/internal/ast/parsers"
+	"github.com/nubolang/nubo/internal/ast/astnode"
+	"github.com/nubolang/nubo/internal/ast/parsers"
 )
 
 func (a *Ast) ParseHTMLAttrValue(s string) (*astnode.Node, error) {

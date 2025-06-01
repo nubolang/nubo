@@ -3,8 +3,8 @@ package native
 import (
 	"fmt"
 
-	"github.com/nubogo/nubo/internal/debug"
-	"github.com/nubogo/nubo/language"
+	"github.com/nubolang/nubo/internal/debug"
+	"github.com/nubolang/nubo/language"
 )
 
 type FnCtx struct {

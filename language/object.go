@@ -1,6 +1,6 @@
 package language
 
-import "github.com/nubogo/nubo/internal/debug"
+import "github.com/nubolang/nubo/internal/debug"
 
 type ObjectType int
 

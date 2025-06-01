@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/nubogo/nubo/internal/debug"
+	"github.com/nubolang/nubo/internal/debug"
 )
 
 type Char struct {
@@ -43,7 +43,7 @@ func (i *Char) GetPrototype() Prototype {
 	return nil
 }
 
-func (i *Char) Value() rune {
+func (i *Char) Value() any {
 	return i.Data
 }
 
@@ -51,6 +51,6 @@ func (i *Char) Debug() *debug.Debug {
 	return i.debug
 }
 
-func (i *Char) Clone() *Char {
+func (i *Char) Clone() Object {
 	return NewChar(i.Data, i.debug)
 }

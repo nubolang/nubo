@@ -1,8 +1,0 @@
-const name = "Martin"
-println(name, name.length())
-
-println(name.length)
-
-println(type(name))
-
-println(inspect(type))

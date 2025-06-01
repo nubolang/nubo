@@ -1,6 +1,6 @@
 package native
 
-import "github.com/nubogo/nubo/language"
+import "github.com/nubolang/nubo/language"
 
 type Arg struct {
 	NameValue    string

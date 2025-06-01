@@ -5,8 +5,8 @@ import (
 	"strconv"
 
 	"github.com/fatih/color"
-	"github.com/nubogo/nubo/cmd/nubo/logger"
-	"github.com/nubogo/nubo/version"
+	"github.com/nubolang/nubo/cmd/nubo/logger"
+	"github.com/nubolang/nubo/version"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )

@@ -1,0 +1,8 @@
+// @nubo/element.nubo
+struct Element {
+    element: string
+    selfClosing: bool
+    attributes: dict[string, any]
+    value: string
+    children: []Element
+}

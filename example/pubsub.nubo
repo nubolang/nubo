@@ -1,0 +1,5 @@
+import events from "./events"
+
+pub events.like(int("123"))
+
+keepAlive(10)

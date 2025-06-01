@@ -3,7 +3,7 @@ package parsers
 import (
 	"fmt"
 
-	"github.com/nubogo/nubo/internal/debug"
+	"github.com/nubolang/nubo/internal/debug"
 )
 
 func newErr(base error, err string, d ...*debug.Debug) error {
@@ -19,4 +19,5 @@ var (
 	ErrUnexpectedToken = fmt.Errorf("Unexpected token")
 	ErrValueError      = fmt.Errorf("Value error")
 	ErrUnexpectedEOF   = fmt.Errorf("Unexpected end of tokens")
+	ErrInvalidEventID  = fmt.Errorf("Invalid event ID")
 )

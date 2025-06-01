@@ -3,9 +3,10 @@ package parsers
 import (
 	"context"
 	"fmt"
+	"strings"
 
-	"github.com/nubogo/nubo/internal/ast/astnode"
-	"github.com/nubogo/nubo/internal/lexer"
+	"github.com/nubolang/nubo/internal/ast/astnode"
+	"github.com/nubolang/nubo/internal/lexer"
 )
 
 func SubParser(ctx context.Context, p interface {
@@ -23,6 +24,10 @@ func SubParser(ctx context.Context, p interface {
 
 	if err := inxPP(tokens, inx); err != nil {
 		return nil, err
+	}
+
+	if strings.Count(id, ".") > 1 {
+		return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("expected 1 dot, got %d", strings.Count(id, ".")), tokens[*inx].Debug)
 	}
 
 	node, err := fnCallParser(ctx, p, id, tokens, inx)

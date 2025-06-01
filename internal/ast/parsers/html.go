@@ -6,8 +6,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/nubogo/nubo/internal/ast/astnode"
-	"github.com/nubogo/nubo/internal/lexer"
+	"github.com/nubolang/nubo/internal/ast/astnode"
+	"github.com/nubolang/nubo/internal/lexer"
 )
 
 type HTMLAttrValueParser interface {
@@ -57,8 +57,6 @@ func HTMLParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer.Tok
 			}
 
 			tok := tokens[*inx]
-
-			tok = tokens[*inx]
 
 			if tok.Type == lexer.TokenClosingStartTag && *inx+2 < len(tokens) {
 				*inx++
@@ -255,18 +253,46 @@ loop:
 				node.Kind = "TEXT"
 			}
 
-			if inx >= len(tokens) {
+			if inx >= len(tokens) || token.Type != lexer.TokenIdentifier {
 				return nil, newErr(ErrUnexpectedToken, "expected attribute name", token.Debug)
 			}
 
-			node.Content = token.Value
+			start := inx
+			var parts []string
+			expectIdent := true
 
-			inx++
+			for inx < len(tokens) {
+				tok := tokens[inx]
+
+				if expectIdent && tok.Type != lexer.TokenIdentifier {
+					break
+				}
+				if !expectIdent && tok.Type != lexer.TokenMinus && tok.Type != lexer.TokenColon {
+					break
+				}
+
+				parts = append(parts, tok.Value)
+				expectIdent = !expectIdent
+				inx++
+			}
+
+			if len(parts) == 0 || expectIdent {
+				return nil, newErr(ErrUnexpectedToken, "invalid attribute name", tokens[start].Debug)
+			}
+
+			node.Content = strings.Join(parts, "")
+
 			if inx >= len(tokens) {
-				break loop
+				nodes = append(nodes, node)
+				continue loop
 			}
 
 			token = tokens[inx]
+			if token.Type == lexer.TokenIdentifier || token.Type == lexer.TokenColon {
+				nodes = append(nodes, node)
+				continue loop
+			}
+
 			if token.Type != lexer.TokenAssign {
 				return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("expected '=', got '%s'", token.Value), token.Debug)
 			}

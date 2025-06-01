@@ -3,15 +3,16 @@ package interpreter
 import (
 	"sync"
 
-	"github.com/google/uuid"
-	"github.com/nubogo/nubo/internal/ast/astnode"
-	"github.com/nubogo/nubo/internal/pubsub"
-	"github.com/nubogo/nubo/language"
+	"github.com/nubolang/nubo/internal/ast/astnode"
+	"github.com/nubolang/nubo/internal/pubsub"
+	"github.com/nubolang/nubo/language"
 )
 
 type Runtime interface {
 	GetBuiltin(name string) (language.Object, bool)
 	GetEventProvider() pubsub.Provider
+	NewID() uint
+	RemoveInterpreter(id uint)
 }
 
 type Scope int
@@ -23,8 +24,9 @@ const (
 )
 
 type Interpreter struct {
-	ID          string
+	ID          uint
 	currentFile string
+	dependent   bool
 
 	scope  Scope
 	parent *Interpreter
@@ -37,11 +39,12 @@ type Interpreter struct {
 	mu sync.RWMutex
 }
 
-func New(currentFile string, runtime Runtime) *Interpreter {
+func New(currentFile string, runtime Runtime, dependent bool) *Interpreter {
 	return &Interpreter{
-		ID:          uuid.NewString(),
+		ID:          runtime.NewID(),
 		currentFile: currentFile,
 		scope:       ScopeGlobal,
+		dependent:   dependent,
 		runtime:     runtime,
 		objects:     make(map[uint32]*entry),
 		imports:     make(map[string]*Interpreter),
@@ -62,11 +65,7 @@ func NewWithParent(parent *Interpreter, scope Scope) *Interpreter {
 }
 
 func (i *Interpreter) Run(nodes []*astnode.Node) (language.Object, error) {
-	defer func() {
-		for _, unsub := range i.unsub {
-			unsub()
-		}
-	}()
+	defer i.Detach()
 
 	for _, node := range nodes {
 		obj, err := i.handleNode(node)
@@ -79,4 +78,28 @@ func (i *Interpreter) Run(nodes []*astnode.Node) (language.Object, error) {
 	}
 
 	return nil, nil
+}
+
+func (i *Interpreter) Detach() {
+	if i.dependent {
+		return
+	}
+	i.MustDetach()
+}
+
+func (i *Interpreter) MustDetach() {
+	i.mu.Lock()
+	defer i.mu.Unlock()
+
+	for _, unsub := range i.unsub {
+		unsub()
+	}
+
+	if i.scope == ScopeGlobal {
+		i.runtime.RemoveInterpreter(i.ID)
+	}
+
+	for _, child := range i.imports {
+		child.MustDetach()
+	}
 }

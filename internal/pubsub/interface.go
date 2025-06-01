@@ -1,6 +1,6 @@
 package pubsub
 
-import "github.com/nubogo/nubo/language"
+import "github.com/nubolang/nubo/language"
 
 // Event represents a pubsub event.
 type Event struct {
@@ -19,9 +19,11 @@ type UnsubscribeFunc func() error
 // Provider represents a pubsub provider.
 type Provider interface {
 	// Events returns a list of events.
-	Events() []Event
+	Events() []*Event
 	// AddEvent adds a new event to the provider.
-	AddEvent(Event)
+	AddEvent(*Event)
+	// GetEvent returns an event by its ID.
+	GetEvent(id string) *Event
 
 	// Publish publishes a new event to the provider.
 	Publish(topic string, data TransportData) error

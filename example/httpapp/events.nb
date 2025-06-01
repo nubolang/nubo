@@ -1,2 +1,0 @@
-event click();
-event updateClicks(count: int);

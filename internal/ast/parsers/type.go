@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/nubogo/nubo/internal/ast/astnode"
-	"github.com/nubogo/nubo/internal/lexer"
+	"github.com/nubolang/nubo/internal/ast/astnode"
+	"github.com/nubolang/nubo/internal/lexer"
 )
 
 func TypeParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {

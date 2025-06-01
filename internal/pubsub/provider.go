@@ -8,7 +8,7 @@ import (
 
 type DefaultProvider struct {
 	mu     sync.RWMutex
-	events []Event
+	events []*Event
 	subs   map[string][]chan TransportData
 	queues map[string]chan TransportData
 	closed bool
@@ -21,13 +21,24 @@ func NewDefaultProvider() *DefaultProvider {
 	}
 }
 
-func (p *DefaultProvider) Events() []Event {
+func (p *DefaultProvider) Events() []*Event {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 	return slices.Clone(p.events)
 }
 
-func (p *DefaultProvider) AddEvent(e Event) {
+func (p *DefaultProvider) GetEvent(id string) *Event {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	for _, event := range p.events {
+		if event.ID == id {
+			return event
+		}
+	}
+	return nil
+}
+
+func (p *DefaultProvider) AddEvent(e *Event) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.events = append(p.events, e)

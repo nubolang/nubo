@@ -1,4 +1,0 @@
-fn main(ctx: nubo.Ctx) {
-    user = (10 * 5);
-    x = 15 * 5 - (2*2) ** 2;
-}

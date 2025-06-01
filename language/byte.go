@@ -4,7 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/nubogo/nubo/internal/debug"
+	"github.com/nubolang/nubo/internal/debug"
 )
 
 type Byte struct {
@@ -43,7 +43,7 @@ func (i *Byte) GetPrototype() Prototype {
 	return nil
 }
 
-func (i *Byte) Value() byte {
+func (i *Byte) Value() any {
 	return i.Data
 }
 
@@ -51,6 +51,6 @@ func (i *Byte) Debug() *debug.Debug {
 	return i.debug
 }
 
-func (i *Byte) Clone() *Byte {
+func (i *Byte) Clone() Object {
 	return NewByte(i.Data, i.debug)
 }

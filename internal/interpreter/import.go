@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/nubogo/nubo/internal/ast/astnode"
-	"github.com/nubogo/nubo/native"
+	"github.com/nubolang/nubo/internal/ast/astnode"
+	"github.com/nubolang/nubo/native"
 )
 
 func (ir *Interpreter) handleImport(node *astnode.Node) error {
@@ -33,12 +33,16 @@ func (ir *Interpreter) handleImport(node *astnode.Node) error {
 		path = filepath.Clean(path)
 	}
 
+	if filepath.Ext(path) == "" {
+		path += ".nubo"
+	}
+
 	nodes, err := native.NodesFromFile(path)
 	if err != nil {
 		return err
 	}
 
-	imported := New(path, ir.runtime)
+	imported := New(path, ir.runtime, true)
 	if _, err := imported.Run(nodes); err != nil {
 		return err
 	}

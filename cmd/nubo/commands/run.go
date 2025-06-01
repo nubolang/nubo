@@ -6,20 +6,19 @@ import (
 	"os"
 	"time"
 
-	"github.com/nubogo/nubo/internal/ast"
-	"github.com/nubogo/nubo/internal/lexer"
-	"github.com/nubogo/nubo/internal/pubsub"
-	"github.com/nubogo/nubo/internal/runtime"
+	"github.com/nubolang/nubo/internal/ast"
+	"github.com/nubolang/nubo/internal/lexer"
+	"github.com/nubolang/nubo/internal/pubsub"
+	"github.com/nubolang/nubo/internal/runtime"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
 
 // runCmd represents the run command
 var runCmd = &cobra.Command{
-	Use:     "run <file.fl>",
-	Aliases: []string{"r", "exec"},
-	Short:   "Interpret and execute Flare (.fl) files",
-	Run:     execRun,
+	Use:   "run <file.nubo>",
+	Short: "Interpret and execute Nubo files",
+	Run:   execRun,
 }
 
 func init() {

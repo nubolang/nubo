@@ -4,7 +4,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/nubogo/nubo/internal/debug"
+	"github.com/nubolang/nubo/internal/debug"
 )
 
 type Lexer struct {

@@ -4,20 +4,25 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/nubogo/nubo/internal/ast/astnode"
-	"github.com/nubogo/nubo/internal/pubsub"
-	"github.com/nubogo/nubo/language"
+	"github.com/nubolang/nubo/internal/ast/astnode"
+	"github.com/nubolang/nubo/internal/debug"
+	"github.com/nubolang/nubo/internal/pubsub"
+	"github.com/nubolang/nubo/language"
 )
 
 func (i *Interpreter) handleEventDecl(node *astnode.Node) (language.Object, error) {
-	name := node.Content
-	eventProvider := i.runtime.GetEventProvider()
-	event := pubsub.Event{
-		ID:   fmt.Sprintf("%s_%s", i.ID, name),
-		Args: make([]language.FnArg, len(node.Children)),
+	name, iid, err := i.getEventByName(node.Content, node.Debug)
+	if err != nil {
+		return nil, err
 	}
 
-	for j, child := range node.Children {
+	eventProvider := i.runtime.GetEventProvider()
+	event := &pubsub.Event{
+		ID:   fmt.Sprintf("%d_%s", iid, name),
+		Args: make([]language.FnArg, len(node.Args)),
+	}
+
+	for j, child := range node.Args {
 		typ, err := i.stringToType(child.ValueType.Content)
 		if err != nil {
 			return nil, err
@@ -35,10 +40,14 @@ func (i *Interpreter) handleEventDecl(node *astnode.Node) (language.Object, erro
 }
 
 func (i *Interpreter) handleSubscribe(node *astnode.Node) (language.Object, error) {
-	name := node.Content
+	name, iid, err := i.getEventByName(node.Content, node.Debug)
+	if err != nil {
+		return nil, err
+	}
+
 	eventProvider := i.runtime.GetEventProvider()
 
-	unsub, err := eventProvider.Subscribe(fmt.Sprintf("%s_%s", i.ID, name), func(td pubsub.TransportData) {
+	unsub, err := eventProvider.Subscribe(fmt.Sprintf("%d_%s", iid, name), func(td pubsub.TransportData) {
 		ir := NewWithParent(i, ScopeFunction)
 
 		for i, arg := range node.Args {
@@ -63,8 +72,18 @@ func (i *Interpreter) handleSubscribe(node *astnode.Node) (language.Object, erro
 }
 
 func (i *Interpreter) handlePublish(node *astnode.Node) (language.Object, error) {
-	name := node.Content
+	name, iid, err := i.getEventByName(node.Content, node.Debug)
+	if err != nil {
+		return nil, err
+	}
+	eventID := fmt.Sprintf("%d_%s", iid, name)
+
 	eventProvider := i.runtime.GetEventProvider()
+	event := eventProvider.GetEvent(eventID)
+
+	if len(event.Args) != len(node.Args) {
+		return nil, newErr(ErrTypeMismatch, fmt.Sprintf("argument count mismatch: expected %d, got %d", len(event.Args), len(node.Args)), node.Debug)
+	}
 
 	args := make(pubsub.TransportData, len(node.Args))
 	for j, arg := range node.Args {
@@ -72,10 +91,38 @@ func (i *Interpreter) handlePublish(node *astnode.Node) (language.Object, error)
 		if err != nil {
 			return nil, err
 		}
+
+		if !language.TypeCheck(event.Args[j].Type(), value.Type()) {
+			return nil, newErr(ErrTypeMismatch, fmt.Sprintf("type mismatch: expected %s, got %s", event.Args[j].Type(), value.Type()), node.Debug)
+		}
 		args[j] = value
 	}
 
-	err := eventProvider.Publish(fmt.Sprintf("%s_%s", i.ID, name), args)
+	err = eventProvider.Publish(eventID, args)
 
 	return nil, err
+}
+
+func (i *Interpreter) getEventByName(name string, d *debug.Debug) (string, uint, error) {
+	var iid = i.ID
+
+	if strings.Contains(name, ".") {
+		parts := strings.Split(name, ".")
+		if len(parts) != 2 {
+			return "", 0, newErr(ErrUnsupported, fmt.Sprintf("invalid event name: %s", name), d)
+		}
+		imported := parts[0]
+		name = parts[1]
+
+		i.mu.RLock()
+		ir, ok := i.imports[imported]
+		if !ok {
+			i.mu.RUnlock()
+			return "", 0, newErr(ErrUnsupported, fmt.Sprintf("import not found: %s", imported), d)
+		}
+		iid = ir.ID
+		i.mu.RUnlock()
+	}
+
+	return name, iid, nil
 }

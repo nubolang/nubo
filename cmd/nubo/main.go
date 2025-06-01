@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/nubogo/nubo/cmd/nubo/commands"
+	"github.com/nubolang/nubo/cmd/nubo/commands"
 	"go.uber.org/zap"
 )
 

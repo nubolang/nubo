@@ -1,0 +1,7 @@
+event like(id: int)
+
+sub like(id) {
+    println(<div :likeID="id" :ok>
+        <p>ID is: {id}</p>
+    </div>)
+}

@@ -3,7 +3,7 @@ package lexer
 import (
 	"fmt"
 
-	"github.com/nubogo/nubo/internal/debug"
+	"github.com/nubolang/nubo/internal/debug"
 )
 
 func newErr(base error, err string, d ...*debug.Debug) error {

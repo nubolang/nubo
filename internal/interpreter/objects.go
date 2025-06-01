@@ -5,7 +5,7 @@ import (
 	"hash/fnv"
 	"strings"
 
-	"github.com/nubogo/nubo/language"
+	"github.com/nubolang/nubo/language"
 )
 
 type entry struct {

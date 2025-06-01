@@ -1,6 +1,6 @@
 package lexer
 
-import "github.com/nubogo/nubo/internal/debug"
+import "github.com/nubolang/nubo/internal/debug"
 
 type Token struct {
 	// TokenType is the type of the token

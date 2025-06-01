@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nubogo/nubo/internal/ast/astnode"
-	"github.com/nubogo/nubo/internal/ast/parsers"
-	"github.com/nubogo/nubo/internal/debug"
-	"github.com/nubogo/nubo/internal/lexer"
+	"github.com/nubolang/nubo/internal/ast/astnode"
+	"github.com/nubolang/nubo/internal/ast/parsers"
+	"github.com/nubolang/nubo/internal/debug"
+	"github.com/nubolang/nubo/internal/lexer"
 )
 
 type Ast struct {

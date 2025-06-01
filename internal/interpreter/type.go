@@ -3,7 +3,7 @@ package interpreter
 import (
 	"fmt"
 
-	"github.com/nubogo/nubo/language"
+	"github.com/nubolang/nubo/language"
 )
 
 func (i *Interpreter) stringToType(s string) (language.ObjectComplexType, error) {

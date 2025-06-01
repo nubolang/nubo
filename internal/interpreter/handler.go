@@ -3,8 +3,8 @@ package interpreter
 import (
 	"fmt"
 
-	"github.com/nubogo/nubo/internal/ast/astnode"
-	"github.com/nubogo/nubo/language"
+	"github.com/nubolang/nubo/internal/ast/astnode"
+	"github.com/nubolang/nubo/language"
 )
 
 func (i *Interpreter) handleNode(node *astnode.Node) (language.Object, error) {

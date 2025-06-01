@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/nubogo/nubo/internal/ast/astnode"
-	"github.com/nubogo/nubo/internal/lexer"
+	"github.com/nubolang/nubo/internal/ast/astnode"
+	"github.com/nubolang/nubo/internal/lexer"
 )
 
 func fnCallParser(ctx context.Context, attrParser HTMLAttrValueParser, id string, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
@@ -78,8 +78,9 @@ loop:
 			}
 
 			currentTokens = append(currentTokens, token)
-			if err := inxPP(tokens, inx); err != nil {
-				break loop
+			*inx++
+			if *inx >= len(tokens) {
+				return nil, newErr(ErrUnexpectedEOF, "unexpected end of file", token.Debug)
 			}
 		}
 	}

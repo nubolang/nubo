@@ -1,7 +1,7 @@
 package interpreter
 
 import (
-	"github.com/nubogo/nubo/language"
+	"github.com/nubolang/nubo/language"
 )
 
 // ComplexVariable represents a variable that is outside of the current interpreter. (For example: otherFile.otherVariable)

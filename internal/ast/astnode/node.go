@@ -3,7 +3,7 @@ package astnode
 import (
 	"slices"
 
-	"github.com/nubogo/nubo/internal/debug"
+	"github.com/nubolang/nubo/internal/debug"
 )
 
 type Node struct {

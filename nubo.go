@@ -3,7 +3,7 @@ package nubo
 import (
 	"fmt"
 
-	"github.com/nubogo/nubo/version"
+	"github.com/nubolang/nubo/version"
 )
 
 type Nubo struct{}

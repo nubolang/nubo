@@ -7,9 +7,10 @@ import (
 	"strings"
 
 	"github.com/expr-lang/expr"
-	"github.com/nubogo/nubo/internal/ast/astnode"
-	"github.com/nubogo/nubo/internal/debug"
-	"github.com/nubogo/nubo/language"
+	"github.com/nubolang/nubo/internal/ast/astnode"
+	"github.com/nubolang/nubo/internal/debug"
+	"github.com/nubolang/nubo/language"
+	"github.com/stoewer/go-strcase"
 	"go.uber.org/zap"
 )
 
@@ -67,6 +68,10 @@ func (i *Interpreter) handleAssignment(node *astnode.Node) error {
 }
 
 func (i *Interpreter) fromExpression(node *astnode.Node) (language.Object, error) {
+	if node.Type == astnode.NodeTypeElement {
+		return i.fromElement(node)
+	}
+
 	var (
 		sb  strings.Builder
 		env = make(map[string]any)
@@ -153,21 +158,33 @@ func (i *Interpreter) fromElement(node *astnode.Node) (language.Object, error) {
 	sb.WriteRune('<')
 	sb.WriteString(node.Content)
 	for _, arg := range node.Args {
+		sb.WriteRune(' ')
+		sb.WriteString(strcase.KebabCase(arg.Content))
+
 		if arg.Kind == "DYNAMIC" {
-			sb.WriteRune(' ')
-			sb.WriteString(arg.Content)
 			sb.WriteRune('=')
-			nodeValue := arg.Value.(*astnode.Node)
-			value, err := i.fromExpression(nodeValue)
-			if err != nil {
-				return nil, err
+			var valueString string
+
+			if arg.Value != nil {
+				nodeValue := arg.Value.(*astnode.Node)
+				value, err := i.fromExpression(nodeValue)
+				if err != nil {
+					return nil, err
+				}
+				valueString = value.String()
 			}
-			sb.WriteString(strconv.Quote(html.EscapeString(value.String())))
+
+			sb.WriteString(strconv.Quote(html.EscapeString(valueString)))
 		} else if arg.Kind == "TEXT" {
-			sb.WriteRune(' ')
-			sb.WriteString(arg.Content)
 			sb.WriteRune('=')
-			sb.WriteString(strconv.Quote(html.EscapeString(arg.Value.(string))))
+
+			var valueString string
+
+			if arg.Value != nil {
+				valueString = arg.Value.(string)
+			}
+
+			sb.WriteString(strconv.Quote(html.EscapeString(valueString)))
 		}
 	}
 
