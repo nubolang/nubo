@@ -87,13 +87,13 @@ func (i *Interpreter) GetObject(name string) (language.Object, bool) {
 		}
 
 		i.mu.RLock()
-		for j, part := range parts {
-			if imp, ok := i.imports[part]; ok {
-				i.mu.RUnlock()
-				return imp.GetObject(strings.Join(parts[j:], "."))
-			}
+		imp, ok := i.imports[parts[0]]
+		i.mu.RUnlock()
+		if ok {
+			return imp.GetObject(strings.Join(parts[1:], "."))
 		}
 
+		i.mu.RLock()
 		obj, ok := i.objects[hashKey(parts[0])]
 		i.mu.RUnlock()
 		if !ok || obj == nil || obj.value == nil {

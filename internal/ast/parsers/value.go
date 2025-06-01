@@ -24,7 +24,8 @@ func ValueParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer.To
 	}
 
 	node := &astnode.Node{
-		Type: astnode.NodeTypeExpression,
+		Type:  astnode.NodeTypeExpression,
+		Debug: token.Debug,
 	}
 
 	var (
@@ -176,7 +177,12 @@ func singleValueParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*le
 		token := tokens[*inx]
 
 		if token.Type == lexer.TokenOpenParen {
-			return fnCallParser(ctx, sn, id, tokens, inx)
+			n, err := fnCallParser(ctx, sn, id, tokens, inx)
+			if err != nil {
+				return nil, err
+			}
+			*inx--
+			return n, nil
 		}
 
 		return &astnode.Node{

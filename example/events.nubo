@@ -1,7 +1,7 @@
-event like(id: int)
+event like(id: int, ch: char)
 
-sub like(id) {
-    println(<div :likeID="id" :ok>
+sub like(id, ch) {
+    println(<div :likeID="id" :ok :ch="ch">
         <p>ID is: {id}</p>
     </div>)
 }

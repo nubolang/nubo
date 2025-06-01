@@ -1,0 +1,6 @@
+import io from "@std/io"
+
+let name = io.read("Enter your name: ")
+println("Hello, " + name + "!")
+
+println(io)

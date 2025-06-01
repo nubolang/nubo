@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/nubolang/nubo/internal/ast/astnode"
+	"github.com/nubolang/nubo/internal/packages"
 	"github.com/nubolang/nubo/native"
 )
 
@@ -23,6 +24,11 @@ func (ir *Interpreter) handleImport(node *astnode.Node) error {
 	ir.mu.RUnlock()
 
 	fileName := node.Value.(string)
+
+	obj, ok := packages.ImportPackage(fileName)
+	if ok {
+		return ir.BindObject(node.Content, obj, false)
+	}
 
 	var path string
 	if filepath.IsAbs(fileName) {

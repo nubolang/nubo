@@ -2,23 +2,26 @@ package language
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/nubolang/nubo/internal/debug"
 )
 
 type StructField struct {
-	Name  string
-	Type  ObjectComplexType
-	Value Object
+	Name string
+	Type ObjectComplexType
 }
 
 type Struct struct {
-	Data  []StructField
-	debug *debug.Debug
+	Name      string
+	Data      []StructField
+	prototype *StructPrototype
+	debug     *debug.Debug
 }
 
-func NewStruct(fields []StructField, debug *debug.Debug) *Struct {
+func NewStruct(name string, fields []StructField, debug *debug.Debug) *Struct {
 	return &Struct{
+		Name:  name,
 		Data:  fields,
 		debug: debug,
 	}
@@ -41,11 +44,19 @@ func (i *Struct) TypeString() string {
 }
 
 func (i *Struct) String() string {
-	return "struct string"
+	var itemsString []string
+	for name, item := range i.GetPrototype().Objects() {
+		itemsString = append(itemsString, name+": "+item.String())
+	}
+
+	return fmt.Sprintf("%s{objects=[%s]}", i.Name, strings.Join(itemsString, ", "))
 }
 
 func (i *Struct) GetPrototype() Prototype {
-	return nil
+	if i.prototype == nil {
+		i.prototype = NewStructPrototype(i)
+	}
+	return i.prototype
 }
 
 func (i *Struct) Value() any {
@@ -57,5 +68,5 @@ func (i *Struct) Debug() *debug.Debug {
 }
 
 func (i *Struct) Clone() Object {
-	return NewStruct(i.Data, i.debug)
+	return NewStruct(i.Name, i.Data, i.debug)
 }

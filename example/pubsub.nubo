@@ -1,5 +1,10 @@
 import events from "./events"
 
-pub events.like(int("123"))
+let ch = char("a")
+
+println(type(ch))
+println(ch, string(ch))
+
+pub events.like(int("123"), ch)
 
 keepAlive(10)

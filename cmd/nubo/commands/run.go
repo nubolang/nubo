@@ -2,7 +2,6 @@ package commands
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"time"
 
@@ -39,8 +38,6 @@ func execRun(cmd *cobra.Command, args []string) {
 
 	filePath := args[0]
 	dev := os.Getenv("NUBO_DEV") == "true"
-
-	fmt.Println("Running file:", filePath)
 
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		cmd.PrintErrln("File does not exist")

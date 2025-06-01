@@ -19,7 +19,7 @@ func (i *Interpreter) handleFunctionCall(node *astnode.Node) (language.Object, e
 
 	var args = make([]language.Object, len(node.Args))
 	for j, arg := range node.Args {
-		value, err := i.fromExpression(arg)
+		value, err := i.evaluateExpression(arg)
 		if err != nil {
 			return nil, err
 		}

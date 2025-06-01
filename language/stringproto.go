@@ -172,3 +172,9 @@ func (s *StringPrototype) SetObject(name string, value Object) error {
 	s.data[name] = value
 	return nil
 }
+
+func (s *StringPrototype) Objects() map[string]Object {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.data
+}

@@ -70,6 +70,7 @@ type ObjectComplexType interface {
 }
 
 type Prototype interface {
+	Objects() map[string]Object
 	GetObject(name string) (Object, bool)
 	SetObject(name string, value Object) error
 }

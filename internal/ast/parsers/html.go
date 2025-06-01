@@ -267,7 +267,7 @@ loop:
 				if expectIdent && tok.Type != lexer.TokenIdentifier {
 					break
 				}
-				if !expectIdent && tok.Type != lexer.TokenMinus && tok.Type != lexer.TokenColon {
+				if !expectIdent && tok.Type != lexer.TokenMinus {
 					break
 				}
 
