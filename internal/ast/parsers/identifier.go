@@ -23,7 +23,8 @@ func IdentifierParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*lex
 	switch token.Type {
 	case lexer.TokenIncrement, lexer.TokenDecrement:
 		node := &astnode.Node{
-			Value: id,
+			Content: id,
+			Debug:   token.Debug,
 		}
 		if token.Type == lexer.TokenIncrement {
 			node.Type = astnode.NodeTypeIncrement

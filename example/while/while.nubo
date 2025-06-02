@@ -1,6 +1,7 @@
 let i = 0
 
-while i != 10 {
-    println(i + 1)
-    i = i + 1
+while i < 10 {
+	println(i)
+	i++ // the ++ (increment) operator fires the int object prototype 'increment' method
+	// i.increment() does the same as i++, same with i.decrement() or i--
 }

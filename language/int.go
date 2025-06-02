@@ -9,6 +9,7 @@ import (
 
 type Int struct {
 	Data  int64
+	proto *IntPrototype
 	debug *debug.Debug
 }
 
@@ -40,7 +41,10 @@ func (i *Int) String() string {
 }
 
 func (i *Int) GetPrototype() Prototype {
-	return nil
+	if i.proto == nil {
+		i.proto = NewIntPrototype(i)
+	}
+	return i.proto
 }
 
 func (i *Int) Value() any {

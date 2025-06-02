@@ -24,6 +24,33 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 		inx = 0
 	)
 
+	if node.Type == astnode.NodeTypeList {
+		var (
+			typ  language.ObjectComplexType
+			list = make([]language.Object, len(node.Children))
+		)
+
+		for j, child := range node.Children {
+			obj, err := i.evaluateExpression(child)
+			if err != nil {
+				return nil, err
+			}
+			list[j] = obj
+
+			if typ == nil {
+				typ = obj.Type()
+			} else if typ != obj.Type() {
+				typ = language.TypeAny
+			}
+		}
+
+		if typ == nil {
+			typ = language.TypeAny
+		}
+
+		return language.NewList(list, typ, node.Debug), nil
+	}
+
 	for _, child := range node.Body {
 		if child.Type == astnode.NodeTypeValue || child.Type == astnode.NodeTypeFunctionArgument {
 			id := "var_" + fmt.Sprintf("%d", inx)
@@ -35,7 +62,7 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 				if !ok {
 					return nil, newErr(ErrUndefinedVariable, child.Value.(string), node.Debug)
 				}
-				if obj.Type() == language.TypeFunction || obj.Type() == language.TypeStructInstance || obj.Type() == language.TypeList {
+				if isNotEvaluable(obj.Type().Base()) {
 					if len(node.Body) == 1 {
 						return obj, nil
 					} else {
@@ -55,7 +82,7 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 				return nil, err
 			}
 
-			if value.Type() == language.TypeFunction || value.Type() == language.TypeStructInstance || value.Type() == language.TypeList {
+			if isNotEvaluable(value.Type().Base()) {
 				if len(node.Body) == 1 {
 					return value, nil
 				} else {
@@ -86,6 +113,10 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 	}
 
 	return language.FromValue(output, node.Debug)
+}
+
+func isNotEvaluable(typ language.ObjectType) bool {
+	return typ == language.TypeFunction || typ == language.TypeStructInstance || typ == language.TypeList
 }
 
 func (i *Interpreter) evaluateElement(node *astnode.Node) (language.Object, error) {
