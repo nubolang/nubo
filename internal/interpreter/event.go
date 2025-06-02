@@ -48,7 +48,7 @@ func (i *Interpreter) handleSubscribe(node *astnode.Node) (language.Object, erro
 	eventProvider := i.runtime.GetEventProvider()
 
 	unsub, err := eventProvider.Subscribe(fmt.Sprintf("%d_%s", iid, name), func(td pubsub.TransportData) {
-		ir := NewWithParent(i, ScopeFunction)
+		ir := NewWithParent(i, ScopeBlock)
 
 		for i, arg := range node.Args {
 			if len(arg.Body) != 1 {

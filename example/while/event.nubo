@@ -1,0 +1,12 @@
+event end()
+
+let loop = true
+
+sub end() {
+	println("end() received")
+	loop = false
+}
+
+while loop {
+	pub end()
+}

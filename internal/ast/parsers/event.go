@@ -44,7 +44,9 @@ loop:
 			if err != nil {
 				return nil, err
 			}
-			args = append(args, arg)
+			if arg != nil {
+				args = append(args, arg)
+			}
 			if last {
 				break loop
 			}
@@ -62,6 +64,10 @@ func eventArgumentParser(ctx context.Context, tokens []*lexer.Token, inx *int) (
 	}
 
 	token := tokens[*inx]
+	if token.Type == lexer.TokenCloseParen {
+		return nil, true, nil
+	}
+
 	if token.Type != lexer.TokenIdentifier {
 		return nil, false, newErr(ErrUnexpectedToken, fmt.Sprintf("expected identifier, got %s", token.Type), token.Debug)
 	}
