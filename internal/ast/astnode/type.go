@@ -35,4 +35,6 @@ const (
 	NodeTypeElementDynamicText NodeType = "element_dynamic_text"
 
 	NodeTypeList NodeType = "list"
+
+	NodeTypeWhile = "while"
 )

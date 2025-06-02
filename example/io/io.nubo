@@ -1,0 +1,5 @@
+import io from "@std/io"
+
+const file = io.open("input.txt", "utf-8")
+
+println(file.readLine().trim().split())

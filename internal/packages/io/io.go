@@ -12,6 +12,10 @@ func NewIO() language.Object {
 	proto := instance.GetPrototype()
 
 	proto.SetObject("read", native.NewTypedFunction(native.OneArg("text", language.TypeString, language.NewString("", nil)), language.TypeString, readFn))
+	proto.SetObject("open", native.NewTypedFunction([]language.FnArg{
+		&language.BasicFnArg{TypeVal: language.TypeString, NameVal: "file"},
+		&language.BasicFnArg{TypeVal: language.TypeString, NameVal: "encoding", DefaultVal: language.NewString("utf-8", nil)},
+	}, language.TypeStructInstance, openFn))
 
 	return instance
 }

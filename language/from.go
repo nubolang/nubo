@@ -1,8 +1,17 @@
 package language
 
-import "fmt"
+import (
+	"fmt"
 
-func FromValue(data any) (Object, error) {
+	"github.com/nubolang/nubo/internal/debug"
+)
+
+func FromValue(data any, dg ...*debug.Debug) (Object, error) {
+	var dbg *debug.Debug
+	if len(dg) > 0 {
+		dbg = dg[0]
+	}
+
 	switch value := data.(type) {
 	case Object:
 		return value, nil
@@ -26,7 +35,7 @@ func FromValue(data any) (Object, error) {
 			vals = append(vals, val)
 		}
 
-		return NewDict(keys, vals, TypeAny, TypeAny, nil)
+		return NewDict(keys, vals, TypeAny, TypeAny, dbg)
 	case []any:
 		var li = make([]Object, len(value))
 		for i, val := range value {
@@ -37,25 +46,25 @@ func FromValue(data any) (Object, error) {
 
 			li[i] = value
 		}
-		return NewList(li, TypeAny, nil), nil
+		return NewList(li, TypeAny, dbg), nil
 	case int:
-		return NewInt(int64(value), nil), nil
+		return NewInt(int64(value), dbg), nil
 	case int8:
-		return NewInt(int64(value), nil), nil
+		return NewInt(int64(value), dbg), nil
 	case int16:
-		return NewInt(int64(value), nil), nil
+		return NewInt(int64(value), dbg), nil
 	case int32:
-		return NewInt(int64(value), nil), nil
+		return NewInt(int64(value), dbg), nil
 	case int64:
-		return NewInt(value, nil), nil
+		return NewInt(value, dbg), nil
 	case float32:
-		return NewFloat(float64(value), nil), nil
+		return NewFloat(float64(value), dbg), nil
 	case float64:
-		return NewFloat(value, nil), nil
+		return NewFloat(value, dbg), nil
 	case string:
-		return NewString(value, nil), nil
+		return NewString(value, dbg), nil
 	case bool:
-		return NewBool(value, nil), nil
+		return NewBool(value, dbg), nil
 	case nil:
 		return nil, nil
 	}

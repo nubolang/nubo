@@ -73,7 +73,7 @@ loop:
 					Kind: token.Value,
 				}
 				body = append(body, value)
-			} else {
+			} else if token.Type != lexer.TokenWhiteSpace {
 				value, err = singleValueParser(ctx, sn, tokens, inx, token)
 				if err != nil {
 					return nil, err
@@ -89,7 +89,8 @@ loop:
 				*inx = last
 			}
 
-			if err := inxPP(tokens, inx); err != nil {
+			*inx++
+			if *inx >= len(tokens) {
 				break loop
 			}
 		}
@@ -165,6 +166,8 @@ func singleValueParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*le
 			return nil, err
 		}
 
+		last := *inx
+
 		if err := inxPP(tokens, inx); err != nil {
 			return &astnode.Node{
 				Type:        astnode.NodeTypeValue,
@@ -184,6 +187,8 @@ func singleValueParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*le
 			*inx--
 			return n, nil
 		}
+
+		*inx = last
 
 		return &astnode.Node{
 			Type:        astnode.NodeTypeValue,

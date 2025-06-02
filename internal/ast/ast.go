@@ -114,6 +114,12 @@ func (a *Ast) handleToken(tokens []*lexer.Token, inx *int) (*astnode.Node, error
 			return nil, err
 		}
 		return node, nil
+	case lexer.TokenWhile:
+		node, err := parsers.WhileParser(a.ctx, a, tokens, inx)
+		if err != nil {
+			return nil, err
+		}
+		return node, nil
 	}
 
 	if token.Type == lexer.TokenWhiteSpace || token.Type == lexer.TokenNewLine || token.Type == lexer.TokenSingleLineComment || token.Type == lexer.TokenMultiLineComment {

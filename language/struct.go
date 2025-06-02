@@ -12,6 +12,16 @@ type StructField struct {
 	Type ObjectComplexType
 }
 
+type StructDefinition struct {
+	Name   string
+	Fields []StructField
+	Debug  debug.Debug
+}
+
+/*func (sd *StructDefinition) NewStruct(values map[string]language.Object) *Struct {
+	return &Struct{}
+}*/
+
 type Struct struct {
 	Name      string
 	Data      []StructField

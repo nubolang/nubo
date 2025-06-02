@@ -35,7 +35,7 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 				if !ok {
 					return nil, newErr(ErrUndefinedVariable, child.Value.(string), node.Debug)
 				}
-				if obj.Type() == language.TypeFunction || obj.Type() == language.TypeStructInstance {
+				if obj.Type() == language.TypeFunction || obj.Type() == language.TypeStructInstance || obj.Type() == language.TypeList {
 					if len(node.Body) == 1 {
 						return obj, nil
 					} else {
@@ -54,6 +54,15 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 			if err != nil {
 				return nil, err
 			}
+
+			if value.Type() == language.TypeFunction || value.Type() == language.TypeStructInstance || value.Type() == language.TypeList {
+				if len(node.Body) == 1 {
+					return value, nil
+				} else {
+					return nil, newErr(ErrUnsupported, fmt.Sprintf("cannot operate on type %s", value.Type()), value.Debug())
+				}
+			}
+
 			id := "var_" + fmt.Sprintf("%d", inx)
 			inx++
 			sb.WriteString(id)
@@ -76,7 +85,7 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 		return nil, i.exprEvalHumanError(node.Body, node.Debug)
 	}
 
-	return language.FromValue(output)
+	return language.FromValue(output, node.Debug)
 }
 
 func (i *Interpreter) evaluateElement(node *astnode.Node) (language.Object, error) {

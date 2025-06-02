@@ -24,4 +24,6 @@ var (
 	ErrUndefinedFunction = fmt.Errorf("Undefined function")
 	ErrExpectedFunction  = fmt.Errorf("Expected function")
 	ErrTypeMismatch      = fmt.Errorf("Type mismatch")
+	ErrAst               = fmt.Errorf("Ast error")
+	ErrValueError        = fmt.Errorf("Value error")
 )

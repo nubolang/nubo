@@ -32,9 +32,11 @@ type Interpreter struct {
 	parent *Interpreter
 
 	runtime Runtime
-	objects map[uint32]*entry
-	imports map[string]*Interpreter
 	unsub   []pubsub.UnsubscribeFunc
+
+	imports map[string]*Interpreter
+	objects map[uint32]*entry
+	structs map[string]*language.StructDefinition
 
 	mu sync.RWMutex
 }

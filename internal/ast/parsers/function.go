@@ -89,5 +89,70 @@ loop:
 		return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("expected ')' but got %s", token.Type), token.Debug)
 	}
 
+	if *inx < len(tokens) && tokens[*inx].Type == lexer.TokenDot {
+		if err := inxPP(tokens, inx); err != nil {
+			return nil, err
+		}
+		if tokens[*inx].Type == lexer.TokenIdentifier {
+			node, err := fnChildParser(ctx, attrParser, tokens, inx)
+			if err != nil {
+				return nil, err
+			}
+			fn.Children = append(fn.Children, node)
+			return fn, nil
+		}
+	}
+
+	last := *inx
+	if err := inxPP(tokens, inx); err == nil {
+		if tokens[*inx].Type == lexer.TokenDot {
+			if err := inxPP(tokens, inx); err != nil {
+				return nil, err
+			}
+			if tokens[*inx].Type == lexer.TokenIdentifier {
+				node, err := fnChildParser(ctx, attrParser, tokens, inx)
+				if err != nil {
+					return nil, err
+				}
+				fn.Children = append(fn.Children, node)
+				return fn, nil
+			}
+		}
+	}
+	*inx = last
+
 	return fn, nil
+}
+
+func fnChildParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
+	debug := tokens[*inx].Debug
+	id, err := TypeWholeIDParser(ctx, tokens, inx)
+	if err != nil {
+		return nil, err
+	}
+
+	last := *inx
+	if err := inxPP(tokens, inx); err != nil {
+		*inx = last
+		return &astnode.Node{
+			Type:    astnode.NodeTypeValue,
+			Content: id,
+			Kind:    "IDENTIFIER",
+			Debug:   debug,
+		}, nil
+	}
+
+	token := tokens[*inx]
+
+	switch token.Type {
+	case lexer.TokenOpenParen:
+		return fnCallParser(ctx, sn, id, tokens, inx)
+	}
+
+	return &astnode.Node{
+		Type:    astnode.NodeTypeValue,
+		Content: id,
+		Kind:    "IDENTIFIER",
+		Debug:   debug,
+	}, newErr(ErrUnexpectedToken, fmt.Sprintf("unexpected token %s", token.Value), token.Debug)
 }

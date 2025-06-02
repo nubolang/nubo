@@ -1,25 +1,50 @@
 package nubo
 
 import (
-	"fmt"
+	"context"
+	"io"
+	"strings"
+	"time"
 
+	"github.com/nubolang/nubo/internal/ast"
+	"github.com/nubolang/nubo/internal/lexer"
+	"github.com/nubolang/nubo/internal/pubsub"
+	"github.com/nubolang/nubo/internal/runtime"
+	"github.com/nubolang/nubo/language"
 	"github.com/nubolang/nubo/version"
 )
 
-type Nubo struct{}
+const Version = version.Version
 
-func New() *Nubo {
-	return &Nubo{}
+type Ctx struct {
+	r *runtime.Runtime
 }
 
-func (n *Nubo) Version() string {
-	return version.Version
+func New() *Ctx {
+	return &Ctx{
+		r: runtime.New(pubsub.NewDefaultProvider()),
+	}
 }
 
-func (n *Nubo) String() string {
-	return fmt.Sprintf("Nubo %s", n.Version())
+func (c *Ctx) Exec(r io.Reader) (language.Object, error) {
+	lx := lexer.New("nativeExecute")
+	tokens, err := lx.Parse(r)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Second*5))
+	defer cancel()
+
+	parser := ast.New(ctx, time.Second*5)
+	nodes, err := parser.Parse(tokens)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.r.Interpret("nativeExecute", nodes)
 }
 
-func (n *Nubo) Execute(file string) {
-	// TODO
+func (c *Ctx) ExecString(s string) (language.Object, error) {
+	return c.Exec(strings.NewReader(s))
 }

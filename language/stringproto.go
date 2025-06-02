@@ -105,7 +105,7 @@ func NewStringPrototype(base *String) *StringPrototype {
 		}, nil))
 
 	sp.SetObject("split", NewTypedFunction(
-		[]FnArg{&BasicFnArg{TypeVal: TypeString, NameVal: "sep"}},
+		[]FnArg{&BasicFnArg{TypeVal: TypeString, NameVal: "sep", DefaultVal: NewString(" ", nil)}},
 		TypeList,
 		func(o []Object) (Object, error) {
 			sep := o[0].(*String).Data

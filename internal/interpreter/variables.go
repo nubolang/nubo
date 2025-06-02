@@ -30,7 +30,7 @@ func (i *Interpreter) handleVariableDecl(node *astnode.Node) error {
 
 	zap.L().Info("Variable Declaration", zap.String("variableName", variableName), zap.Any("value", value), zap.Bool("mutable", mutable))
 
-	return i.BindObject(variableName, value, mutable)
+	return i.BindObject(variableName, value, mutable, true)
 }
 
 func (i *Interpreter) handleAssignment(node *astnode.Node) error {
