@@ -3,14 +3,14 @@ package interpreter
 import (
 	"sync"
 
+	"github.com/nubolang/nubo/events"
 	"github.com/nubolang/nubo/internal/ast/astnode"
-	"github.com/nubolang/nubo/internal/pubsub"
 	"github.com/nubolang/nubo/language"
 )
 
 type Runtime interface {
 	GetBuiltin(name string) (language.Object, bool)
-	GetEventProvider() pubsub.Provider
+	GetEventProvider() events.Provider
 	NewID() uint
 	RemoveInterpreter(id uint)
 }
@@ -32,7 +32,7 @@ type Interpreter struct {
 	parent *Interpreter
 
 	runtime Runtime
-	unsub   []pubsub.UnsubscribeFunc
+	unsub   []events.UnsubscribeFunc
 
 	imports map[string]*Interpreter
 	objects map[uint32]*entry
@@ -50,7 +50,7 @@ func New(currentFile string, runtime Runtime, dependent bool) *Interpreter {
 		runtime:     runtime,
 		objects:     make(map[uint32]*entry),
 		imports:     make(map[string]*Interpreter),
-		unsub:       make([]pubsub.UnsubscribeFunc, 0),
+		unsub:       make([]events.UnsubscribeFunc, 0),
 	}
 }
 

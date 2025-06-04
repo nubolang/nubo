@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/nubolang/nubo/events"
 	"github.com/nubolang/nubo/internal/ast/astnode"
 	"github.com/nubolang/nubo/internal/debug"
-	"github.com/nubolang/nubo/internal/pubsub"
 	"github.com/nubolang/nubo/language"
 )
 
@@ -17,7 +17,7 @@ func (i *Interpreter) handleEventDecl(node *astnode.Node) (language.Object, erro
 	}
 
 	eventProvider := i.runtime.GetEventProvider()
-	event := &pubsub.Event{
+	event := &events.Event{
 		ID:   fmt.Sprintf("%d_%s", iid, name),
 		Args: make([]language.FnArg, len(node.Args)),
 	}
@@ -47,7 +47,7 @@ func (i *Interpreter) handleSubscribe(node *astnode.Node) (language.Object, erro
 
 	eventProvider := i.runtime.GetEventProvider()
 
-	unsub, err := eventProvider.Subscribe(fmt.Sprintf("%d_%s", iid, name), func(td pubsub.TransportData) {
+	unsub, err := eventProvider.Subscribe(fmt.Sprintf("%d_%s", iid, name), func(td events.TransportData) {
 		ir := NewWithParent(i, ScopeBlock)
 
 		for i, arg := range node.Args {
@@ -85,7 +85,7 @@ func (i *Interpreter) handlePublish(node *astnode.Node) (language.Object, error)
 		return nil, newErr(ErrTypeMismatch, fmt.Sprintf("argument count mismatch: expected %d, got %d", len(event.Args), len(node.Args)), node.Debug)
 	}
 
-	args := make(pubsub.TransportData, len(node.Args))
+	args := make(events.TransportData, len(node.Args))
 	for j, arg := range node.Args {
 		value, err := i.evaluateExpression(arg)
 		if err != nil {

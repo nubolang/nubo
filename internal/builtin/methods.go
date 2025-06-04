@@ -13,10 +13,10 @@ import (
 
 func GetBuiltins() map[string]language.Object {
 	return map[string]language.Object{
-		"println":   native.NewFunction(printlnFn),
-		"type":      native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeString, typeFn),
-		"inspect":   native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeString, inspectFn),
-		"keepAlive": native.NewTypedFunction(native.OneArg("ms", language.TypeInt, language.NewInt(0, nil)), language.TypeVoid, keepAliveFn),
+		"println": native.NewFunction(printlnFn),
+		"type":    native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeString, typeFn),
+		"inspect": native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeString, inspectFn),
+		"sleep":   native.NewTypedFunction(native.OneArg("ms", language.TypeInt, language.NewInt(0, nil)), language.TypeVoid, sleepFn),
 
 		// Types
 		"string": native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeString, stringFn),
@@ -53,7 +53,7 @@ func inspectFn(ctx native.FnCtx) (language.Object, error) {
 	return language.NewString(obj.Inspect(), nil), nil
 }
 
-func keepAliveFn(ctx native.FnCtx) (language.Object, error) {
+func sleepFn(ctx native.FnCtx) (language.Object, error) {
 	ms, err := ctx.Get("ms")
 	if err != nil {
 		return nil, err

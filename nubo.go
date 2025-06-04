@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nubolang/nubo/events"
 	"github.com/nubolang/nubo/internal/ast"
 	"github.com/nubolang/nubo/internal/lexer"
-	"github.com/nubolang/nubo/internal/pubsub"
 	"github.com/nubolang/nubo/internal/runtime"
 	"github.com/nubolang/nubo/language"
 	"github.com/nubolang/nubo/version"
@@ -20,9 +20,9 @@ type Ctx struct {
 	r *runtime.Runtime
 }
 
-func New() *Ctx {
+func New(provider events.Provider) *Ctx {
 	return &Ctx{
-		r: runtime.New(pubsub.NewDefaultProvider()),
+		r: runtime.New(provider),
 	}
 }
 

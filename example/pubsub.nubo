@@ -7,4 +7,4 @@ println(ch, string(ch))
 
 pub events.like(int("123"), ch)
 
-keepAlive(10)
+sleep(10)

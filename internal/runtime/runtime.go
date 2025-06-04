@@ -3,15 +3,15 @@ package runtime
 import (
 	"sync"
 
+	"github.com/nubolang/nubo/events"
 	"github.com/nubolang/nubo/internal/ast/astnode"
 	"github.com/nubolang/nubo/internal/builtin"
 	"github.com/nubolang/nubo/internal/interpreter"
-	"github.com/nubolang/nubo/internal/pubsub"
 	"github.com/nubolang/nubo/language"
 )
 
 type Runtime struct {
-	pubsubProvider pubsub.Provider
+	pubsubProvider events.Provider
 
 	mu           sync.RWMutex
 	interpreters map[uint]*interpreter.Interpreter
@@ -20,7 +20,7 @@ type Runtime struct {
 	builtins map[string]language.Object
 }
 
-func New(pubsubProvider pubsub.Provider) *Runtime {
+func New(pubsubProvider events.Provider) *Runtime {
 	return &Runtime{
 		pubsubProvider: pubsubProvider,
 		interpreters:   make(map[uint]*interpreter.Interpreter),
@@ -35,7 +35,7 @@ func (r *Runtime) GetBuiltin(name string) (language.Object, bool) {
 	return obj, ok
 }
 
-func (r *Runtime) GetEventProvider() pubsub.Provider {
+func (r *Runtime) GetEventProvider() events.Provider {
 	return r.pubsubProvider
 }
 

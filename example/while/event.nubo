@@ -9,4 +9,5 @@ sub end() {
 
 while loop {
 	pub end()
+	sleep(1)
 }

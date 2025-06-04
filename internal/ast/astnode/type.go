@@ -37,4 +37,6 @@ const (
 	NodeTypeList NodeType = "list"
 
 	NodeTypeWhile = "while"
+	NodeTypeIf    = "if"
+	NodeTypeElse  = "else"
 )

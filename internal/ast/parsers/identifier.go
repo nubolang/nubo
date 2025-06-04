@@ -54,6 +54,8 @@ func IdentifierParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*lex
 		return skipSemi(tokens, inx, node), nil
 	case lexer.TokenOpenParen:
 		return fnCallParser(ctx, sn, id, tokens, inx)
+		/*case lexer.TokenOpenBracket:
+		return arrayAccessParser(ctx, sn, id, tokens, inx)*/
 	}
 
 	return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("unexpected token %s", token.Value), token.Debug)

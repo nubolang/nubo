@@ -5,9 +5,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/nubolang/nubo/events"
 	"github.com/nubolang/nubo/internal/ast"
 	"github.com/nubolang/nubo/internal/lexer"
-	"github.com/nubolang/nubo/internal/pubsub"
 	"github.com/nubolang/nubo/internal/runtime"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
@@ -96,7 +96,7 @@ func execRun(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	eventProvider := pubsub.NewDefaultProvider()
+	eventProvider := events.NewDefaultProvider()
 
 	ex := runtime.New(eventProvider)
 	if _, err := ex.Interpret(filePath, syntaxTree); err != nil {
