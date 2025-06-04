@@ -482,6 +482,19 @@ func (lx *Lexer) parse(s string) ([]*Token, error) {
 					},
 				})
 			}
+		case '#':
+			if pos+1 < len(s) && runes[pos+1] == '{' {
+				parsed = append(parsed, &Token{
+					Type:  TokenUnescapedBrace,
+					Value: "#{",
+					Debug: &debug.Debug{
+						Line:   line,
+						Column: col,
+						File:   lx.file,
+					},
+				})
+				pos++
+			}
 		default:
 			start := pos
 			if isLetter(runes[pos]) {

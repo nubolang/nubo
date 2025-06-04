@@ -33,6 +33,8 @@ func (i *Interpreter) handleNode(node *astnode.Node) (language.Object, error) {
 		return nil, i.handleDecrement(node)
 	case astnode.NodeTypeIf:
 		return i.handleIf(node)
+	case astnode.NodeTypeReturn:
+		return i.handleReturn(node)
 	default:
 		return nil, newErr(ErrUnknownNode, fmt.Sprintf("%s", node.Type), node.Debug)
 	}

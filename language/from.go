@@ -66,7 +66,7 @@ func FromValue(data any, dg ...*debug.Debug) (Object, error) {
 	case bool:
 		return NewBool(value, dbg), nil
 	case nil:
-		return nil, nil
+		return NewNil(), nil
 	}
 	return nil, fmt.Errorf("unsupported type %T", data)
 }

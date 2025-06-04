@@ -2,7 +2,6 @@ package interpreter
 
 import (
 	"fmt"
-	"html"
 	"strconv"
 	"strings"
 
@@ -10,7 +9,6 @@ import (
 	"github.com/nubolang/nubo/internal/ast/astnode"
 	"github.com/nubolang/nubo/internal/debug"
 	"github.com/nubolang/nubo/language"
-	"github.com/stoewer/go-strcase"
 )
 
 func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, error) {
@@ -49,6 +47,10 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 		}
 
 		return language.NewList(list, typ, node.Debug), nil
+	}
+
+	if node.Body == nil {
+		return language.Nil, nil
 	}
 
 	for _, child := range node.Body {
@@ -117,79 +119,6 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 
 func isNotEvaluable(typ language.ObjectType) bool {
 	return typ == language.TypeFunction || typ == language.TypeStructInstance || typ == language.TypeList
-}
-
-func (i *Interpreter) evaluateElement(node *astnode.Node) (language.Object, error) {
-	var (
-		sb strings.Builder
-	)
-
-	sb.WriteRune('<')
-	sb.WriteString(node.Content)
-	for _, arg := range node.Args {
-		sb.WriteRune(' ')
-		sb.WriteString(strcase.KebabCase(arg.Content))
-
-		if arg.Kind == "DYNAMIC" {
-			sb.WriteRune('=')
-			var valueString string
-
-			if arg.Value != nil {
-				nodeValue := arg.Value.(*astnode.Node)
-				value, err := i.evaluateExpression(nodeValue)
-				if err != nil {
-					return nil, err
-				}
-				valueString = value.String()
-			}
-
-			sb.WriteString(strconv.Quote(html.EscapeString(valueString)))
-		} else if arg.Kind == "TEXT" {
-			sb.WriteRune('=')
-
-			var valueString string
-
-			if arg.Value != nil {
-				valueString = arg.Value.(string)
-			}
-
-			sb.WriteString(strconv.Quote(html.EscapeString(valueString)))
-		}
-	}
-
-	if node.Flags.Contains("SELFCLOSING") {
-		if len(node.Args) > 0 {
-			sb.WriteRune(' ')
-		}
-		sb.WriteString("/>")
-		return language.FromValue(sb.String())
-	}
-
-	sb.WriteRune('>')
-	for _, child := range node.Children {
-		switch child.Type {
-		case astnode.NodeTypeElement:
-			childValue, err := i.evaluateElement(child)
-			if err != nil {
-				return nil, err
-			}
-			sb.WriteString(childValue.String())
-		case astnode.NodeTypeElementRawText:
-			sb.WriteString(html.EscapeString(child.Content))
-		case astnode.NodeTypeElementDynamicText:
-			childValue, err := i.evaluateExpression(child.Value.(*astnode.Node))
-			if err != nil {
-				return nil, err
-			}
-			sb.WriteString(html.EscapeString(childValue.String()))
-		}
-	}
-
-	sb.WriteString("</")
-	sb.WriteString(node.Content)
-	sb.WriteString(">")
-
-	return language.NewString(sb.String(), node.Debug), nil
 }
 
 func (i *Interpreter) exprEvalHumanError(children []*astnode.Node, debug *debug.Debug) error {

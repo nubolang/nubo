@@ -83,7 +83,7 @@ func NewTypedFunction(argTypes []FnArg, returnType ObjectComplexType, data func(
 			if returnType != TypeVoid {
 				return nil, fmt.Errorf("expected return type %s, got %s", returnType.String(), TypeVoid.String())
 			}
-		} else {
+		} else if returnType != TypeAny {
 			if value.Type() != returnType {
 				return nil, fmt.Errorf("expected return type %s, got %s", returnType.String(), value.Type().String())
 			}

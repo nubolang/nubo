@@ -41,7 +41,7 @@ func (i *Interpreter) handleFunctionDecl(node *astnode.Node) (language.Object, e
 				return nil, newErr(ErrTypeMismatch, fmt.Sprintf("Expected %s but got %s", arg.Type(), providedArg.Type()), providedArg.Debug())
 			}
 
-			if err := ir.BindObject(arg.Name(), providedArg, false); err != nil {
+			if err := ir.BindObject(arg.Name(), providedArg, false, true); err != nil {
 				return nil, err
 			}
 		}
@@ -49,5 +49,5 @@ func (i *Interpreter) handleFunctionDecl(node *astnode.Node) (language.Object, e
 		return ir.Run(node.Body)
 	}, node.Debug)
 
-	return nil, i.BindObject(node.Content, fn, false)
+	return nil, i.BindObject(node.Content, fn, false, true)
 }

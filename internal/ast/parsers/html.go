@@ -97,11 +97,15 @@ func HTMLParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer.Tok
 					default:
 						tok := tokens[*inx]
 
-						if tok.Type == lexer.TokenOpenBrace {
+						if tok.Type == lexer.TokenOpenBrace || tok.Type == lexer.TokenUnescapedBrace {
+							isUnescaped := tok.Type == lexer.TokenUnescapedBrace
 							if content.Len() > 0 && strings.TrimSpace(content.String()) != "" {
 								text := &astnode.Node{
 									Type:    astnode.NodeTypeElementRawText,
 									Content: content.String(),
+								}
+								if isUnescaped {
+									text.Flags.Append("UNESCAPED")
 								}
 								node.Children = append(node.Children, text)
 								content.Reset()
@@ -110,6 +114,7 @@ func HTMLParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer.Tok
 							var dynamicText strings.Builder
 
 							var braceCount = 0
+
 							for *inx < len(tokens) {
 								select {
 								case <-ctx.Done():
@@ -118,13 +123,16 @@ func HTMLParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer.Tok
 									tok := tokens[*inx]
 
 									dynamicText.WriteString(tok.Value)
-									if tok.Type == lexer.TokenOpenBrace {
+									if tok.Type == lexer.TokenOpenBrace || tok.Type == lexer.TokenUnescapedBrace {
 										braceCount++
 									} else if tok.Type == lexer.TokenCloseBrace {
 										braceCount--
 										if braceCount == 0 {
 											dynamicStr := dynamicText.String()
 											dynamicStr = dynamicStr[1 : len(dynamicStr)-1]
+											if isUnescaped {
+												dynamicStr = dynamicStr[1:]
+											}
 
 											*inx++
 											if dynamicText.Len() > 0 && strings.TrimSpace(dynamicStr) != "" {
@@ -138,6 +146,9 @@ func HTMLParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer.Tok
 													Value: dynamicTextNode,
 												}
 												text.Flags.Append("NODEVALUE")
+												if isUnescaped {
+													text.Flags.Append("UNESCAPED")
+												}
 												node.Children = append(node.Children, text)
 											}
 											continue textloop
