@@ -8,13 +8,14 @@ Nubo is designed to be easy to learn and use for creating interactive web applic
 We believe in simplicity and efficiency. Nubo is designed with `pub` and `sub` keywords for real-time communication. This language does not provide `async` or `await` keywords, as it is designed to be
 as simple as possible. With these built-in keywords, developers can easily `subscribe` to events (even on client-side) and `publish` events to other clients.
 
-Nubo also has built-in support for `HTML` templates. After any expression, developers can pass `HTML` contents without messing with string literals. Here is a short example:
+Nubo also has built-in support for `HTML` templates. After any expression, developers can pass `HTML` contents without messing with string literals. By default, Nubo prevents text from being vulnerable to XSS attacks. When embedding other HTML code inside a component, you should prefix it with `@` so that our parser doesn't escape it.
+Here is a short example:
 
 ```nubo
 let html = <div>Hello, World!</div>
 
 return <body>
-  {html}
+  @{html}
 </body>
 ```
 
