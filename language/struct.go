@@ -9,7 +9,7 @@ import (
 
 type StructField struct {
 	Name string
-	Type ObjectComplexType
+	Type*Type
 }
 
 type StructDefinition struct {
@@ -41,7 +41,7 @@ func (i *Struct) ID() string {
 	return fmt.Sprintf("%p", i)
 }
 
-func (i *Struct) Type() ObjectComplexType {
+func (i *Struct) Type()*Type {
 	return TypeStructInstance
 }
 

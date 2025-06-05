@@ -22,7 +22,7 @@ func (i *Any) ID() string {
 	return fmt.Sprintf("%p", i)
 }
 
-func (i *Any) Type() ObjectComplexType {
+func (i *Any) Type() *Type {
 	return i.Data.Type()
 }
 

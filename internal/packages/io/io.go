@@ -8,7 +8,7 @@ import (
 )
 
 func NewIO() language.Object {
-	instance := language.NewStruct("io", nil, nil)
+	instance := language.NewStruct("@std/io", nil, nil)
 	proto := instance.GetPrototype()
 
 	proto.SetObject("read", native.NewTypedFunction(native.OneArg("text", language.TypeString, language.NewString("", nil)), language.TypeString, readFn))

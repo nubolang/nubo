@@ -5,48 +5,48 @@ import "github.com/nubolang/nubo/internal/debug"
 type ObjectType int
 
 const (
-	TypeInt ObjectType = iota
-	TypeFloat
-	TypeBool
-	TypeString
-	TypeChar
-	TypeByte
-	TypeList
-	TypeDict
-	TypeStructInstance
-	TypeFunction
-	TypeNil
-	TypeAny
-	TypeVoid
+	ObjectTypeInt ObjectType = iota
+	ObjectTypeFloat
+	ObjectTypeBool
+	ObjectTypeString
+	ObjectTypeChar
+	ObjectTypeByte
+	ObjectTypeList
+	ObjectTypeDict
+	ObjectTypeStructInstance
+	ObjectTypeFunction
+	ObjectTypeNil
+	ObjectTypeAny
+	ObjectTypeVoid
 )
 
 func (ot ObjectType) String() string {
 	switch ot {
-	case TypeInt:
+	case ObjectTypeInt:
 		return "int"
-	case TypeFloat:
+	case ObjectTypeFloat:
 		return "float"
-	case TypeBool:
+	case ObjectTypeBool:
 		return "bool"
-	case TypeString:
+	case ObjectTypeString:
 		return "string"
-	case TypeChar:
+	case ObjectTypeChar:
 		return "char"
-	case TypeByte:
+	case ObjectTypeByte:
 		return "byte"
-	case TypeList:
+	case ObjectTypeList:
 		return "list"
-	case TypeDict:
+	case ObjectTypeDict:
 		return "dict"
-	case TypeStructInstance:
+	case ObjectTypeStructInstance:
 		return "struct"
-	case TypeFunction:
+	case ObjectTypeFunction:
 		return "function"
-	case TypeNil:
+	case ObjectTypeNil:
 		return "nil"
-	case TypeAny:
+	case ObjectTypeAny:
 		return "any"
-	case TypeVoid:
+	case ObjectTypeVoid:
 		return "void"
 	default:
 		return "unknown"
@@ -59,24 +59,11 @@ func (ot ObjectType) Base() ObjectType {
 
 func (ot ObjectType) Hashable() bool {
 	switch ot {
-	case TypeInt, TypeFloat, TypeBool, TypeString, TypeChar, TypeByte:
+	case ObjectTypeInt, ObjectTypeFloat, ObjectTypeBool, ObjectTypeString, ObjectTypeChar, ObjectTypeByte:
 		return true
 	default:
 		return false
 	}
-}
-
-func (ot ObjectType) Compare(other ObjectComplexType) bool {
-	if ot != TypeAny && ot != other {
-		return false
-	}
-	return true
-}
-
-type ObjectComplexType interface {
-	Base() ObjectType
-	String() string
-	Compare(other ObjectComplexType) bool
 }
 
 type Prototype interface {
@@ -88,7 +75,7 @@ type Prototype interface {
 type Object interface {
 	ID() string
 
-	Type() ObjectComplexType
+	Type() *Type
 	Inspect() string
 
 	TypeString() string

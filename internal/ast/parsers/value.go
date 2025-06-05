@@ -23,6 +23,10 @@ func ValueParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer.To
 		return ListParser(ctx, sn, tokens, inx)
 	}
 
+	if token.Type == lexer.TokenIdentifier && token.Value == "dict" {
+		return DictParser(ctx, sn, tokens, inx)
+	}
+
 	node := &astnode.Node{
 		Type:  astnode.NodeTypeExpression,
 		Debug: token.Debug,

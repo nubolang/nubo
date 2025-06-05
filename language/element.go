@@ -48,7 +48,7 @@ func (e *Element) ID() string {
 	return fmt.Sprintf("%p", e)
 }
 
-func (e *Element) Type() ObjectComplexType {
+func (e *Element) Type()*Type {
 	return TypeString
 }
 

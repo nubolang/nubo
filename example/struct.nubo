@@ -1,0 +1,10 @@
+struct BcryptPassword {
+    content: string
+}
+
+struct User {
+    name: string
+    age: number
+    email: string
+    password: nubo.BcryptPassword
+}

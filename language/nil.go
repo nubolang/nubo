@@ -21,7 +21,7 @@ func (n *NilObj) ID() string {
 	return fmt.Sprintf("%p", n)
 }
 
-func (n *NilObj) Type() ObjectComplexType {
+func (n *NilObj) Type() *Type {
 	return TypeNil
 }
 

@@ -34,7 +34,9 @@ const (
 	NodeTypeElementAttribute   NodeType = "element_attribute"
 	NodeTypeElementDynamicText NodeType = "element_dynamic_text"
 
-	NodeTypeList NodeType = "list"
+	NodeTypeList      NodeType = "list"
+	NodeTypeDict      NodeType = "dict"
+	NodeTypeDictField NodeType = "dict_field"
 
 	NodeTypeWhile = "while"
 	NodeTypeIf    = "if"

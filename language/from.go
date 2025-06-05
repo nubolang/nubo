@@ -93,7 +93,9 @@ func FromValue(data any, dg ...*debug.Debug) (Object, error) {
 	return nil, fmt.Errorf("unsupported type %T", data)
 }
 
-func ToValue(obj Object) (any, error) {
+func ToValue(obj Object, json ...bool) (any, error) {
+	jsonMode := len(json) > 0 && json[0]
+
 	switch v := obj.(type) {
 	case *Int:
 		return v.Value, nil
@@ -118,6 +120,14 @@ func ToValue(obj Object) (any, error) {
 			out := make(map[string]any)
 			for key, value := range v.Data {
 				out[key.Value().(string)] = value.Value()
+			}
+			return out, nil
+		}
+
+		if jsonMode {
+			out := make(map[string]any)
+			for key, value := range v.Data {
+				out[key.String()] = value.Value()
 			}
 			return out, nil
 		}

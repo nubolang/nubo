@@ -9,7 +9,7 @@ import (
 
 func (i *Interpreter) handleFunctionDecl(node *astnode.Node) (language.Object, error) {
 	var args = make([]language.FnArg, len(node.Args))
-	var returnType language.ObjectComplexType
+	var returnType *language.Type
 
 	if node.ValueType != nil {
 		rt, err := i.stringToType(node.ValueType.Content)
@@ -41,7 +41,7 @@ func (i *Interpreter) handleFunctionDecl(node *astnode.Node) (language.Object, e
 				return nil, newErr(ErrTypeMismatch, fmt.Sprintf("Expected %s but got %s", arg.Type(), providedArg.Type()), providedArg.Debug())
 			}
 
-			if err := ir.BindObject(arg.Name(), providedArg, false, true); err != nil {
+			if err := ir.Declare(arg.Name(), providedArg, arg.Type(), true); err != nil {
 				return nil, err
 			}
 		}
@@ -49,7 +49,7 @@ func (i *Interpreter) handleFunctionDecl(node *astnode.Node) (language.Object, e
 		return ir.Run(node.Body)
 	}, node.Debug)
 
-	return nil, i.BindObject(node.Content, fn, false, true)
+	return nil, i.Declare(node.Content, fn, fn.Type(), false)
 }
 
 func (i *Interpreter) handleFunctionCall(node *astnode.Node) (language.Object, error) {
@@ -58,7 +58,7 @@ func (i *Interpreter) handleFunctionCall(node *astnode.Node) (language.Object, e
 		return nil, newErr(ErrUndefinedFunction, node.Content+"(...)", node.Debug)
 	}
 
-	if fn.Type() != language.TypeFunction {
+	if fn.Type().Base() != language.ObjectTypeFunction {
 		return nil, newErr(ErrExpectedFunction, fmt.Sprintf("got %s", node.Type), node.Debug)
 	}
 
@@ -108,7 +108,7 @@ func (i *Interpreter) getValueFromObjByNode(value language.Object, node *astnode
 		}
 	case astnode.NodeTypeFunctionCall:
 		fn, ok := proto.GetObject(node.Content)
-		if fn.Type() != language.TypeFunction {
+		if fn.Type().Base() != language.ObjectTypeFunction {
 			return nil, newErr(ErrExpectedFunction, fmt.Sprintf("got %s", node.Type), node.Debug)
 		}
 

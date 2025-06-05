@@ -27,7 +27,7 @@ func NewFunction(fn func(args []language.Object) (language.Object, error)) *lang
 	return language.NewFunction(fn, nil)
 }
 
-func NewTypedFunction(typedArgs []language.FnArg, returnType language.ObjectComplexType, fn FunctionWrapper) *language.Function {
+func NewTypedFunction(typedArgs []language.FnArg, returnType *language.Type, fn FunctionWrapper) *language.Function {
 	return language.NewTypedFunction(typedArgs, returnType, func(args []language.Object) (language.Object, error) {
 		ctx := FnCtx{
 			typedArgs:    typedArgs,

@@ -20,7 +20,7 @@ var logLevels = map[string]int{
 }
 
 func NewLog() language.Object {
-	instance := language.NewStruct("log", nil, nil)
+	instance := language.NewStruct("@std/log", nil, nil)
 	proto := instance.GetPrototype()
 
 	proto.SetObject("debug", native.NewFunction(logFn("DEBUG")))

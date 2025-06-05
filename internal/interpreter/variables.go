@@ -21,30 +21,51 @@ func (i *Interpreter) handleVariableDecl(parent *astnode.Node) error {
 		node = parent.Value.(*astnode.Node)
 	}
 
-	if node.Type == astnode.NodeTypeElement {
-		value, err = i.evaluateElement(node)
-	} else {
-		value, err = i.evaluateExpression(node)
-	}
+	var typ = language.TypeAny
 
 	if parent.ValueType != nil {
-		typ, err := i.parseTypeNode(parent.ValueType)
+		typ, err = i.parseTypeNode(parent.ValueType)
+
 		if err != nil {
 			return err
 		}
+	}
 
-		if !typ.Compare(value.Type()) {
-			return newErr(ErrTypeMismatch, fmt.Sprintf("expected %s, got %s", typ.String(), value.Type().String()), parent.Debug)
+	if node.Type == astnode.NodeTypeElement {
+		value, err = i.evaluateElement(node)
+	} else if node.Type == astnode.NodeTypeList {
+		var elType = language.TypeAny
+		if typ.Base() == language.ObjectTypeList {
+			elType = typ.Element
 		}
+		value, err = i.evalList(node, elType)
+	} else if node.Type == astnode.NodeTypeDict {
+		var (
+			keyType   *language.Type
+			valueType *language.Type
+		)
+
+		if typ.Base() == language.ObjectTypeDict {
+			keyType = typ.Key
+			valueType = typ.Element
+		}
+
+		value, err = i.evalDict(node, keyType, valueType)
+	} else {
+		value, err = i.evaluateExpression(node)
 	}
 
 	if err != nil {
 		return err
 	}
 
+	if !typ.Compare(value.Type()) {
+		return newErr(ErrTypeMismatch, fmt.Sprintf("expected %s, got %s", typ.String(), value.Type().String()), parent.Debug)
+	}
+
 	zap.L().Info("Variable Declaration", zap.String("variableName", variableName), zap.Any("value", value), zap.Bool("mutable", mutable))
 
-	return i.BindObject(variableName, value, mutable, true)
+	return i.Declare(variableName, value, typ, mutable)
 }
 
 func (i *Interpreter) handleAssignment(node *astnode.Node) error {
@@ -70,7 +91,7 @@ func (i *Interpreter) handleAssignment(node *astnode.Node) error {
 
 	zap.L().Info("Variable Assignment", zap.String("variableName", variableName), zap.Any("value", value))
 
-	return i.BindObject(variableName, value, false)
+	return i.Assign(variableName, value)
 }
 
 func (i *Interpreter) handleIncrement(node *astnode.Node) error {

@@ -1,93 +1,90 @@
 package language
 
 import (
+	"fmt"
 	"strings"
 )
 
 // Type represents a type in the language.
 type Type struct {
-	BaseType ObjectComplexType
-	Kind     string  // "", "LIST", "DICT"
+	BaseType ObjectType
 	Content  string  // "int", "string", etc. (used for simple types)
 	Key      *Type   // if Kind == "DICT", represents the key type
-	Value    *Type   // if Kind == "DICT", represents the value type
+	Value    *Type   // if Kind == "DICT", represents the value type or if Kind == "FUNCTION", represents the return type
 	Element  *Type   // if Kind == "LIST", represents the element type
 	Args     []*Type // if Kind == "FUNCTION", represents the function argument types
 	Next     *Type   // if it's an union type, represents the next type in the union
 }
+
+var (
+	TypeInt            = &Type{BaseType: ObjectTypeInt, Content: "int"}
+	TypeFloat          = &Type{BaseType: ObjectTypeFloat, Content: "float"}
+	TypeBool           = &Type{BaseType: ObjectTypeBool, Content: "bool"}
+	TypeString         = &Type{BaseType: ObjectTypeString, Content: "string"}
+	TypeChar           = &Type{BaseType: ObjectTypeChar, Content: "char"}
+	TypeByte           = &Type{BaseType: ObjectTypeByte, Content: "byte"}
+	TypeList           = &Type{BaseType: ObjectTypeList, Element: TypeAny}
+	TypeDict           = &Type{BaseType: ObjectTypeDict}
+	TypeStructInstance = &Type{BaseType: ObjectTypeStructInstance}
+	TypeNil            = &Type{BaseType: ObjectTypeNil, Content: "nil"}
+	TypeAny            = &Type{BaseType: ObjectTypeAny, Content: "any"}
+	TypeVoid           = &Type{BaseType: ObjectTypeVoid, Content: "void"}
+)
 
 func (t *Type) Base() ObjectType {
 	return t.BaseType.Base()
 }
 
 func (t *Type) String() string {
-	switch t.Kind {
-	case "LIST":
-		if t.Element != nil {
-			return "List<" + t.Element.String() + ">"
-		}
-		return "List<any>"
-	case "DICT":
-		if t.Key != nil && t.Value != nil {
-			return "Dict<" + t.Key.String() + ", " + t.Value.String() + ">"
-		}
-		return "Dict<any, any>"
-	case "FUNCTION":
-		args := make([]string, len(t.Args))
-		for i, a := range t.Args {
-			args[i] = a.String()
-		}
-		return "Function(" + strings.Join(args, ", ") + ") -> " + t.Value.String()
+	switch t.BaseType {
 	default:
-		if t.Content != "" {
-			return t.Content
-		}
 		return t.BaseType.String()
+	case ObjectTypeFunction:
+		args := make([]string, len(t.Args))
+		for i, arg := range t.Args {
+			args[i] = arg.String()
+		}
+		return fmt.Sprintf("%s(%s) %s", t.BaseType.String(), strings.Join(args, ", "), t.Value.String())
+	case ObjectTypeList:
+		return fmt.Sprintf("[]%s", t.Element.String())
+	case ObjectTypeDict:
+		return fmt.Sprintf("dict[%s, %s]", t.Key.String(), t.Value.String())
+	case ObjectTypeStructInstance:
+		return fmt.Sprintf("%s{}", t.Content)
 	}
 }
 
-func (t *Type) Compare(other ObjectComplexType) bool {
-	if t.Kind == "" {
-		return t.Base().Compare(other)
-	}
-
-	o, ok := other.(*Type)
-	if !ok {
-		return false
-	}
-
-	if t.BaseType != o.BaseType || t.Kind != o.Kind || t.Content != o.Content {
-		return false
-	}
-
-	switch t.Kind {
-	case "LIST":
-		return t.Element != nil && o.Element != nil && t.Element.Compare(o.Element)
-	case "DICT":
-		return t.Key != nil && o.Key != nil && t.Key.Compare(o.Key) &&
-			t.Value != nil && o.Value != nil && t.Value.Compare(o.Value)
-	case "FUNCTION":
-
-		if len(t.Args) != len(o.Args) {
-			return false
-		}
-		for i := range t.Args {
-			if !t.Args[i].Compare(o.Args[i]) {
-				return false
-			}
-		}
-		return true
-	default:
+func (t *Type) Compare(other *Type) bool {
+	if t.BaseType == ObjectTypeAny {
 		return true
 	}
+
+	if other.Base() == ObjectTypeNil {
+		return t.BaseType == ObjectTypeNil || t.BaseType == ObjectTypeList || t.BaseType == ObjectTypeDict || t.BaseType == ObjectTypeStructInstance || t.BaseType == ObjectTypeFunction
+	}
+
+	switch t.BaseType {
+	case ObjectTypeList:
+		return t.Element.String() == TypeAny.String() || t.Element.String() == other.Element.String()
+	case ObjectTypeDict:
+		return t.Key.String() == TypeAny.String() || t.Key.String() == other.Key.String() && t.Value.String() == TypeAny.String() || t.Value.String() == other.Value.String()
+	}
+
+	return t.String() == other.String()
 }
 
-type StructDef struct {
-	Name   string
-	Fields []StructField
-}
+func NewUnionType(types ...*Type) *Type {
+	if len(types) == 0 {
+		return nil
+	}
 
-type StructFieldDef struct {
-	Name string
-	Type *Type
+	head := types[0]
+	current := head
+
+	for _, t := range types[1:] {
+		current.Next = t
+		current = t
+	}
+
+	return head
 }

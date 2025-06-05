@@ -7,18 +7,18 @@ import (
 )
 
 type FnArg interface {
-	Type() ObjectComplexType
+	Type() *Type
 	Name() string
 	Default() Object
 }
 
 type BasicFnArg struct {
-	TypeVal    ObjectComplexType
+	TypeVal    *Type
 	NameVal    string
 	DefaultVal Object
 }
 
-func (b *BasicFnArg) Type() ObjectComplexType {
+func (b *BasicFnArg) Type() *Type {
 	return b.TypeVal
 }
 
@@ -33,7 +33,8 @@ func (b *BasicFnArg) Default() Object {
 type Function struct {
 	Data       func(args []Object) (Object, error)
 	ArgTypes   []FnArg
-	ReturnType ObjectComplexType
+	ReturnType *Type
+	typ        *Type
 	debug      *debug.Debug
 }
 
@@ -41,10 +42,22 @@ func NewFunction(data func([]Object) (Object, error), debug *debug.Debug) *Funct
 	return &Function{
 		Data:  data,
 		debug: debug,
+		typ:   &Type{BaseType: ObjectTypeFunction},
 	}
 }
 
-func NewTypedFunction(argTypes []FnArg, returnType ObjectComplexType, data func([]Object) (Object, error), debug *debug.Debug) *Function {
+func NewTypedFunction(argTypes []FnArg, returnType *Type, data func([]Object) (Object, error), debug *debug.Debug) *Function {
+	args := make([]*Type, len(argTypes))
+	for i, arg := range argTypes {
+		args[i] = arg.Type()
+	}
+
+	typ := &Type{
+		BaseType: ObjectTypeFunction,
+		Value:    returnType,
+		Args:     args,
+	}
+
 	fn := func(args []Object) (Object, error) {
 		minRequiredArgs := 0
 		for _, arg := range argTypes {
@@ -94,6 +107,7 @@ func NewTypedFunction(argTypes []FnArg, returnType ObjectComplexType, data func(
 		Data:       fn,
 		ArgTypes:   argTypes,
 		ReturnType: returnType,
+		typ:        typ,
 		debug:      debug,
 	}
 }
@@ -102,8 +116,8 @@ func (i *Function) ID() string {
 	return fmt.Sprintf("%p", i)
 }
 
-func (i *Function) Type() ObjectComplexType {
-	return TypeFunction
+func (i *Function) Type() *Type {
+	return i.typ
 }
 
 func (i *Function) Inspect() string {

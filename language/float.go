@@ -23,7 +23,7 @@ func (i *Float) ID() string {
 	return fmt.Sprintf("%p", i)
 }
 
-func (i *Float) Type() ObjectComplexType {
+func (i *Float) Type() *Type {
 	return TypeFloat
 }
 

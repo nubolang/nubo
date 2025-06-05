@@ -5,3 +5,6 @@ build:
 
 run: build
 	@./bin/nubo run ./example/$(FILE).nubo --dev
+
+prepare: build
+	@./bin/nubo prepare ./example --dev

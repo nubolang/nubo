@@ -9,11 +9,11 @@ import (
 
 type List struct {
 	Data     []Object
-	ItemType ObjectComplexType
+	ItemType *Type
 	debug    *debug.Debug
 }
 
-func NewList(values []Object, itemType ObjectComplexType, debug *debug.Debug) *List {
+func NewList(values []Object, itemType *Type, debug *debug.Debug) *List {
 	return &List{
 		Data:     values,
 		ItemType: itemType,
@@ -25,8 +25,11 @@ func (i *List) ID() string {
 	return fmt.Sprintf("%p", i)
 }
 
-func (i *List) Type() ObjectComplexType {
-	return TypeList
+func (i *List) Type() *Type {
+	return &Type{
+		BaseType: ObjectTypeList,
+		Element:  i.ItemType,
+	}
 }
 
 func (i *List) Inspect() string {

@@ -11,7 +11,7 @@ import (
 )
 
 func NewIOStream(r io.Reader) language.Object {
-	instance := language.NewStruct("io", nil, nil)
+	instance := language.NewStruct("@std/io:stream", nil, nil)
 	proto := instance.GetPrototype()
 
 	proto.SetObject("read", native.NewTypedFunction(nil, language.TypeString, streamReadFn(r)))

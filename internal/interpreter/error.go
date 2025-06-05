@@ -1,6 +1,7 @@
 package interpreter
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/nubolang/nubo/internal/debug"
@@ -12,6 +13,15 @@ func newErr(base error, err string, d ...*debug.Debug) error {
 	}
 
 	return fmt.Errorf("%w: %v", base, err)
+}
+
+func isTypeErr(err error) bool {
+	var de *debug.DebugErr
+	if errors.As(err, &de) {
+		return de.Unwrap() == ErrTypeMismatch
+	}
+
+	return err == ErrTypeMismatch
 }
 
 var (
@@ -26,4 +36,5 @@ var (
 	ErrTypeMismatch      = fmt.Errorf("Type mismatch")
 	ErrAst               = fmt.Errorf("Ast error")
 	ErrValueError        = fmt.Errorf("Value error")
+	ErrInvalid           = fmt.Errorf("Invalid syntax")
 )

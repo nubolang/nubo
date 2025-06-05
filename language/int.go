@@ -26,7 +26,7 @@ func (i *Int) ID() string {
 	return fmt.Sprintf("%p", i)
 }
 
-func (i *Int) Type() ObjectComplexType {
+func (i *Int) Type() *Type {
 	return TypeInt
 }
 

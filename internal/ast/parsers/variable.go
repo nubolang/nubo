@@ -3,6 +3,7 @@ package parsers
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"github.com/nubolang/nubo/internal/ast/astnode"
 	"github.com/nubolang/nubo/internal/lexer"
@@ -55,6 +56,12 @@ func VariableParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer
 	}
 
 	token = tokens[*inx]
+	if slices.Contains(white, token.Type) {
+		if err := inxPP(tokens, inx); err != nil {
+			return nil, err
+		}
+		token = tokens[*inx]
+	}
 
 	if token.Type == lexer.TokenAssign {
 		if err := inxPP(tokens, inx); err != nil {

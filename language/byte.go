@@ -23,7 +23,7 @@ func (i *Byte) ID() string {
 	return fmt.Sprintf("%p", i)
 }
 
-func (i *Byte) Type() ObjectComplexType {
+func (i *Byte) Type() *Type {
 	return TypeByte
 }
 

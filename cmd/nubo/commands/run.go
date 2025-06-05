@@ -2,11 +2,15 @@ package commands
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/nubolang/nubo/events"
 	"github.com/nubolang/nubo/internal/ast"
+	"github.com/nubolang/nubo/internal/ast/astnode"
+	"github.com/nubolang/nubo/internal/dotfolder"
 	"github.com/nubolang/nubo/internal/lexer"
 	"github.com/nubolang/nubo/internal/runtime"
 	"github.com/spf13/cobra"
@@ -44,55 +48,61 @@ func execRun(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	file, err := os.Open(filePath)
-	if err != nil {
-		cmd.PrintErrln(err)
-		return
-	}
-	defer file.Close()
-
-	lx := lexer.New(filePath)
-	tokens, err := lx.Parse(file)
-	if err != nil {
-		cmd.PrintErrln(err)
-		return
-	}
-
-	if dev {
-		lxFile, err := os.Create("./bin/gen/lexer.yaml")
+	var syntaxTree []*astnode.Node
+	if prepared, ok := dotfolder.HasPrepared(filePath); ok {
+		fmt.Println(color.New(color.FgBlue).Sprint("Using a prepared file 🚀"))
+		syntaxTree = prepared
+	} else {
+		file, err := os.Open(filePath)
 		if err != nil {
 			cmd.PrintErrln(err)
 			return
 		}
-		defer lxFile.Close()
+		defer file.Close()
 
-		if err := yaml.NewEncoder(lxFile).Encode(tokens); err != nil {
-			cmd.PrintErrln(err)
-			return
-		}
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-
-	builder := ast.New(ctx, time.Second*5)
-	syntaxTree, err := builder.Parse(tokens)
-	if err != nil {
-		cmd.PrintErrln(err)
-		return
-	}
-
-	if dev {
-		astFile, err := os.Create("./bin/gen/ast.yaml")
+		lx := lexer.New(filePath)
+		tokens, err := lx.Parse(file)
 		if err != nil {
 			cmd.PrintErrln(err)
 			return
 		}
-		defer astFile.Close()
 
-		if err := yaml.NewEncoder(astFile).Encode(syntaxTree); err != nil {
+		if dev {
+			lxFile, err := os.Create("./bin/gen/lexer.yaml")
+			if err != nil {
+				cmd.PrintErrln(err)
+				return
+			}
+			defer lxFile.Close()
+
+			if err := yaml.NewEncoder(lxFile).Encode(tokens); err != nil {
+				cmd.PrintErrln(err)
+				return
+			}
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+		defer cancel()
+
+		builder := ast.New(ctx, time.Second*5)
+		syntaxTree, err = builder.Parse(tokens)
+		if err != nil {
 			cmd.PrintErrln(err)
 			return
+		}
+
+		if dev {
+			astFile, err := os.Create("./bin/gen/ast.yaml")
+			if err != nil {
+				cmd.PrintErrln(err)
+				return
+			}
+			defer astFile.Close()
+
+			if err := yaml.NewEncoder(astFile).Encode(syntaxTree); err != nil {
+				cmd.PrintErrln(err)
+				return
+			}
 		}
 	}
 

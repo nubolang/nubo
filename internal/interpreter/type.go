@@ -7,7 +7,7 @@ import (
 	"github.com/nubolang/nubo/language"
 )
 
-func (i *Interpreter) stringToType(s string) (language.ObjectComplexType, error) {
+func (i *Interpreter) stringToType(s string) (*language.Type, error) {
 	switch s {
 	case "void":
 		return language.TypeVoid, nil
@@ -23,6 +23,8 @@ func (i *Interpreter) stringToType(s string) (language.ObjectComplexType, error)
 		return language.TypeByte, nil
 	case "char":
 		return language.TypeChar, nil
+	case "any":
+		return language.TypeAny, nil
 	default:
 		return nil, fmt.Errorf("unknown type: %s", s)
 	}
@@ -34,7 +36,6 @@ func (i *Interpreter) parseTypeNode(n *astnode.Node) (*language.Type, error) {
 	}
 
 	t := &language.Type{
-		Kind:    n.Kind,
 		Content: n.Content,
 	}
 
@@ -48,7 +49,7 @@ func (i *Interpreter) parseTypeNode(n *astnode.Node) (*language.Type, error) {
 			return nil, err
 		}
 		t.Element = elem
-		t.BaseType = language.TypeList
+		t.BaseType = language.ObjectTypeList
 		return t, nil
 	case "DICT":
 		if len(n.Body) != 2 {
@@ -64,7 +65,7 @@ func (i *Interpreter) parseTypeNode(n *astnode.Node) (*language.Type, error) {
 		}
 		t.Key = key
 		t.Value = val
-		t.BaseType = language.TypeDict
+		t.BaseType = language.ObjectTypeDict
 		return t, nil
 	case "FUNCTION":
 		if n.ValueType == nil {
@@ -84,7 +85,7 @@ func (i *Interpreter) parseTypeNode(n *astnode.Node) (*language.Type, error) {
 			t.Args = append(t.Args, argType)
 		}
 
-		t.BaseType = language.TypeFunction
+		t.BaseType = language.ObjectTypeFunction
 		return t, nil
 	}
 

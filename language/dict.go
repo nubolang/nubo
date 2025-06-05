@@ -9,16 +9,24 @@ import (
 
 type Dict struct {
 	Data      map[Object]Object
-	KeyType   ObjectComplexType
-	ValueType ObjectComplexType
+	KeyType   *Type
+	ValueType *Type
 	debug     *debug.Debug
 }
 
-func NewDict(keys []Object, values []Object, keyType ObjectComplexType, valueType ObjectComplexType, debug *debug.Debug) (*Dict, error) {
+func NewDict(keys []Object, values []Object, keyType *Type, valueType *Type, debug *debug.Debug) (*Dict, error) {
 	var m = make(map[Object]Object, len(keys))
 	for i, key := range keys {
 		if !key.Type().Base().Hashable() {
 			return nil, fmt.Errorf("key %s is not hashable", key.Inspect())
+		}
+
+		if !keyType.Compare(key.Type()) {
+			return nil, fmt.Errorf("key type %s does not match expected type %s", key.Type().String(), keyType.String())
+		}
+
+		if !valueType.Compare(values[i].Type()) {
+			return nil, fmt.Errorf("value type %s does not match expected type %s", values[i].Type().String(), valueType.String())
 		}
 
 		m[key] = values[i]
@@ -36,8 +44,12 @@ func (i *Dict) ID() string {
 	return fmt.Sprintf("%p", i)
 }
 
-func (i *Dict) Type() ObjectComplexType {
-	return TypeDict
+func (i *Dict) Type() *Type {
+	return &Type{
+		BaseType: ObjectTypeDict,
+		Key:      i.KeyType,
+		Value:    i.ValueType,
+	}
 }
 
 func (i *Dict) Inspect() string {

@@ -23,30 +23,7 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 	)
 
 	if node.Type == astnode.NodeTypeList {
-		var (
-			typ  language.ObjectComplexType
-			list = make([]language.Object, len(node.Children))
-		)
-
-		for j, child := range node.Children {
-			obj, err := i.evaluateExpression(child)
-			if err != nil {
-				return nil, err
-			}
-			list[j] = obj
-
-			if typ == nil {
-				typ = obj.Type()
-			} else if typ != obj.Type() {
-				typ = language.TypeAny
-			}
-		}
-
-		if typ == nil {
-			typ = language.TypeAny
-		}
-
-		return language.NewList(list, typ, node.Debug), nil
+		return i.evalList(node, nil)
 	}
 
 	if node.Body == nil {
@@ -119,7 +96,7 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 }
 
 func isNotEvaluable(typ language.ObjectType) bool {
-	return typ == language.TypeDict || typ == language.TypeFunction || typ == language.TypeStructInstance || typ == language.TypeList
+	return typ == language.ObjectTypeDict || typ == language.ObjectTypeFunction || typ == language.ObjectTypeStructInstance || typ == language.ObjectTypeList
 }
 
 func (i *Interpreter) exprEvalHumanError(children []*astnode.Node, debug *debug.Debug) error {
@@ -169,4 +146,91 @@ func humanNode(node *astnode.Node) string {
 	}
 
 	return sb.String()
+}
+
+func (i *Interpreter) evalList(node *astnode.Node, typ *language.Type) (language.Object, error) {
+	var (
+		baseTyp *language.Type
+		list    = make([]language.Object, len(node.Children))
+	)
+
+	for j, child := range node.Children {
+		obj, err := i.evaluateExpression(child)
+		if err != nil {
+			return nil, err
+		}
+		list[j] = obj
+
+		if baseTyp == nil {
+			baseTyp = obj.Type()
+		} else if !baseTyp.Compare(obj.Type()) {
+			baseTyp = language.TypeAny
+		}
+	}
+
+	if baseTyp != nil {
+		typ = baseTyp
+	}
+
+	return language.NewList(list, typ, node.Debug), nil
+}
+
+func (i *Interpreter) evalDict(node *astnode.Node, keyType, valueType *language.Type) (language.Object, error) {
+	var (
+		keys              []language.Object
+		values            []language.Object
+		inferredKeyType   *language.Type
+		inferredValueType *language.Type
+	)
+
+	for _, pair := range node.Children {
+		if len(pair.Children) != 1 {
+			return nil, newErr(ErrInvalid, "Invalid dict entry", pair.Debug)
+		}
+
+		keyNode, ok := pair.Value.(*astnode.Node)
+		if !ok {
+			return nil, newErr(ErrInvalid, "Invalid dict entry", pair.Debug)
+		}
+
+		keyObj, err := i.evaluateExpression(keyNode)
+		if err != nil {
+			return nil, err
+		}
+
+		valueObj, err := i.evaluateExpression(pair.Children[0])
+		if err != nil {
+			return nil, err
+		}
+
+		keys = append(keys, keyObj)
+		values = append(values, valueObj)
+
+		if inferredKeyType == nil {
+			inferredKeyType = keyObj.Type()
+		} else if !inferredKeyType.Compare(keyObj.Type()) {
+			inferredKeyType = language.TypeAny
+		}
+
+		if inferredValueType == nil {
+			inferredValueType = valueObj.Type()
+		} else if !inferredValueType.Compare(valueObj.Type()) {
+			inferredValueType = language.TypeAny
+		}
+	}
+
+	if keyType == nil {
+		keyType = inferredKeyType
+	}
+
+	if valueType == nil {
+		valueType = inferredValueType
+	}
+
+	dict, err := language.NewDict(keys, values, keyType, valueType, node.Debug)
+	if err != nil {
+		return nil, newErr(ErrTypeMismatch, err.Error(), node.Debug)
+	}
+
+	return dict, nil
 }

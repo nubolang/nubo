@@ -60,7 +60,7 @@ func (i *Interpreter) handleSubscribe(node *astnode.Node) (language.Object, erro
 				return
 			}
 
-			ir.BindObject(id, td[i], true)
+			ir.Declare(id, td[i], td[i].Type(), true)
 		}
 
 		_, _ = ir.Run(node.Body)

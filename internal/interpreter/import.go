@@ -27,7 +27,7 @@ func (ir *Interpreter) handleImport(node *astnode.Node) error {
 
 	obj, ok := packages.ImportPackage(fileName)
 	if ok {
-		return ir.BindObject(node.Content, obj, false, true)
+		return ir.Declare(node.Content, obj, obj.Type(), false)
 	}
 
 	var path string

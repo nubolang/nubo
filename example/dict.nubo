@@ -1,0 +1,9 @@
+import json from "@std/json"
+
+let data = dict{
+    "key": "value",
+    "another_key": "another_value",
+    5: "five",
+}
+
+println(data, json.stringify(data))

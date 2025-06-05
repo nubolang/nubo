@@ -26,6 +26,10 @@ func (de *DebugErr) Error() string {
 	return fmt.Sprintf("%s %s%s", redBold(de.err.Error()+":"), red(de.msg), location)
 }
 
+func (de *DebugErr) Unwrap() error {
+	return de.err
+}
+
 func NewError(base error, err string, debug ...*Debug) error {
 	var dg *DebugErr
 	if errors.As(base, &dg) {

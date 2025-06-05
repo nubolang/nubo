@@ -23,7 +23,7 @@ func (i *Bool) ID() string {
 	return fmt.Sprintf("%p", i)
 }
 
-func (i *Bool) Type() ObjectComplexType {
+func (i *Bool) Type()*Type {
 	return TypeBool
 }
 

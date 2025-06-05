@@ -18,7 +18,7 @@ func (i *Ref) ID() string {
 	return fmt.Sprintf("%p", i)
 }
 
-func (i *Ref) Type() ObjectComplexType {
+func (i *Ref) Type() *Type {
 	return i.Data.Type()
 }
 

@@ -8,7 +8,7 @@ import (
 )
 
 func NewMath() language.Object {
-	instance := language.NewStruct("math", nil, nil)
+	instance := language.NewStruct("@std/math", nil, nil)
 	proto := instance.GetPrototype()
 
 	proto.SetObject("abs", native.NewTypedFunction(native.OneArg("number", language.TypeNumber), language.TypeNumber, absFn))

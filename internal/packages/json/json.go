@@ -8,7 +8,7 @@ import (
 )
 
 func NewJSON() language.Object {
-	instance := language.NewStruct("json", nil, nil)
+	instance := language.NewStruct("@std/json", nil, nil)
 	proto := instance.GetPrototype()
 
 	proto.SetObject("parse", native.NewTypedFunction(native.OneArg("string", language.TypeString), language.TypeAny, parseFn))
@@ -43,7 +43,7 @@ func stringifyFn(ctx native.FnCtx) (language.Object, error) {
 		return nil, err
 	}
 
-	goValue, err := language.ToValue(value)
+	goValue, err := language.ToValue(value, true)
 	if err != nil {
 		return nil, err
 	}
