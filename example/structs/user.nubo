@@ -1,0 +1,5 @@
+struct User {
+    id: int
+    name: string
+    age: int
+}

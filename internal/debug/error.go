@@ -1,6 +1,7 @@
 package debug
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/fatih/color"
@@ -26,6 +27,11 @@ func (de *DebugErr) Error() string {
 }
 
 func NewError(base error, err string, debug ...*Debug) error {
+	var dg *DebugErr
+	if errors.As(base, &dg) {
+		return dg
+	}
+
 	var d *Debug
 	if len(debug) > 0 {
 		d = debug[0]

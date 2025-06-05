@@ -93,7 +93,7 @@ func (i *Interpreter) handlePublish(node *astnode.Node) (language.Object, error)
 		}
 
 		if !language.TypeCheck(event.Args[j].Type(), value.Type()) {
-			return nil, newErr(ErrTypeMismatch, fmt.Sprintf("type mismatch: expected %s, got %s", event.Args[j].Type(), value.Type()), node.Debug)
+			return nil, newErr(ErrTypeMismatch, fmt.Sprintf("expected %s, got %s", event.Args[j].Type(), value.Type()), node.Debug)
 		}
 		args[j] = value
 	}

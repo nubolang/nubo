@@ -18,7 +18,7 @@ func NewIOStream(r io.Reader) language.Object {
 	proto.SetObject("readAll", native.NewTypedFunction(nil, language.TypeString, streamReadAllFn(r)))
 	proto.SetObject("readByte", native.NewTypedFunction(nil, language.TypeInt, streamReadByteFn(r)))
 	proto.SetObject("readLine", native.NewTypedFunction(nil, language.TypeString, streamReadLineFn(r)))
-	if rc, ok := r.(io.ReadCloser); ok {
+	if rc, ok := r.(io.Closer); ok {
 		proto.SetObject("close", native.NewTypedFunction(nil, language.TypeVoid, streamCloseFn(rc)))
 	}
 
@@ -68,7 +68,7 @@ func streamReadLineFn(r io.Reader) native.FunctionWrapper {
 	}
 }
 
-func streamCloseFn(rc io.ReadCloser) native.FunctionWrapper {
+func streamCloseFn(rc io.Closer) native.FunctionWrapper {
 	return func(ctx native.FnCtx) (language.Object, error) {
 		return nil, rc.Close()
 	}

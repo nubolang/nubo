@@ -1,0 +1,5 @@
+import json from "@std/json"
+
+let x = json.parse('{"hello": "world"}')
+
+println(json.stringify(x))

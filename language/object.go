@@ -46,6 +46,8 @@ func (ot ObjectType) String() string {
 		return "nil"
 	case TypeAny:
 		return "any"
+	case TypeVoid:
+		return "void"
 	default:
 		return "unknown"
 	}
@@ -64,9 +66,17 @@ func (ot ObjectType) Hashable() bool {
 	}
 }
 
+func (ot ObjectType) Compare(other ObjectComplexType) bool {
+	if ot != TypeAny && ot != other {
+		return false
+	}
+	return true
+}
+
 type ObjectComplexType interface {
 	Base() ObjectType
 	String() string
+	Compare(other ObjectComplexType) bool
 }
 
 type Prototype interface {

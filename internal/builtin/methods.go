@@ -2,6 +2,7 @@ package builtin
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -13,10 +14,15 @@ import (
 
 func GetBuiltins() map[string]language.Object {
 	return map[string]language.Object{
+		"_id":     native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeString, idFn),
 		"println": native.NewFunction(printlnFn),
 		"type":    native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeString, typeFn),
 		"inspect": native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeString, inspectFn),
 		"sleep":   native.NewTypedFunction(native.OneArg("ms", language.TypeInt, language.NewInt(0, nil)), language.TypeVoid, sleepFn),
+		"ref":     native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeAny, refFn),
+		"unwrap":  native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeAny, unwrapFn),
+		"clone":   native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeAny, cloneFn),
+		"exit":    native.NewTypedFunction(native.OneArg("code", language.TypeInt, language.NewInt(0, nil)), language.TypeVoid, exitFn),
 
 		// Types
 		"string": native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeString, stringFn),
@@ -26,6 +32,14 @@ func GetBuiltins() map[string]language.Object {
 		"byte":   native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeByte, byteFn),
 		"char":   native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeChar, charFn),
 	}
+}
+
+func idFn(ctx native.FnCtx) (language.Object, error) {
+	obj, err := ctx.Get("obj")
+	if err != nil {
+		return nil, err
+	}
+	return language.NewString(obj.ID(), nil), nil
 }
 
 func printlnFn(args []language.Object) (language.Object, error) {
@@ -290,4 +304,47 @@ func charFn(ctx native.FnCtx) (language.Object, error) {
 	}
 
 	return language.NewChar(value, obj.Debug()), nil
+}
+
+func cloneFn(ctx native.FnCtx) (language.Object, error) {
+	obj, err := ctx.Get("obj")
+	if err != nil {
+		return nil, err
+	}
+
+	return obj.Clone(), nil
+}
+
+func exitFn(ctx native.FnCtx) (language.Object, error) {
+	code, err := ctx.Get("code")
+	if err != nil {
+		return nil, err
+	}
+
+	os.Exit(int(code.Value().(int64)))
+
+	return nil, nil
+}
+
+func refFn(ctx native.FnCtx) (language.Object, error) {
+	obj, err := ctx.Get("obj")
+	if err != nil {
+		return nil, err
+	}
+
+	return language.NewRef(obj), nil
+}
+
+func unwrapFn(ctx native.FnCtx) (language.Object, error) {
+	obj, err := ctx.Get("obj")
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Printf("%T\n", obj)
+	if ref, ok := obj.(*language.Ref); ok {
+		return ref.Data, nil
+	}
+
+	return nil, fmt.Errorf("Cannot unwrap non-reference object")
 }

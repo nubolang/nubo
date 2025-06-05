@@ -7,6 +7,8 @@ import (
 	"github.com/nubolang/nubo/internal/debug"
 )
 
+var TypeNumber = NewUnionType(TypeInt, TypeFloat)
+
 type Int struct {
 	Data  int64
 	proto *IntPrototype

@@ -20,7 +20,11 @@ type Ctx struct {
 	r *runtime.Runtime
 }
 
-func New(provider events.Provider) *Ctx {
+func New() *Ctx {
+	return NewWithProvider(events.NewDefaultProvider())
+}
+
+func NewWithProvider(provider events.Provider) *Ctx {
 	return &Ctx{
 		r: runtime.New(provider),
 	}

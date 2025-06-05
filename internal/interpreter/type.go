@@ -3,6 +3,7 @@ package interpreter
 import (
 	"fmt"
 
+	"github.com/nubolang/nubo/internal/ast/astnode"
 	"github.com/nubolang/nubo/language"
 )
 
@@ -25,4 +26,73 @@ func (i *Interpreter) stringToType(s string) (language.ObjectComplexType, error)
 	default:
 		return nil, fmt.Errorf("unknown type: %s", s)
 	}
+}
+
+func (i *Interpreter) parseTypeNode(n *astnode.Node) (*language.Type, error) {
+	if n.Type != astnode.NodeTypeType {
+		return nil, fmt.Errorf("expected node type 'type', got '%s'", n.Type)
+	}
+
+	t := &language.Type{
+		Kind:    n.Kind,
+		Content: n.Content,
+	}
+
+	switch n.Kind {
+	case "LIST":
+		if len(n.Body) != 1 {
+			return nil, fmt.Errorf("LIST must have exactly one body element")
+		}
+		elem, err := i.parseTypeNode(n.Body[0])
+		if err != nil {
+			return nil, err
+		}
+		t.Element = elem
+		t.BaseType = language.TypeList
+		return t, nil
+	case "DICT":
+		if len(n.Body) != 2 {
+			return nil, fmt.Errorf("DICT must have exactly two body elements")
+		}
+		key, err := i.parseTypeNode(n.Body[0])
+		if err != nil {
+			return nil, err
+		}
+		val, err := i.parseTypeNode(n.Body[1])
+		if err != nil {
+			return nil, err
+		}
+		t.Key = key
+		t.Value = val
+		t.BaseType = language.TypeDict
+		return t, nil
+	case "FUNCTION":
+		if n.ValueType == nil {
+			return nil, fmt.Errorf("FUNCTION must have a return value_type")
+		}
+		ret, err := i.parseTypeNode(n.ValueType)
+		if err != nil {
+			return nil, err
+		}
+		t.Value = ret
+
+		for _, arg := range n.Args {
+			argType, err := i.parseTypeNode(arg)
+			if err != nil {
+				return nil, err
+			}
+			t.Args = append(t.Args, argType)
+		}
+
+		t.BaseType = language.TypeFunction
+		return t, nil
+	}
+
+	baseType, err := i.stringToType(n.Content)
+	if err != nil {
+		return nil, err
+	}
+
+	t.BaseType = baseType.Base()
+	return t, nil
 }

@@ -482,11 +482,11 @@ func (lx *Lexer) parse(s string) ([]*Token, error) {
 					},
 				})
 			}
-		case '#':
+		case '@':
 			if pos+1 < len(s) && runes[pos+1] == '{' {
 				parsed = append(parsed, &Token{
 					Type:  TokenUnescapedBrace,
-					Value: "#{",
+					Value: "@{",
 					Debug: &debug.Debug{
 						Line:   line,
 						Column: col,

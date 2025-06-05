@@ -8,22 +8,34 @@ import (
 	"go.uber.org/zap"
 )
 
-func (i *Interpreter) handleVariableDecl(node *astnode.Node) error {
+func (i *Interpreter) handleVariableDecl(parent *astnode.Node) error {
 	var (
-		variableName string = node.Content
-		mutable             = node.Kind != "CONST"
+		variableName string = parent.Content
+		mutable             = parent.Kind != "CONST"
 		value        language.Object
 		err          error
 	)
 
-	if node.Flags.Contains("NODEVALUE") {
-		node = node.Value.(*astnode.Node)
+	node := parent
+	if parent.Flags.Contains("NODEVALUE") {
+		node = parent.Value.(*astnode.Node)
 	}
 
 	if node.Type == astnode.NodeTypeElement {
 		value, err = i.evaluateElement(node)
 	} else {
 		value, err = i.evaluateExpression(node)
+	}
+
+	if parent.ValueType != nil {
+		typ, err := i.parseTypeNode(parent.ValueType)
+		if err != nil {
+			return err
+		}
+
+		if !typ.Compare(value.Type()) {
+			return newErr(ErrTypeMismatch, fmt.Sprintf("expected %s, got %s", typ.String(), value.Type().String()), parent.Debug)
+		}
 	}
 
 	if err != nil {

@@ -61,7 +61,7 @@ func (e *Element) TypeString() string {
 }
 
 func (e *Element) String() string {
-	return "<Object(Element(string))>"
+	return e.Value().(string)
 }
 
 func (e *Element) GetPrototype() Prototype {

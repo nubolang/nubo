@@ -1,0 +1,4 @@
+import math from "@std/math"
+
+
+println(math.abs(true))

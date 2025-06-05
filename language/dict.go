@@ -8,14 +8,14 @@ import (
 )
 
 type Dict struct {
-	Data      map[any]Object
+	Data      map[Object]Object
 	KeyType   ObjectComplexType
 	ValueType ObjectComplexType
 	debug     *debug.Debug
 }
 
 func NewDict(keys []Object, values []Object, keyType ObjectComplexType, valueType ObjectComplexType, debug *debug.Debug) (*Dict, error) {
-	var m = make(map[any]Object, len(keys))
+	var m = make(map[Object]Object, len(keys))
 	for i, key := range keys {
 		if !key.Type().Base().Hashable() {
 			return nil, fmt.Errorf("key %s is not hashable", key.Inspect())
@@ -70,7 +70,7 @@ func (i *Dict) Debug() *debug.Debug {
 }
 
 func (i *Dict) Clone() Object {
-	var m = make(map[any]Object, len(i.Data))
+	var m = make(map[Object]Object, len(i.Data))
 	for key, value := range i.Data {
 		m[key] = value.Clone()
 	}

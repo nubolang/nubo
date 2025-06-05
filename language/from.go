@@ -36,6 +36,27 @@ func FromValue(data any, dg ...*debug.Debug) (Object, error) {
 		}
 
 		return NewDict(keys, vals, TypeAny, TypeAny, dbg)
+	case map[string]any:
+		var (
+			keys []Object
+			vals []Object
+		)
+
+		for k, v := range value {
+			key, err := FromValue(k)
+			if err != nil {
+				return nil, err
+			}
+			keys = append(keys, key)
+
+			val, err := FromValue(v)
+			if err != nil {
+				return nil, err
+			}
+			vals = append(vals, val)
+		}
+
+		return NewDict(keys, vals, TypeString, TypeAny, dbg)
 	case []any:
 		var li = make([]Object, len(value))
 		for i, val := range value {
@@ -68,5 +89,45 @@ func FromValue(data any, dg ...*debug.Debug) (Object, error) {
 	case nil:
 		return NewNil(), nil
 	}
+
 	return nil, fmt.Errorf("unsupported type %T", data)
+}
+
+func ToValue(obj Object) (any, error) {
+	switch v := obj.(type) {
+	case *Int:
+		return v.Value, nil
+	case *Float:
+		return v.Value, nil
+	case *String:
+		return v.Value, nil
+	case *Bool:
+		return v.Value, nil
+	case *List:
+		out := make([]any, len(v.Data))
+		for i, elem := range v.Data {
+			val, err := ToValue(elem)
+			if err != nil {
+				return nil, err
+			}
+			out[i] = val
+		}
+		return out, nil
+	case *Dict:
+		if v.KeyType == TypeString {
+			out := make(map[string]any)
+			for key, value := range v.Data {
+				out[key.Value().(string)] = value.Value()
+			}
+			return out, nil
+		}
+
+		out := make(map[any]any)
+		for key, value := range v.Data {
+			out[key.Value()] = value.Value()
+		}
+		return out, nil
+	default:
+		return nil, fmt.Errorf("unsupported object type %T", obj)
+	}
 }

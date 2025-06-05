@@ -64,12 +64,13 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 				if !ok {
 					return nil, newErr(ErrUndefinedVariable, child.Value.(string), node.Debug)
 				}
+
+				if len(node.Body) == 1 {
+					return obj, nil
+				}
+
 				if isNotEvaluable(obj.Type().Base()) {
-					if len(node.Body) == 1 {
-						return obj, nil
-					} else {
-						return nil, newErr(ErrUnsupported, fmt.Sprintf("cannot operate on type %s", obj.Type()), obj.Debug())
-					}
+					return nil, newErr(ErrUnsupported, fmt.Sprintf("cannot operate on type %s", obj.Type()), obj.Debug())
 				}
 
 				env[id] = obj.Value()
@@ -84,12 +85,12 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 				return nil, err
 			}
 
+			if len(node.Body) == 1 {
+				return value, nil
+			}
+
 			if isNotEvaluable(value.Type().Base()) {
-				if len(node.Body) == 1 {
-					return value, nil
-				} else {
-					return nil, newErr(ErrUnsupported, fmt.Sprintf("cannot operate on type %s", value.Type()), value.Debug())
-				}
+				return nil, newErr(ErrUnsupported, fmt.Sprintf("cannot operate on type %s", value.Type()), value.Debug())
 			}
 
 			id := "var_" + fmt.Sprintf("%d", inx)
@@ -118,7 +119,7 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 }
 
 func isNotEvaluable(typ language.ObjectType) bool {
-	return typ == language.TypeFunction || typ == language.TypeStructInstance || typ == language.TypeList
+	return typ == language.TypeDict || typ == language.TypeFunction || typ == language.TypeStructInstance || typ == language.TypeList
 }
 
 func (i *Interpreter) exprEvalHumanError(children []*astnode.Node, debug *debug.Debug) error {

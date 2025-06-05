@@ -45,7 +45,7 @@ const (
 	TokenOpenParen      TokenType = "("
 	TokenCloseParen     TokenType = ")"
 	TokenOpenBrace      TokenType = "{"
-	TokenUnescapedBrace TokenType = "#{"
+	TokenUnescapedBrace TokenType = "@{"
 	TokenCloseBrace     TokenType = "}"
 	TokenOpenBracket    TokenType = "["
 	TokenCloseBracket   TokenType = "]"

@@ -17,7 +17,8 @@ func VariableParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer
 	}
 
 	node := &astnode.Node{
-		Type: astnode.NodeTypeVariableDecl,
+		Type:  astnode.NodeTypeVariableDecl,
+		Debug: token.Debug,
 	}
 
 	if isConst {
@@ -29,7 +30,7 @@ func VariableParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer
 	token = tokens[*inx]
 
 	if token.Type != lexer.TokenIdentifier {
-		return nil, newErr(ErrSyntaxError, fmt.Sprintf("expected identifier, got %s", token.Value))
+		return nil, newErr(ErrSyntaxError, fmt.Sprintf("expected identifier, got %s", token.Value), token.Debug)
 	}
 
 	node.Content = token.Value

@@ -1,0 +1,7 @@
+// CURRENTLY NOT WORKING
+// SHOULD IMPLEMENT A BETTER TYPE SYSTEM WITH
+// *language.Type instead of a language.ObjectComplexType interface
+
+fn x(s: string) -> void {}
+
+let y: fn() -> void = x

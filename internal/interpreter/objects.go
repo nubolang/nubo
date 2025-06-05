@@ -11,6 +11,7 @@ import (
 type entry struct {
 	key     string
 	value   language.Object
+	typ     language.ObjectComplexType
 	mutable bool
 	next    *entry
 }

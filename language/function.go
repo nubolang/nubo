@@ -61,15 +61,15 @@ func NewTypedFunction(argTypes []FnArg, returnType ObjectComplexType, data func(
 		for i, argType := range argTypes {
 			if i < len(args) {
 				arg := args[i]
-				if argType.Type() != TypeAny && arg.Type() != argType.Type() {
-					return nil, fmt.Errorf("argument %d (%s) expected type %s, got %s", i, argType.Name(), argType.Type(), arg.Type())
+				if !argType.Type().Compare(arg.Type()) {
+					return nil, fmt.Errorf("argument %d (%s) expected type %s, got %s", i+1, argType.Name(), argType.Type(), arg.Type())
 				}
 				provideArgs[i] = arg
 			} else {
 				if argType.Default() != nil {
 					provideArgs[i] = argType.Default()
 				} else {
-					return nil, fmt.Errorf("missing required argument %d (%s)", i, argType.Name())
+					return nil, fmt.Errorf("missing required argument %d (%s)", i+1, argType.Name())
 				}
 			}
 		}
@@ -83,10 +83,8 @@ func NewTypedFunction(argTypes []FnArg, returnType ObjectComplexType, data func(
 			if returnType != TypeVoid {
 				return nil, fmt.Errorf("expected return type %s, got %s", returnType.String(), TypeVoid.String())
 			}
-		} else if returnType != TypeAny {
-			if value.Type() != returnType {
-				return nil, fmt.Errorf("expected return type %s, got %s", returnType.String(), value.Type().String())
-			}
+		} else if !returnType.Compare(value.Type()) {
+			return nil, fmt.Errorf("expected return type %s, got %s", returnType.String(), value.Type().String())
 		}
 
 		return value, nil
