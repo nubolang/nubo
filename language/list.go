@@ -10,6 +10,7 @@ import (
 type List struct {
 	Data     []Object
 	ItemType *Type
+	proto    *ListPrototype
 	debug    *debug.Debug
 }
 
@@ -50,7 +51,10 @@ func (i *List) String() string {
 }
 
 func (i *List) GetPrototype() Prototype {
-	return nil
+	if i.proto == nil {
+		i.proto = NewListPrototype(i)
+	}
+	return i.proto
 }
 
 func (i *List) Value() any {

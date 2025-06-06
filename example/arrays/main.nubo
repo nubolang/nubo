@@ -1,0 +1,5 @@
+let li: [][]string = [["hello", "world"]]
+
+let first = li[0][1]
+
+println(first.split(""))

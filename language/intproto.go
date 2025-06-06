@@ -17,11 +17,17 @@ func NewIntPrototype(base *Int) *IntPrototype {
 	}
 
 	ip.SetObject("increment", NewFunction(func(o []Object) (Object, error) {
+		ip.mu.Lock()
+		defer ip.mu.Unlock()
+
 		ip.base.Data++
 		return nil, nil
 	}, base.Debug()))
 
 	ip.SetObject("decrement", NewFunction(func(o []Object) (Object, error) {
+		ip.mu.Lock()
+		defer ip.mu.Unlock()
+
 		ip.base.Data--
 		return nil, nil
 	}, base.Debug()))

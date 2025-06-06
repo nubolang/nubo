@@ -1,0 +1,5 @@
+import json from "@std/json"
+
+let object = json.parse('{"key": {"subkey": "value"}}')
+
+println(object)

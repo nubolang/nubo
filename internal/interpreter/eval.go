@@ -26,6 +26,10 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 		return i.evalList(node, nil)
 	}
 
+	if node.Type == astnode.NodeTypeDict {
+		return i.evalDict(node, nil, nil)
+	}
+
 	if node.Body == nil {
 		return language.Nil, nil
 	}
@@ -43,11 +47,27 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 				}
 
 				if len(node.Body) == 1 {
+					if len(node.Body[0].Children) > 0 {
+						if ob, err := i.checkGetter(obj, child); err != nil {
+							return nil, err
+						} else {
+							obj = ob
+						}
+					}
+
 					return obj, nil
 				}
 
 				if isNotEvaluable(obj.Type().Base()) {
 					return nil, newErr(ErrUnsupported, fmt.Sprintf("cannot operate on type %s", obj.Type()), obj.Debug())
+				}
+
+				if len(child.Children) > 0 {
+					if ob, err := i.checkGetter(obj, child); err != nil {
+						return nil, err
+					} else {
+						obj = ob
+					}
 				}
 
 				env[id] = obj.Value()
@@ -233,4 +253,40 @@ func (i *Interpreter) evalDict(node *astnode.Node, keyType, valueType *language.
 	}
 
 	return dict, nil
+}
+
+func (i *Interpreter) checkGetter(obj language.Object, node *astnode.Node) (language.Object, error) {
+	for _, child := range node.Children {
+		val, err := i.evaluateExpression(child)
+		if err != nil {
+			return nil, err
+		}
+
+		if obj.GetPrototype() == nil {
+			return nil, newErr(ErrUnsupported, fmt.Sprintf("cannot operate on type %s", obj.Type()), obj.Debug())
+		}
+
+		getter, ok := obj.GetPrototype().GetObject("get")
+		if !ok {
+			return nil, newErr(ErrUnsupported, fmt.Sprintf("cannot operate on type %s", obj.Type()), obj.Debug())
+		}
+
+		getterFn, ok := getter.(*language.Function)
+		if !ok {
+			return nil, newErr(ErrUnsupported, fmt.Sprintf("cannot operate on type %s", obj.Type()), obj.Debug())
+		}
+
+		value, err := getterFn.Data([]language.Object{val})
+		if err != nil {
+			return nil, err
+		}
+
+		obj = value
+	}
+
+	if obj == nil {
+		return nil, newErr(ErrTypeMismatch, fmt.Sprintf("cannot operate on type %s", node.Type), node.Debug)
+	}
+
+	return obj, nil
 }

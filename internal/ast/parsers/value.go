@@ -184,13 +184,22 @@ func singleValueParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*le
 
 		token := tokens[*inx]
 
-		if token.Type == lexer.TokenOpenParen {
-			n, err := fnCallParser(ctx, sn, id, tokens, inx)
-			if err != nil {
-				return nil, err
+		if token.Type == lexer.TokenOpenParen || token.Type == lexer.TokenOpenBracket {
+			if token.Type == lexer.TokenOpenParen {
+				n, err := fnCallParser(ctx, sn, id, tokens, inx)
+				if err != nil {
+					return nil, err
+				}
+				*inx--
+				return n, nil
+			} else {
+				n, err := arrayKeyParser(ctx, sn, id, tokens, inx)
+				if err != nil {
+					return nil, err
+				}
+				*inx--
+				return n, nil
 			}
-			*inx--
-			return n, nil
 		}
 
 		*inx = last
@@ -218,4 +227,73 @@ func isBinaryOperator(typ lexer.TokenType) bool {
 		lexer.TokenAnd, lexer.TokenOr, lexer.TokenNot:
 		return true
 	}
+}
+
+func arrayKeyParser(ctx context.Context, sn HTMLAttrValueParser, id string, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
+	node := &astnode.Node{
+		Type:        astnode.NodeTypeValue,
+		Kind:        "IDENTIFIER",
+		Value:       id,
+		IsReference: true,
+	}
+
+loop:
+	for *inx < len(tokens) {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+		}
+
+		tok := tokens[*inx]
+
+		switch tok.Type {
+		case lexer.TokenOpenBracket:
+			start := *inx
+			bracketCount := 1
+			*inx++
+
+			for *inx < len(tokens) && bracketCount > 0 {
+				switch tokens[*inx].Type {
+				case lexer.TokenOpenBracket:
+					bracketCount++
+				case lexer.TokenCloseBracket:
+					bracketCount--
+				}
+				*inx++
+			}
+
+			if bracketCount != 0 {
+				return nil, fmt.Errorf("unclosed [ in array access")
+			}
+
+			exprTokens := tokens[start+1 : *inx-1]
+			newInx := 0
+			valueNode, err := ValueParser(ctx, sn, exprTokens, &newInx)
+			if err != nil {
+				return nil, err
+			}
+
+			node.Children = append(node.Children, valueNode)
+
+		case lexer.TokenDot:
+			*inx++
+			if *inx >= len(tokens) || tokens[*inx].Type != lexer.TokenIdentifier {
+				return nil, fmt.Errorf("expected identifier after dot")
+			}
+			prop := tokens[*inx].Value
+			*inx++
+			propNode := &astnode.Node{
+				Type:  astnode.NodeTypeValue,
+				Kind:  "IDENTIFIER",
+				Value: prop,
+			}
+			node.Children = append(node.Children, propNode)
+
+		default:
+			break loop
+		}
+	}
+
+	return node, nil
 }

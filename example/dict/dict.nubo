@@ -4,6 +4,10 @@ let data = dict{
     "key": "value",
     "another_key": "another_value",
     5: "five",
+    "other": dict{
+        "nested_key": "nested_value"
+    },
 }
 
-println(data, json.stringify(data))
+println(data)
+println(json.stringify(data))

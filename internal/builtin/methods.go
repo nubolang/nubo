@@ -16,6 +16,7 @@ func GetBuiltins() map[string]language.Object {
 	return map[string]language.Object{
 		"_id":     native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeString, idFn),
 		"println": native.NewFunction(printlnFn),
+		"print":   native.NewFunction(printFn),
 		"type":    native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeString, typeFn),
 		"inspect": native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeString, inspectFn),
 		"sleep":   native.NewTypedFunction(native.OneArg("ms", language.TypeInt, language.NewInt(0, nil)), language.TypeVoid, sleepFn),
@@ -48,6 +49,15 @@ func printlnFn(args []language.Object) (language.Object, error) {
 		out = append(out, arg.String())
 	}
 	fmt.Println(strings.Join(out, " "))
+	return nil, nil
+}
+
+func printFn(args []language.Object) (language.Object, error) {
+	var out []string
+	for _, arg := range args {
+		out = append(out, arg.String())
+	}
+	fmt.Print(strings.Join(out, " "))
 	return nil, nil
 }
 

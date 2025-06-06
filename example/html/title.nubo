@@ -8,4 +8,4 @@ const wrapper = <div>
     @{welcome}
 </div> // @ is used to prevent Nubo from escaping HTML (by default, Nubo escapes HTML to prevent XSS attacks)
 
-println(wrapper)
+println(wrapper, welcome.getAttribute("data-age"))

@@ -1,0 +1,4 @@
+const x = 42
+let y = 42
+
+println(_id(x), _id(y))
