@@ -31,11 +31,19 @@ var (
 	TypeVoid           = &Type{BaseType: ObjectTypeVoid, Content: "void"}
 )
 
+func NewFunctionType(returnType *Type, argsType ...*Type) *Type {
+	return &Type{BaseType: ObjectTypeFunction, Value: returnType, Args: argsType}
+}
+
 func (t *Type) Base() ObjectType {
 	return t.BaseType.Base()
 }
 
 func (t *Type) String() string {
+	if t == nil {
+		return "<invalid>"
+	}
+
 	switch t.BaseType {
 	default:
 		return t.BaseType.String()
@@ -55,22 +63,48 @@ func (t *Type) String() string {
 }
 
 func (t *Type) Compare(other *Type) bool {
+	if t == nil || other == nil {
+		return false
+	}
+
 	if t.BaseType == ObjectTypeAny {
 		return true
 	}
 
 	if other.Base() == ObjectTypeNil {
-		return t.BaseType == ObjectTypeNil || t.BaseType == ObjectTypeList || t.BaseType == ObjectTypeDict || t.BaseType == ObjectTypeStructInstance || t.BaseType == ObjectTypeFunction
+		return t.BaseType == ObjectTypeNil ||
+			t.BaseType == ObjectTypeList ||
+			t.BaseType == ObjectTypeDict ||
+			t.BaseType == ObjectTypeStructInstance ||
+			t.BaseType == ObjectTypeFunction
+	}
+
+	if t.BaseType != other.BaseType {
+		return false
 	}
 
 	switch t.BaseType {
 	case ObjectTypeList:
-		return t.Element.String() == TypeAny.String() || t.Element.String() == other.Element.String()
+		return t.Element.Compare(TypeAny) || t.Element.Compare(other.Element)
+
 	case ObjectTypeDict:
-		return t.Key.String() == TypeAny.String() || t.Key.String() == other.Key.String() && t.Value.String() == TypeAny.String() || t.Value.String() == other.Value.String()
+		keyMatch := t.Key.Compare(TypeAny) || t.Key.Compare(other.Key)
+		valueMatch := t.Value.Compare(TypeAny) || t.Value.Compare(other.Value)
+		return keyMatch && valueMatch
+
+	case ObjectTypeFunction:
+		if len(t.Args) != len(other.Args) {
+			return false
+		}
+		for i := range t.Args {
+			if !t.Args[i].Compare(other.Args[i]) {
+				return false
+			}
+		}
+		return t.Value.Compare(other.Value)
 	}
 
-	return t.String() == other.String()
+	return t.Content == other.Content
 }
 
 func NewUnionType(types ...*Type) *Type {

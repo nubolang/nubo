@@ -1,0 +1,5 @@
+fn x() -> string {
+    return "hello"
+}
+
+println(x())

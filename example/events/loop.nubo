@@ -1,0 +1,18 @@
+event messages(id: int)
+
+let open = true
+let loop = 1000
+
+sub messages(id) {
+    println(id)
+    if id == 0 {
+        open = false
+    }
+}
+
+while loop > 0 {
+    pub messages(loop)
+    loop--
+}
+
+sleep(1000)

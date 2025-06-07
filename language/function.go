@@ -130,15 +130,15 @@ func (i *Function) TypeString() string {
 
 func (i *Function) String() string {
 	var argTypes []string
-	for _, arg := range i.ArgTypes {
-		argTypes = append(argTypes, arg.Type().String())
+	for _, arg := range i.Type().Args {
+		argTypes = append(argTypes, arg.String())
 	}
 
 	var rt string
-	if i.ReturnType == nil {
+	if i.Type().Value == nil {
 		rt = "void"
 	} else {
-		rt = i.ReturnType.String()
+		rt = i.Type().Value.String()
 	}
 
 	return fmt.Sprintf("Closure(%p args=%v returns=%s)", i, argTypes, rt)
@@ -157,5 +157,11 @@ func (i *Function) Debug() *debug.Debug {
 }
 
 func (i *Function) Clone() Object {
-	return NewFunction(i.Data, i.debug)
+	return &Function{
+		Data:       i.Data,
+		ArgTypes:   i.ArgTypes,
+		ReturnType: i.ReturnType,
+		typ:        i.typ,
+		debug:      i.debug,
+	}
 }

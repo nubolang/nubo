@@ -48,7 +48,7 @@ func (e *Element) ID() string {
 	return fmt.Sprintf("%p", e)
 }
 
-func (e *Element) Type()*Type {
+func (e *Element) Type() *Type {
 	return TypeString
 }
 
@@ -142,7 +142,7 @@ func (e *Element) Clone() Object {
 		attrs[i] = Attribute{
 			Name:  a.Name,
 			Kind:  a.Kind,
-			Value: a.Value.Clone(),
+			Value: a.Value,
 		}
 	}
 

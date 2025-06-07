@@ -4,38 +4,50 @@ import (
 	"errors"
 	"slices"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
-const MaxWorkers = 10
+const (
+	MaxWorkersPerTopic = 10
+	ChanBufferSize     = 1024
+)
 
 type DefaultProvider struct {
-	mu      sync.RWMutex
-	events  []*Event
-	subs    map[string][]chan TransportData
-	buffer  map[string][]TransportData
-	closed  bool
+	eventsMu sync.RWMutex
+	events   []*Event
+
+	topics sync.Map // map[string]*topicState
+
+	closed atomic.Bool
+}
+
+type topicState struct {
+	mu      sync.Mutex
+	subs    []chan TransportData
+	buffer  []TransportData
 	workers int
 }
 
 func NewDefaultProvider() *DefaultProvider {
-	return &DefaultProvider{
-		subs:   make(map[string][]chan TransportData),
-		buffer: make(map[string][]TransportData),
-	}
+	return &DefaultProvider{}
+}
+
+func (p *DefaultProvider) AddEvent(e *Event) {
+	p.eventsMu.Lock()
+	defer p.eventsMu.Unlock()
+	p.events = append(p.events, e)
 }
 
 func (p *DefaultProvider) Events() []*Event {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
-	eventsCopy := make([]*Event, len(p.events))
-	copy(eventsCopy, p.events)
-	return eventsCopy
+	p.eventsMu.RLock()
+	defer p.eventsMu.RUnlock()
+	return slices.Clone(p.events)
 }
 
 func (p *DefaultProvider) GetEvent(id string) *Event {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
+	p.eventsMu.RLock()
+	defer p.eventsMu.RUnlock()
 	for _, e := range p.events {
 		if e.ID == id {
 			return e
@@ -44,94 +56,94 @@ func (p *DefaultProvider) GetEvent(id string) *Event {
 	return nil
 }
 
-func (p *DefaultProvider) AddEvent(e *Event) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	p.events = append(p.events, e)
+func (p *DefaultProvider) getOrCreateTopic(topic string) *topicState {
+	actual, _ := p.topics.LoadOrStore(topic, &topicState{})
+	return actual.(*topicState)
 }
 
 func (p *DefaultProvider) Publish(topic string, data TransportData) error {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	if p.closed {
+	if p.closed.Load() {
 		return errors.New("provider closed")
 	}
 
-	subs, ok := p.subs[topic]
-	if !ok || len(subs) == 0 {
+	ts := p.getOrCreateTopic(topic)
+
+	ts.mu.Lock()
+	defer ts.mu.Unlock()
+
+	sent := true
+	for _, ch := range ts.subs {
+		select {
+		case ch <- data:
+		default:
+			sent = false
+		}
+	}
+
+	if sent {
 		return nil
 	}
 
-	sent := false
-	for _, ch := range subs {
-		select {
-		case ch <- data:
-			sent = true
-		default:
-		}
-	}
-
-	if !sent {
-		p.buffer[topic] = append(p.buffer[topic], data)
-
-		if p.workers < MaxWorkers {
-			p.workers++
-			go p.bufferWorker(topic)
-		}
+	ts.buffer = append(ts.buffer, data)
+	if ts.workers < MaxWorkersPerTopic {
+		ts.workers++
+		go p.bufferWorker(topic, ts)
 	}
 
 	return nil
 }
 
-func (p *DefaultProvider) bufferWorker(topic string) {
-	defer func() {
-		p.mu.Lock()
-		p.workers--
-		p.mu.Unlock()
-	}()
+func (p *DefaultProvider) bufferWorker(topic string, ts *topicState) {
+	backoff := 10 * time.Millisecond
 
 	for {
-		p.mu.Lock()
-		buf := p.buffer[topic]
-		if len(buf) == 0 || p.closed {
-			delete(p.buffer, topic)
-			p.mu.Unlock()
+		ts.mu.Lock()
+
+		if p.closed.Load() || len(ts.buffer) == 0 {
+			ts.workers--
+			ts.mu.Unlock()
 			return
 		}
-		data := buf[0]
-		p.buffer[topic] = buf[1:]
-		subs := p.subs[topic]
-		p.mu.Unlock()
 
-		sent := false
+		data := ts.buffer[0]
+		ts.buffer = ts.buffer[1:]
+		subs := slices.Clone(ts.subs)
+		ts.mu.Unlock()
+
+		sent := true
 		for _, ch := range subs {
 			select {
 			case ch <- data:
-				sent = true
 			default:
+				sent = false
 			}
 		}
 
 		if !sent {
-			p.mu.Lock()
-			p.buffer[topic] = append([]TransportData{data}, p.buffer[topic]...)
-			p.mu.Unlock()
-			time.Sleep(50 * time.Millisecond)
+			ts.mu.Lock()
+			ts.buffer = append([]TransportData{data}, ts.buffer...)
+			ts.mu.Unlock()
+			time.Sleep(backoff)
+			if backoff < 200*time.Millisecond {
+				backoff *= 2
+			}
+		} else {
+			backoff = 10 * time.Millisecond
 		}
 	}
 }
 
 func (p *DefaultProvider) Subscribe(topic string, handler func(TransportData)) (UnsubscribeFunc, error) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	if p.closed {
+	if p.closed.Load() {
 		return nil, errors.New("provider closed")
 	}
 
-	ch := make(chan TransportData, 10)
-	p.subs[topic] = append(p.subs[topic], ch)
+	ts := p.getOrCreateTopic(topic)
+	ch := make(chan TransportData, ChanBufferSize)
+
+	ts.mu.Lock()
+	ts.subs = append(ts.subs, ch)
+	ts.mu.Unlock()
 
 	go func() {
 		for msg := range ch {
@@ -139,44 +151,37 @@ func (p *DefaultProvider) Subscribe(topic string, handler func(TransportData)) (
 		}
 	}()
 
-	unsub := func() error {
-		p.mu.Lock()
-		defer p.mu.Unlock()
+	return func() error {
+		ts.mu.Lock()
+		defer ts.mu.Unlock()
 
-		subs := p.subs[topic]
-		for i, c := range subs {
+		for i, c := range ts.subs {
 			if c == ch {
-				p.subs[topic] = slices.Delete(subs, i, i+1)
-				close(c)
-
-				if len(p.subs[topic]) == 0 {
-					delete(p.subs, topic)
-					delete(p.buffer, topic)
-				}
+				ts.subs = append(ts.subs[:i], ts.subs[i+1:]...)
+				close(ch)
 				return nil
 			}
 		}
 		return errors.New("channel not found")
-	}
-
-	return unsub, nil
+	}, nil
 }
 
 func (p *DefaultProvider) Close() error {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	if p.closed {
+	if !p.closed.CompareAndSwap(false, true) {
 		return nil
 	}
 
-	p.closed = true
-	for _, chans := range p.subs {
-		for _, ch := range chans {
+	p.topics.Range(func(_, v any) bool {
+		ts := v.(*topicState)
+		ts.mu.Lock()
+		for _, ch := range ts.subs {
 			close(ch)
 		}
-	}
-	p.subs = nil
-	p.buffer = nil
+		ts.subs = nil
+		ts.buffer = nil
+		ts.mu.Unlock()
+		return true
+	})
+
 	return nil
 }

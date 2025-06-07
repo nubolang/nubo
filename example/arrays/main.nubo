@@ -1,5 +1,7 @@
-let li: [][]string = [["hello", "world"]]
+let li: [][]string = [["string", "int"], ["hello", "world"]]
 
-let first = li[0][1]
+fn listMapper(item: []string) -> string {
+	return item.join("|")
+}
 
-println(first.split(""))
+println("data", li.map(listMapper))

@@ -6,6 +6,10 @@ import (
 )
 
 func (i *Interpreter) handleReturn(node *astnode.Node) (language.Object, error) {
+	if node.Flags.Contains("NODEVALUE") {
+		node = node.Value.(*astnode.Node)
+	}
+
 	value, err := i.evaluateExpression(node)
 	if err != nil {
 		return nil, err

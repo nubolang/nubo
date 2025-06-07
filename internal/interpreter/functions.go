@@ -12,17 +12,19 @@ func (i *Interpreter) handleFunctionDecl(node *astnode.Node) (language.Object, e
 	var returnType *language.Type
 
 	if node.ValueType != nil {
-		rt, err := i.stringToType(node.ValueType.Content)
+		rt, err := i.parseTypeNode(node.ValueType)
 		if err != nil {
 			return nil, err
 		}
 		returnType = rt
-	} else {
+	}
+
+	if returnType == nil {
 		returnType = language.TypeVoid
 	}
 
 	for j, arg := range node.Args {
-		typ, err := i.stringToType(arg.ValueType.Content)
+		typ, err := i.parseTypeNode(arg.ValueType)
 		if err != nil {
 			return nil, err
 		}
