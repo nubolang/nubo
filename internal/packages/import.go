@@ -7,6 +7,8 @@ import (
 	"github.com/nubolang/nubo/internal/packages/json"
 	"github.com/nubolang/nubo/internal/packages/log"
 	"github.com/nubolang/nubo/internal/packages/math"
+	"github.com/nubolang/nubo/internal/packages/process"
+	"github.com/nubolang/nubo/internal/packages/random"
 	"github.com/nubolang/nubo/internal/packages/thread"
 	"github.com/nubolang/nubo/language"
 )
@@ -32,6 +34,10 @@ func ImportPackage(name string) (language.Object, bool) {
 		return log.NewLog(), true
 	case "thread":
 		return thread.NewThread(), true
+	case "random":
+		return random.NewRandom(), true
+	case "process":
+		return process.NewProcess(), true
 	}
 
 	return nil, false

@@ -9,7 +9,7 @@ import (
 
 type StructField struct {
 	Name string
-	Type*Type
+	Type *Type
 }
 
 type StructDefinition struct {
@@ -41,7 +41,7 @@ func (i *Struct) ID() string {
 	return fmt.Sprintf("%p", i)
 }
 
-func (i *Struct) Type()*Type {
+func (i *Struct) Type() *Type {
 	return TypeStructInstance
 }
 
@@ -78,5 +78,5 @@ func (i *Struct) Debug() *debug.Debug {
 }
 
 func (i *Struct) Clone() Object {
-	return NewStruct(i.Name, i.Data, i.debug)
+	return i
 }

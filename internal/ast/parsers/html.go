@@ -104,9 +104,6 @@ func HTMLParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer.Tok
 									Type:    astnode.NodeTypeElementRawText,
 									Content: content.String(),
 								}
-								if isUnescaped {
-									text.Flags.Append("UNESCAPED")
-								}
 								node.Children = append(node.Children, text)
 								content.Reset()
 							}
@@ -129,9 +126,12 @@ func HTMLParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer.Tok
 										braceCount--
 										if braceCount == 0 {
 											dynamicStr := dynamicText.String()
-											dynamicStr = dynamicStr[1 : len(dynamicStr)-1]
+											dynamicStr = strings.TrimSuffix(dynamicStr, "}")
+
 											if isUnescaped {
-												dynamicStr = dynamicStr[1:]
+												dynamicStr = strings.TrimPrefix(dynamicStr, "@{")
+											} else {
+												dynamicStr = strings.TrimPrefix(dynamicStr, "{")
 											}
 
 											*inx++
@@ -294,12 +294,38 @@ loop:
 			node.Content = strings.Join(parts, "")
 
 			if inx >= len(tokens) {
+				if node.Kind == "DYNAMIC" && !strings.ContainsAny(node.Content, "-") {
+					node.Value = &astnode.Node{
+						Type: astnode.NodeTypeExpression,
+						Body: []*astnode.Node{
+							{
+								Type:        astnode.NodeTypeValue,
+								Kind:        "IDENTIFIER",
+								Value:       node.Content,
+								IsReference: true,
+							},
+						},
+					}
+				}
 				nodes = append(nodes, node)
 				continue loop
 			}
 
 			token = tokens[inx]
 			if token.Type == lexer.TokenIdentifier || token.Type == lexer.TokenColon {
+				if node.Kind == "DYNAMIC" && !strings.ContainsAny(node.Content, "-") {
+					node.Value = &astnode.Node{
+						Type: astnode.NodeTypeExpression,
+						Body: []*astnode.Node{
+							{
+								Type:        astnode.NodeTypeValue,
+								Kind:        "IDENTIFIER",
+								Value:       node.Content,
+								IsReference: true,
+							},
+						},
+					}
+				}
 				nodes = append(nodes, node)
 				continue loop
 			}

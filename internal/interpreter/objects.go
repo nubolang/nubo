@@ -131,6 +131,16 @@ func (i *Interpreter) GetObject(name string) (language.Object, bool) {
 		parts := strings.Split(name, ".")
 
 		i.mu.RLock()
+		imp, ok := i.imports[parts[0]]
+		i.mu.RUnlock()
+
+		if ok {
+			if ob, ok := imp.GetObject(strings.Join(parts[1:], ".")); ok {
+				return ob, true
+			}
+		}
+
+		i.mu.RLock()
 		obj, ok := i.objects[hashKey(parts[0])]
 		i.mu.RUnlock()
 		if !ok || obj == nil || obj.value == nil {
@@ -157,6 +167,7 @@ func (i *Interpreter) GetObject(name string) (language.Object, bool) {
 		if current == nil || current.GetPrototype() == nil {
 			return i.parentGetObject(name)
 		}
+
 		return current.GetPrototype().GetObject(last)
 	}
 

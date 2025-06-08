@@ -1,0 +1,5 @@
+let x = "hello " + "world"
+let y = 5 + 5.45 + int(true)
+let z = fn(x: int) {
+    println(x)
+}

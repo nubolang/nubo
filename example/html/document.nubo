@@ -1,0 +1,14 @@
+import random from "@std/random"
+
+fn Document(data: string) -> string {
+    const domID = random.between(1000, 9999)
+
+    const html = <html :domID>
+        <head></head>
+        <body>
+            @{data}
+        </body>
+    </html>
+
+    return html
+}

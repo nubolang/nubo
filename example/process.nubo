@@ -1,0 +1,8 @@
+import process from "@std/process"
+
+let args = [ "run", "process" ]
+let result = process.run("make", args)
+
+println(result.stdout.trim())
+println(result.stderr.trim())
+println(result.stderr.exit)

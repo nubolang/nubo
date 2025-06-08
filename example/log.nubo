@@ -1,0 +1,8 @@
+import log from "@std/log"
+
+log.setLevel("INFO")
+
+log.debug("This will not be shown if level is INFO or higher")
+log.info("Application started")
+log.warn("Low disk space")
+log.error("Unhandled exception occurred")

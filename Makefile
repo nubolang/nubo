@@ -8,3 +8,6 @@ run: build
 
 prepare: build
 	@./bin/nubo prepare ./example --dev
+
+format: build
+	@./bin/nubo format ./example/$(FILE) --dev

@@ -1,0 +1,6 @@
+import doc from "./document.nubo"
+
+let el = <p>
+    Hello, World!
+</p>
+println(doc.Document(el))
