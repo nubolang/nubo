@@ -8,7 +8,7 @@ import (
 	"github.com/nubolang/nubo/internal/lexer"
 )
 
-func DictParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
+func DictParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
 	token := tokens[*inx]
 
 	node := &astnode.Node{

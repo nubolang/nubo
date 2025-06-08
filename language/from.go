@@ -98,13 +98,13 @@ func ToValue(obj Object, json ...bool) (any, error) {
 
 	switch v := obj.(type) {
 	case *Int:
-		return v.Value, nil
+		return v.Data, nil
 	case *Float:
-		return v.Value, nil
+		return v.Data, nil
 	case *String:
-		return v.Value, nil
+		return v.Data, nil
 	case *Bool:
-		return v.Value, nil
+		return v.Data, nil
 	case *List:
 		out := make([]any, len(v.Data))
 		for i, elem := range v.Data {
@@ -119,15 +119,11 @@ func ToValue(obj Object, json ...bool) (any, error) {
 		if v.KeyType == TypeString {
 			out := make(map[string]any)
 			for key, value := range v.Data {
-				k, err := resolve(key.Value(), jsonMode)
-				if err != nil {
-					return nil, err
-				}
 				val, err := ToValue(value, jsonMode)
 				if err != nil {
 					return nil, err
 				}
-				out[k.(string)] = val
+				out[key.Value().(string)] = val
 			}
 			return out, nil
 		}
@@ -146,28 +142,17 @@ func ToValue(obj Object, json ...bool) (any, error) {
 
 		out := make(map[any]any)
 		for key, value := range v.Data {
-			k, err := resolve(key.Value(), jsonMode)
-			if err != nil {
-				return nil, err
-			}
 			val, err := ToValue(value, jsonMode)
 			if err != nil {
 				return nil, err
 			}
-			out[k] = val
+			out[key.Value()] = val
 		}
 		return out, nil
 	default:
 		if val, ok := obj.(Object); ok {
-			return val, nil
+			return ToValue(val, jsonMode)
 		}
 		return nil, fmt.Errorf("unsupported object type %T", obj)
 	}
-}
-
-func resolve(v any, jsonMode bool) (any, error) {
-	if o, ok := v.(Object); ok {
-		return ToValue(o, jsonMode)
-	}
-	return v, nil
 }

@@ -9,7 +9,7 @@ import (
 	"github.com/nubolang/nubo/internal/lexer"
 )
 
-func ValueParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
+func ValueParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
 	if *inx >= len(tokens) {
 		return nil, newErr(ErrUnexpectedToken, "unexpected end of input")
 	}
@@ -109,7 +109,7 @@ loop:
 	return node, nil
 }
 
-func singleValueParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer.Token, inx *int, token *lexer.Token) (*astnode.Node, error) {
+func singleValueParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, inx *int, token *lexer.Token) (*astnode.Node, error) {
 	switch token.Type {
 	default:
 		return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("expected value, got '%v'", token.Value), token.Debug)
@@ -210,6 +210,13 @@ func singleValueParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*le
 			Value:       id,
 			IsReference: true,
 		}, nil
+	case lexer.TokenFn:
+		n, err := FnParser(ctx, tokens, inx, sn, true)
+		if err != nil {
+			return nil, err
+		}
+		*inx--
+		return n, nil
 	}
 }
 
@@ -229,7 +236,7 @@ func isBinaryOperator(typ lexer.TokenType) bool {
 	}
 }
 
-func arrayKeyParser(ctx context.Context, sn HTMLAttrValueParser, id string, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
+func arrayKeyParser(ctx context.Context, sn Parser_HTML, id string, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
 	node := &astnode.Node{
 		Type:        astnode.NodeTypeValue,
 		Kind:        "IDENTIFIER",

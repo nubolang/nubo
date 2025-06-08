@@ -142,3 +142,50 @@ func (i *Interpreter) getValueFromObjByNode(value language.Object, node *astnode
 
 	return nil, newErr(ErrUnsupported, fmt.Sprintf("cannot get prototype for type %s with node %s", value.Type(), node.Type), value.Debug())
 }
+
+func (i *Interpreter) createInlineFunction(node *astnode.Node) (language.Object, error) {
+	var args = make([]language.FnArg, len(node.Args))
+	var returnType *language.Type
+
+	if node.ValueType != nil {
+		rt, err := i.parseTypeNode(node.ValueType)
+		if err != nil {
+			return nil, err
+		}
+		returnType = rt
+	}
+
+	if returnType == nil {
+		returnType = language.TypeVoid
+	}
+
+	for j, arg := range node.Args {
+		typ, err := i.parseTypeNode(arg.ValueType)
+		if err != nil {
+			return nil, err
+		}
+		args[j] = &language.BasicFnArg{
+			NameVal: arg.Content,
+			TypeVal: typ,
+		}
+	}
+
+	fn := language.NewTypedFunction(args, returnType, func(o []language.Object) (language.Object, error) {
+		ir := NewWithParent(i, ScopeFunction)
+
+		for j, arg := range args {
+			providedArg := o[j]
+			if !language.TypeCheck(arg.Type(), providedArg.Type()) {
+				return nil, newErr(ErrTypeMismatch, fmt.Sprintf("Expected %s but got %s", arg.Type(), providedArg.Type()), providedArg.Debug())
+			}
+
+			if err := ir.Declare(arg.Name(), providedArg, arg.Type(), true); err != nil {
+				return nil, err
+			}
+		}
+
+		return ir.Run(node.Body)
+	}, node.Debug)
+
+	return fn, nil
+}

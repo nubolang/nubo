@@ -8,3 +8,8 @@ import (
 type parser interface {
 	Parse(tokens []*lexer.Token) ([]*astnode.Node, error)
 }
+
+type Parser_HTML interface {
+	parser
+	HTMLAttrValueParser
+}

@@ -8,7 +8,7 @@ import (
 	"github.com/nubolang/nubo/internal/lexer"
 )
 
-func ListParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
+func ListParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
 	node := &astnode.Node{Type: astnode.NodeTypeList}
 
 	if err := inxPP(tokens, inx); err != nil {

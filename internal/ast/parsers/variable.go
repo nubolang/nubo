@@ -9,7 +9,7 @@ import (
 	"github.com/nubolang/nubo/internal/lexer"
 )
 
-func VariableParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
+func VariableParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
 	token := tokens[*inx]
 	isConst := token.Type == lexer.TokenConst
 

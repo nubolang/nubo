@@ -9,5 +9,6 @@ let data = dict{
     },
 }
 
-println(data)
-println(json.stringify(data))
+println(data["key"])
+let j = json.stringify(data)
+println(j)

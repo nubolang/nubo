@@ -9,7 +9,7 @@ import (
 	"github.com/nubolang/nubo/internal/lexer"
 )
 
-func PubParser(ctx context.Context, attrParser HTMLAttrValueParser, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
+func PubParser(ctx context.Context, attrParser Parser_HTML, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
 	if err := inxPP(tokens, inx); err != nil {
 		return nil, err
 	}

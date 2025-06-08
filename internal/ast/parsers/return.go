@@ -7,7 +7,7 @@ import (
 	"github.com/nubolang/nubo/internal/lexer"
 )
 
-func ReturnParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
+func ReturnParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
 	node := &astnode.Node{
 		Type: astnode.NodeTypeReturn,
 	}

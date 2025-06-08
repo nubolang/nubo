@@ -8,7 +8,7 @@ import (
 	"github.com/nubolang/nubo/internal/lexer"
 )
 
-func IdentifierParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
+func IdentifierParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
 	id, err := TypeWholeIDParser(ctx, tokens, inx)
 	if err != nil {
 		return nil, err

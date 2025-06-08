@@ -6,6 +6,7 @@ const (
 	NodeTypeImport NodeType = "import"
 
 	NodeTypeFunction         NodeType = "function"
+	NodeTypeInlineFunction   NodeType = "inline_function"
 	NodeTypeFunctionArgument NodeType = "function_argument"
 	NodeTypeFunctionCall     NodeType = "function_call"
 	NodeTypeReturn           NodeType = "return"

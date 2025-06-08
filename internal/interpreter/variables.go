@@ -65,7 +65,7 @@ func (i *Interpreter) handleVariableDecl(parent *astnode.Node) error {
 
 	zap.L().Info("Variable Declaration", zap.String("variableName", variableName), zap.Any("value", value), zap.Bool("mutable", mutable))
 
-	return i.Declare(variableName, value, typ, mutable)
+	return i.Declare(variableName, value.Clone(), typ, mutable)
 }
 
 func (i *Interpreter) handleAssignment(node *astnode.Node) error {

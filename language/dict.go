@@ -11,6 +11,7 @@ type Dict struct {
 	Data      map[Object]Object
 	KeyType   *Type
 	ValueType *Type
+	proto     *DictPrototype
 	debug     *debug.Debug
 }
 
@@ -70,7 +71,10 @@ func (i *Dict) String() string {
 }
 
 func (i *Dict) GetPrototype() Prototype {
-	return nil
+	if i.proto == nil {
+		i.proto = NewDictPrototype(i)
+	}
+	return i.proto
 }
 
 func (i *Dict) Value() any {

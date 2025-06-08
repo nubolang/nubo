@@ -18,7 +18,6 @@ type DefaultProvider struct {
 	events   []*Event
 
 	topics sync.Map // map[string]*topicState
-
 	closed atomic.Bool
 }
 
@@ -71,34 +70,33 @@ func (p *DefaultProvider) Publish(topic string, data TransportData) error {
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
 
-	sent := true
+	allSent := true
 	for _, ch := range ts.subs {
 		select {
 		case ch <- data:
 		default:
-			sent = false
+			allSent = false
 		}
 	}
 
-	if sent {
+	if allSent {
 		return nil
 	}
 
 	ts.buffer = append(ts.buffer, data)
 	if ts.workers < MaxWorkersPerTopic {
 		ts.workers++
-		go p.bufferWorker(topic, ts)
+		go p.bufferWorker(ts)
 	}
 
 	return nil
 }
 
-func (p *DefaultProvider) bufferWorker(topic string, ts *topicState) {
+func (p *DefaultProvider) bufferWorker(ts *topicState) {
 	backoff := 10 * time.Millisecond
 
 	for {
 		ts.mu.Lock()
-
 		if p.closed.Load() || len(ts.buffer) == 0 {
 			ts.workers--
 			ts.mu.Unlock()
@@ -106,20 +104,20 @@ func (p *DefaultProvider) bufferWorker(topic string, ts *topicState) {
 		}
 
 		data := ts.buffer[0]
-		ts.buffer = ts.buffer[1:]
+		ts.buffer = slices.Delete(ts.buffer, 0, 1)
 		subs := slices.Clone(ts.subs)
 		ts.mu.Unlock()
 
-		sent := true
+		allSent := true
 		for _, ch := range subs {
 			select {
 			case ch <- data:
 			default:
-				sent = false
+				allSent = false
 			}
 		}
 
-		if !sent {
+		if !allSent {
 			ts.mu.Lock()
 			ts.buffer = append([]TransportData{data}, ts.buffer...)
 			ts.mu.Unlock()
@@ -154,10 +152,9 @@ func (p *DefaultProvider) Subscribe(topic string, handler func(TransportData)) (
 	return func() error {
 		ts.mu.Lock()
 		defer ts.mu.Unlock()
-
 		for i, c := range ts.subs {
 			if c == ch {
-				ts.subs = append(ts.subs[:i], ts.subs[i+1:]...)
+				ts.subs = slices.Delete(ts.subs, i, i+1)
 				close(ch)
 				return nil
 			}

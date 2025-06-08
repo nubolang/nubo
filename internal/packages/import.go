@@ -7,6 +7,7 @@ import (
 	"github.com/nubolang/nubo/internal/packages/json"
 	"github.com/nubolang/nubo/internal/packages/log"
 	"github.com/nubolang/nubo/internal/packages/math"
+	"github.com/nubolang/nubo/internal/packages/thread"
 	"github.com/nubolang/nubo/language"
 )
 
@@ -29,6 +30,8 @@ func ImportPackage(name string) (language.Object, bool) {
 		return json.NewJSON(), true
 	case "log":
 		return log.NewLog(), true
+	case "thread":
+		return thread.NewThread(), true
 	}
 
 	return nil, false

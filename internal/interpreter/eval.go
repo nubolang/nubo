@@ -94,6 +94,12 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 			inx++
 			sb.WriteString(id)
 			env[id] = value.Value()
+		} else if child.Type == astnode.NodeTypeInlineFunction {
+			if len(node.Body) != 1 {
+				return nil, newErr(ErrUnsupported, fmt.Sprintf("cannot operate on inline functiion"), child.Debug)
+			}
+
+			return i.createInlineFunction(child)
 		} else {
 			sb.WriteString(child.Value.(string))
 		}

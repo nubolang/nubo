@@ -1,18 +1,18 @@
+import thread from "@std/thread"
+
 event messages(id: int)
 
-let open = true
-let loop = 1000
+let loop = 4
 
 sub messages(id) {
-    println(id)
-    if id == 0 {
-        open = false
-    }
+    println("received: ", id)
 }
 
 while loop > 0 {
-    pub messages(loop)
+    thread.spawn(fn(l: int) {
+        pub messages(l)
+    }, loop)
     loop--
 }
 
-sleep(1000)
+sleep(100)

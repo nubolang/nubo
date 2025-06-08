@@ -8,7 +8,7 @@ import (
 	"github.com/nubolang/nubo/internal/lexer"
 )
 
-func fnCallParser(ctx context.Context, attrParser HTMLAttrValueParser, id string, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
+func fnCallParser(ctx context.Context, attrParser Parser_HTML, id string, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
 	token := tokens[*inx]
 	if token.Type != lexer.TokenOpenParen {
 		return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("expected '(' but got %s", token.Type), token.Debug)
@@ -124,7 +124,7 @@ loop:
 	return fn, nil
 }
 
-func fnChildParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
+func fnChildParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
 	debug := tokens[*inx].Debug
 	id, err := TypeWholeIDParser(ctx, tokens, inx)
 	if err != nil {

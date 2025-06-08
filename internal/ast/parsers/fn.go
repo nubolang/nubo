@@ -8,9 +8,26 @@ import (
 	"github.com/nubolang/nubo/internal/lexer"
 )
 
-func FnParser(ctx context.Context, tokens []*lexer.Token, inx *int, p parser) (*astnode.Node, error) {
+func FnParser(ctx context.Context, tokens []*lexer.Token, inx *int, p parser, inline bool) (*astnode.Node, error) {
 	node := &astnode.Node{
 		Type: astnode.NodeTypeFunction,
+	}
+
+	if inline {
+		node.Type = astnode.NodeTypeInlineFunction
+	}
+
+	if !inline {
+		if err := inxPP(tokens, inx); err != nil {
+			return nil, err
+		}
+
+		token := tokens[*inx]
+		if token.Type != lexer.TokenIdentifier {
+			return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("expected identifier, got %s", token.Type), token.Debug)
+		}
+
+		node.Content = token.Value
 	}
 
 	if err := inxPP(tokens, inx); err != nil {
@@ -18,17 +35,6 @@ func FnParser(ctx context.Context, tokens []*lexer.Token, inx *int, p parser) (*
 	}
 
 	token := tokens[*inx]
-	if token.Type != lexer.TokenIdentifier {
-		return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("expected identifier, got %s", token.Type), token.Debug)
-	}
-
-	node.Content = token.Value
-
-	if err := inxPP(tokens, inx); err != nil {
-		return nil, err
-	}
-
-	token = tokens[*inx]
 	if token.Type != lexer.TokenOpenParen {
 		return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("expected '(', got %s", token.Type), token.Debug)
 	}
