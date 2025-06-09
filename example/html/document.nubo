@@ -1,14 +1,11 @@
 import random from "@std/random"
 
-fn Document(data: string) -> string {
-    const domID = random.between(1000, 9999)
-
-    const html = <html :domID>
+fn Document(slot: any, props: dict[string, any]) {
+    const domID = random.between(100, 999)
+    return <html :domID :lang="props['lang']">
         <head></head>
         <body>
-            @{data}
+            @{slot}
         </body>
     </html>
-
-    return html
 }

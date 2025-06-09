@@ -55,6 +55,11 @@ loop:
 				return nil, err
 			}
 
+			if key.Kind == "IDENTIFIER" {
+				key.Kind = "STRING"
+				key.IsReference = false
+			}
+
 			dataset := &astnode.Node{
 				Type: astnode.NodeTypeDictField,
 				Value: &astnode.Node{
@@ -107,6 +112,10 @@ loop:
 				if tokens[*inx].Type == lexer.TokenCloseBrace {
 					break loop
 				}
+			}
+
+			if token.Type == lexer.TokenCloseBrace {
+				break loop
 			}
 
 			return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("expected ',' or newline, got '%s'", token.Value), node.Debug)

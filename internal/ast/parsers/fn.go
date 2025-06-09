@@ -111,7 +111,7 @@ bodyloop:
 					*inx++
 					break bodyloop
 				}
-			} else if token.Type == lexer.TokenOpenBrace {
+			} else if token.Type == lexer.TokenOpenBrace || token.Type == lexer.TokenUnescapedBrace {
 				braceCount++
 			}
 

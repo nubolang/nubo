@@ -20,7 +20,7 @@ func (i *Interpreter) handleFunctionDecl(node *astnode.Node) (language.Object, e
 	}
 
 	if returnType == nil {
-		returnType = language.TypeVoid
+		returnType = language.TypeAny
 	}
 
 	for j, arg := range node.Args {
