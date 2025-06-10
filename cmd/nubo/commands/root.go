@@ -30,7 +30,7 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.PersistentFlags().BoolP("nocolor", "", false, "Disable colorized output")
+	rootCmd.PersistentFlags().Bool("nocolor", false, "Disable colorized output")
 	rootCmd.PersistentFlags().BoolP("dev", "d", false, "Run the program in debug mode")
 	rootCmd.PersistentFlags().String("loglevel", "PROD", "Language tokenizer and interpreter log level")
 }

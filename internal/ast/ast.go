@@ -79,7 +79,7 @@ func (a *Ast) handleToken(tokens []*lexer.Token, inx *int) (*astnode.Node, error
 		}
 		return node, nil
 	case lexer.TokenFn:
-		node, err := parsers.FnParser(a.ctx, tokens, inx, New(a.ctx, a.nodeTimeout), false)
+		node, err := parsers.FnParser(a.ctx, a, tokens, inx, New(a.ctx, a.nodeTimeout), false)
 		if err != nil {
 			return nil, err
 		}

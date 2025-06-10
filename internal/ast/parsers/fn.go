@@ -8,7 +8,7 @@ import (
 	"github.com/nubolang/nubo/internal/lexer"
 )
 
-func FnParser(ctx context.Context, tokens []*lexer.Token, inx *int, p parser, inline bool) (*astnode.Node, error) {
+func FnParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, inx *int, p parser, inline bool) (*astnode.Node, error) {
 	node := &astnode.Node{
 		Type: astnode.NodeTypeFunction,
 	}
@@ -47,7 +47,7 @@ loop:
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		default:
-			arg, last, err := fnArgumentParser(ctx, tokens, inx)
+			arg, last, err := fnArgumentParser(ctx, sn, tokens, inx)
 			if err != nil {
 				return nil, err
 			}
@@ -133,7 +133,7 @@ bodyloop:
 	return node, nil
 }
 
-func fnArgumentParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.Node, bool, error) {
+func fnArgumentParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, inx *int) (*astnode.Node, bool, error) {
 	if err := inxPP(tokens, inx); err != nil {
 		return nil, false, err
 	}
@@ -150,6 +150,7 @@ func fnArgumentParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*as
 	node := &astnode.Node{
 		Type:    astnode.NodeTypeFunctionArgument,
 		Content: token.Value,
+		Debug:   token.Debug,
 	}
 
 	if err := inxPP(tokens, inx); err != nil {
@@ -157,19 +158,17 @@ func fnArgumentParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*as
 	}
 
 	token = tokens[*inx]
-	if token.Type != lexer.TokenColon {
-		return nil, false, newErr(ErrUnexpectedToken, "expected colon", token.Debug)
-	}
+	if token.Type == lexer.TokenColon {
+		if err := inxPP(tokens, inx); err != nil {
+			return nil, false, err
+		}
 
-	if err := inxPP(tokens, inx); err != nil {
-		return nil, false, err
+		typ, err := TypeParser(ctx, tokens, inx)
+		if err != nil {
+			return nil, false, err
+		}
+		node.ValueType = typ
 	}
-
-	typ, err := TypeParser(ctx, tokens, inx)
-	if err != nil {
-		return nil, false, err
-	}
-	node.ValueType = typ
 
 	token = tokens[*inx]
 	if token.Type == lexer.TokenComma {
@@ -183,6 +182,31 @@ func fnArgumentParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*as
 
 		*inx--
 		return node, false, nil
+	}
+
+	if token.Type == lexer.TokenAssign {
+		if err := inxPP(tokens, inx); err != nil {
+			return nil, false, err
+		}
+		val, err := ValueParser(ctx, sn, tokens, inx)
+		if err != nil {
+			return nil, false, err
+		}
+		*inx--
+
+		node.FallbackValue = val
+		if err := inxPP(tokens, inx); err != nil {
+			return nil, false, err
+		}
+
+		token = tokens[*inx]
+		if token.Type == lexer.TokenCloseParen {
+			return node, true, nil
+		}
+
+		if token.Type == lexer.TokenComma {
+			return node, false, nil
+		}
 	}
 
 	if token.Type != lexer.TokenCloseParen {

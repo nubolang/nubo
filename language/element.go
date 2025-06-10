@@ -78,8 +78,26 @@ func (e *Element) Value() any {
 	sb.WriteString(e.Data.TagName)
 
 	for _, arg := range e.Data.Args {
+		attrName := strcase.KebabCase(arg.Name)
+
+		if e.Data.TagName == "a" && attrName == "n-to" {
+			sb.WriteRune(' ')
+			sb.WriteString("href=")
+
+			var valueStr string
+			if arg.Value != nil {
+				valueStr = html.EscapeString(arg.Value.String())
+			}
+
+			sb.WriteString(strconv.Quote(valueStr))
+
+			sb.WriteRune(' ')
+			sb.WriteString("n-to=\"\"")
+			continue
+		}
+
 		sb.WriteRune(' ')
-		sb.WriteString(strcase.KebabCase(arg.Name))
+		sb.WriteString(attrName)
 
 		sb.WriteRune('=')
 
@@ -113,14 +131,6 @@ func (e *Element) Value() any {
 			} else {
 				sb.WriteString(child.Content)
 			}
-		case astnode.NodeTypeElementDynamicText:
-			if child.Value != nil {
-				if child.IsEscaped {
-					sb.WriteString(html.EscapeString(child.Value.String()))
-				} else {
-					sb.WriteString(child.Value.String())
-				}
-			}
 		}
 	}
 
@@ -150,8 +160,9 @@ func (e *Element) Clone() Object {
 	children := make([]ElementChild, len(e.Data.Children))
 	for i, c := range e.Data.Children {
 		children[i] = ElementChild{
-			Type:    c.Type,
-			Content: c.Content,
+			Type:      c.Type,
+			Content:   c.Content,
+			IsEscaped: c.IsEscaped,
 		}
 		if c.Value != nil {
 			// recursively clone nested elements

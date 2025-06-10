@@ -31,6 +31,10 @@ func (i *Interpreter) stringToType(s string) (*language.Type, error) {
 }
 
 func (i *Interpreter) parseTypeNode(n *astnode.Node) (*language.Type, error) {
+	if n == nil {
+		return language.TypeAny, nil
+	}
+
 	if n.Type != astnode.NodeTypeType {
 		return nil, fmt.Errorf("expected node type 'type', got '%s'", n.Type)
 	}

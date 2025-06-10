@@ -1,0 +1,5 @@
+import response from "@server/response"
+import request from "@server/request"
+
+const dom = <h1>Hello, {request.param("name").capitalize()}!</h1>
+response.write(dom)

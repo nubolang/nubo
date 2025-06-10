@@ -1,0 +1,24 @@
+import request from "@server/request"
+import response from "@server/response"
+import error from "@server/error"
+
+const dom = <html>
+    <head>
+        <title>Error: {error.status} - {error.message}</title>
+        <style>
+            {"body { font-family: Arial, Helvetica, sans-serif }"}
+        </style>
+    </head>
+    <body>
+        <h1>{error.status} - {error.message.capitalize()}</h1>
+        <h3>Error:</h3>
+        <p>{error}</p>
+        <h3>Response:</h3>
+        <p>{response}</p>
+        <h3>Request:</h3>
+        <p>{request}</p>
+    </body>
+</html>
+
+response.write("<!DOCTYPE html>")
+response.write(dom)

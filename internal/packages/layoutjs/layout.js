@@ -1,0 +1,1 @@
+document.addEventListener("DOMContentLoaded",(()=>{const e=()=>{document.querySelectorAll("a[n-to]").forEach((t=>{t.addEventListener("click",(n=>{n.preventDefault(),fetch(t.href,{headers:{"X-Nubo-Link":"true"}}).then((e=>e.text())).then((n=>{document.body.innerHTML=n,history.pushState({},"",t.href),e()})).catch((()=>{window.location.href=t.href}))}))}))};e()}));

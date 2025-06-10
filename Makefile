@@ -1,4 +1,4 @@
-.PHONY: build run
+.PHONY: build run prepare format serve
 
 build:
 	@go build -o bin/nubo ./cmd/nubo
@@ -11,3 +11,6 @@ prepare: build
 
 format: build
 	@./bin/nubo format ./example/$(FILE) --dev
+
+serve: build
+	@./bin/nubo serve ./example/clientserver --dev --loglevel=WARN

@@ -1,0 +1,9 @@
+import async from "async"
+
+// Simple demo that Nubo is able to simulate async await without a built-in module written in Go
+let value = async.await(fn(resolver: fn(any) -> void) -> void {
+    sleep(1000) // simulate an http request
+    resolver(15)
+})
+
+println(value)

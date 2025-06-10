@@ -15,27 +15,6 @@ func FromValue(data any, dg ...*debug.Debug) (Object, error) {
 	switch value := data.(type) {
 	case Object:
 		return value, nil
-	case map[any]any:
-		var (
-			keys []Object
-			vals []Object
-		)
-
-		for k, v := range value {
-			key, err := FromValue(k)
-			if err != nil {
-				return nil, err
-			}
-			keys = append(keys, key)
-
-			val, err := FromValue(v)
-			if err != nil {
-				return nil, err
-			}
-			vals = append(vals, val)
-		}
-
-		return NewDict(keys, vals, TypeAny, TypeAny, dbg)
 	case map[string]any:
 		var (
 			keys []Object
@@ -57,6 +36,27 @@ func FromValue(data any, dg ...*debug.Debug) (Object, error) {
 		}
 
 		return NewDict(keys, vals, TypeString, TypeAny, dbg)
+	case map[any]any:
+		var (
+			keys []Object
+			vals []Object
+		)
+
+		for k, v := range value {
+			key, err := FromValue(k)
+			if err != nil {
+				return nil, err
+			}
+			keys = append(keys, key)
+
+			val, err := FromValue(v)
+			if err != nil {
+				return nil, err
+			}
+			vals = append(vals, val)
+		}
+
+		return NewDict(keys, vals, TypeAny, TypeAny, dbg)
 	case []any:
 		var li = make([]Object, len(value))
 		for i, val := range value {

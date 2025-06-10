@@ -1,10 +1,13 @@
 package debug
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/fatih/color"
+	"github.com/nubolang/nubo/version"
 )
 
 type DebugErr struct {
@@ -46,4 +49,36 @@ func NewError(base error, err string, debug ...*Debug) error {
 		msg:   err,
 		debug: d,
 	}
+}
+
+// HtmlError returns the error message with debug information html
+func (de DebugErr) HtmlError() *HtmlError {
+	if de.debug == nil {
+		return nil
+	}
+
+	htmlErr := NewHtmlError(&de)
+	return htmlErr
+}
+
+// JSONError returns the error message with debug information json
+func (de DebugErr) JSONError() (string, bool) {
+	if de.debug == nil {
+		return de.Error(), false
+	}
+
+	data := map[string]any{
+		"version": version.Version,
+		"message": de.Error(),
+		"file":    de.debug.File + ":" + strconv.Itoa(de.debug.Line) + ":" + strconv.Itoa(de.debug.Column),
+		"line":    de.debug.Line,
+		"column":  de.debug.Column,
+	}
+
+	s, err := json.Marshal(&data)
+	if err != nil {
+		return de.Error(), false
+	}
+
+	return string(s), true
 }

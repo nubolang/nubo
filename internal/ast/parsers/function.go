@@ -58,7 +58,7 @@ loop:
 				}
 			}
 
-			if token.Type == lexer.TokenOpenParen {
+			if token.Type == lexer.TokenOpenParen || token.Type == lexer.TokenUnescapedBrace {
 				parenCount++
 			}
 

@@ -72,7 +72,6 @@ func (lx *Lexer) parse(s string) ([]*Token, error) {
 				}
 
 				// Add the single line comment token for debugging purposes
-				sb.WriteByte('\n')
 				parsed = append(parsed, &Token{
 					Type:  TokenSingleLineComment,
 					Value: sb.String(),
@@ -83,6 +82,16 @@ func (lx *Lexer) parse(s string) ([]*Token, error) {
 					},
 				})
 				sb.Reset()
+				// Add the newline to the end
+				parsed = append(parsed, &Token{
+					Type:  TokenNewLine,
+					Value: "\n",
+					Debug: &debug.Debug{
+						Line:   line,
+						Column: col,
+						File:   lx.file,
+					},
+				})
 				// New line reached
 				line++
 				col = 1
@@ -186,10 +195,15 @@ func (lx *Lexer) parse(s string) ([]*Token, error) {
 
 			typ := TokenString
 
+			realValue, err := escapeString(value, quote)
+			if err != nil {
+				return nil, err
+			}
+
 			// Add the string token to the parsed tokens
 			parsed = append(parsed, &Token{
 				Type:  typ,
-				Value: value,
+				Value: realValue,
 				Debug: &debug.Debug{
 					Line:   line,
 					Column: col,

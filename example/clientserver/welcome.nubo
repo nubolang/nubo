@@ -1,0 +1,11 @@
+import response from "@server/response"
+import layout from "layout"
+
+const page = <div>
+    <h1>Welcome!</h1>
+    <a n-to="/">
+        Home Page
+    </a>
+</div>
+
+response.write(layout.Use(page))

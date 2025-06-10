@@ -20,7 +20,7 @@ func (i *Interpreter) handleFunctionDecl(node *astnode.Node) (language.Object, e
 	}
 
 	if returnType == nil {
-		returnType = language.TypeAny
+		returnType = language.NewUnionType(language.TypeAny, language.TypeVoid)
 	}
 
 	for j, arg := range node.Args {
@@ -28,9 +28,31 @@ func (i *Interpreter) handleFunctionDecl(node *astnode.Node) (language.Object, e
 		if err != nil {
 			return nil, err
 		}
-		args[j] = &language.BasicFnArg{
-			NameVal: arg.Content,
-			TypeVal: typ,
+
+		if arg.FallbackValue != nil {
+			val, err := i.evaluateExpression(arg.FallbackValue)
+			if err != nil {
+				return nil, err
+			}
+
+			if arg.ValueType == nil {
+				typ = val.Type()
+			} else {
+				if !typ.Compare(val.Type()) {
+					return nil, newErr(ErrTypeMismatch, fmt.Sprintf("Expected %s but got %s", typ, val.Type()), arg.Debug)
+				}
+			}
+
+			args[j] = &language.BasicFnArg{
+				NameVal:    arg.Content,
+				TypeVal:    typ,
+				DefaultVal: val,
+			}
+		} else {
+			args[j] = &language.BasicFnArg{
+				NameVal: arg.Content,
+				TypeVal: typ,
+			}
 		}
 	}
 

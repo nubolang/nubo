@@ -1,0 +1,19 @@
+import layoutjs from "@std/layoutjs"
+import request from "@server/request"
+
+fn Use(children: string) -> string {
+    const handler = fn(children: string) -> string {
+        const document = <html>
+            <head>
+                <meta charset="UTF-8" />
+                @{layoutjs.script()}
+            </head>
+            <body>
+                @{children}
+            </body>
+        </html>
+        return "<!DOCTYPE html>" + document
+    }
+
+    return layoutjs.create(children, handler, request.headers)
+}

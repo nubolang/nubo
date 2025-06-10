@@ -7,6 +7,7 @@ import (
 	"github.com/nubolang/nubo/internal/ast/astnode"
 	"github.com/nubolang/nubo/internal/builtin"
 	"github.com/nubolang/nubo/internal/interpreter"
+	"github.com/nubolang/nubo/internal/packages"
 	"github.com/nubolang/nubo/language"
 )
 
@@ -18,6 +19,7 @@ type Runtime struct {
 	iid          uint
 
 	builtins map[string]language.Object
+	packages map[string]language.Object
 }
 
 func New(pubsubProvider events.Provider) *Runtime {
@@ -25,6 +27,7 @@ func New(pubsubProvider events.Provider) *Runtime {
 		pubsubProvider: pubsubProvider,
 		interpreters:   make(map[uint]*interpreter.Interpreter),
 		builtins:       builtin.GetBuiltins(),
+		packages:       make(map[string]language.Object),
 	}
 }
 
@@ -37,6 +40,23 @@ func (r *Runtime) GetBuiltin(name string) (language.Object, bool) {
 
 func (r *Runtime) GetEventProvider() events.Provider {
 	return r.pubsubProvider
+}
+
+func (r *Runtime) ProvidePackage(name string, pkg language.Object) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.packages[name] = pkg
+}
+
+func (r *Runtime) ImportPackage(name string) (language.Object, bool) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	pkg, ok := r.packages[name]
+	if ok {
+		return pkg, true
+	}
+
+	return packages.ImportPackage(name)
 }
 
 func (r *Runtime) Interpret(file string, nodes []*astnode.Node) (language.Object, error) {

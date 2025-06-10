@@ -2,6 +2,7 @@ package thread
 
 import (
 	"fmt"
+	"runtime"
 
 	"github.com/nubolang/nubo/language"
 	"github.com/nubolang/nubo/native"
@@ -42,6 +43,11 @@ func NewThread() language.Object {
 			}
 		}(fn, fnArgs)
 
+		return nil, nil
+	}))
+
+	proto.SetObject("yield", native.NewFunction(func(args []language.Object) (language.Object, error) {
+		runtime.Gosched()
 		return nil, nil
 	}))
 

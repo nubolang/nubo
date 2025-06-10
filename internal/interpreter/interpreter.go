@@ -13,6 +13,7 @@ type Runtime interface {
 	GetEventProvider() events.Provider
 	NewID() uint
 	RemoveInterpreter(id uint)
+	ImportPackage(name string) (language.Object, bool)
 }
 
 type Scope int

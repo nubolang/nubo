@@ -1,0 +1,49 @@
+// This package simulates the await keyword in other languages.
+import thread from "@std/thread"
+
+// Define a promise event
+event promise(data: dict[string, any])
+
+// Create a global event counter
+let id = 0
+
+// await awaits the handler to finish and then returns the value if resolve is called
+fn await(handler: fn(fn(any) -> void) -> void) -> any {
+    // Create a new process ID for the current await
+    id++
+    let procID = clone(id)
+
+    // Declare received and data
+    let received = false
+    let data: any
+
+    // Subscribe to the promise channel
+    sub promise(message) {
+        let messageID = message["id"]
+        // Compare the messageID with the procID
+
+        if messageID == procID {
+            // Resolve the promise
+            data = message["data"]
+            received = true
+        }
+    }
+
+    // Create a resolver function
+    const resolver = fn(data: any) {
+        let resolveData = dict{
+            id: procID,
+            data: data,
+        }
+        pub promise(resolveData)
+    }
+
+    // Spawn the handler with the created resolver
+    thread.spawn(fn() { handler(resolver) })
+
+    // Wait until the message is received
+    while !received { thread.yield() }
+
+    // Finally return the data
+    return data
+}

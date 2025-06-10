@@ -35,6 +35,18 @@ func NewFunctionType(returnType *Type, argsType ...*Type) *Type {
 	return &Type{BaseType: ObjectTypeFunction, Value: returnType, Args: argsType}
 }
 
+func NewListType(elementType *Type) *Type {
+	return &Type{BaseType: ObjectTypeList, Element: elementType}
+}
+
+func NewDictType(key *Type, value *Type) *Type {
+	return &Type{BaseType: ObjectTypeDict, Key: key, Value: value}
+}
+
+func Nullable(typ *Type) *Type {
+	return NewUnionType(typ, TypeNil)
+}
+
 func (t *Type) Base() ObjectType {
 	return t.BaseType.Base()
 }
@@ -44,27 +56,39 @@ func (t *Type) String() string {
 		return "<invalid>"
 	}
 
+	var next string
+	if t.Next != nil {
+		next = "|" + t.Next.String()
+	}
+
 	switch t.BaseType {
 	default:
-		return t.BaseType.String()
+		return t.BaseType.String() + next
 	case ObjectTypeFunction:
 		args := make([]string, len(t.Args))
 		for i, arg := range t.Args {
 			args[i] = arg.String()
 		}
-		return fmt.Sprintf("%s(%s) %s", t.BaseType.String(), strings.Join(args, ", "), t.Value.String())
+		return fmt.Sprintf("%s(%s) %s%s", t.BaseType.String(), strings.Join(args, ", "), t.Value.String(), next)
 	case ObjectTypeList:
-		return fmt.Sprintf("[]%s", t.Element.String())
+		return fmt.Sprintf("[]%s%s", t.Element.String(), next)
 	case ObjectTypeDict:
-		return fmt.Sprintf("dict[%s, %s]", t.Key.String(), t.Value.String())
+		return fmt.Sprintf("dict[%s, %s]%s", t.Key.String(), t.Value.String(), next)
 	case ObjectTypeStructInstance:
-		return fmt.Sprintf("%s{}", t.Content)
+		return fmt.Sprintf("%s{}%s", t.Content, next)
 	}
+}
+
+func (t *Type) NextMatch(other *Type) bool {
+	if t.Next == nil {
+		return false
+	}
+	return t.Next.Compare(other)
 }
 
 func (t *Type) Compare(other *Type) bool {
 	if t == nil || other == nil {
-		return false
+		return t.NextMatch(other)
 	}
 
 	if t.BaseType == ObjectTypeAny {
@@ -80,31 +104,47 @@ func (t *Type) Compare(other *Type) bool {
 	}
 
 	if t.BaseType != other.BaseType {
-		return false
+		return t.NextMatch(other)
 	}
 
 	switch t.BaseType {
 	case ObjectTypeList:
-		return t.Element.Compare(TypeAny) || t.Element.Compare(other.Element)
+		ok := t.Element.Compare(TypeAny) || t.Element.Compare(other.Element)
+		if !ok {
+			return t.NextMatch(other)
+		}
+		return ok
 
 	case ObjectTypeDict:
 		keyMatch := t.Key.Compare(TypeAny) || t.Key.Compare(other.Key)
 		valueMatch := t.Value.Compare(TypeAny) || t.Value.Compare(other.Value)
-		return keyMatch && valueMatch
+		ok := keyMatch && valueMatch
+		if !ok {
+			return t.NextMatch(other)
+		}
+		return ok
 
 	case ObjectTypeFunction:
 		if len(t.Args) != len(other.Args) {
-			return false
+			return t.NextMatch(other)
 		}
 		for i := range t.Args {
 			if !t.Args[i].Compare(other.Args[i]) {
-				return false
+				return t.NextMatch(other)
 			}
 		}
-		return t.Value.Compare(other.Value)
+		ok := t.Value.Compare(other.Value)
+		if !ok {
+			return t.NextMatch(other)
+		}
+		return ok
 	}
 
-	return t.Content == other.Content
+	ok := t.Content == other.Content
+	if !ok {
+		return t.NextMatch(other)
+	}
+	return ok
 }
 
 func NewUnionType(types ...*Type) *Type {

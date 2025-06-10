@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 type StringPrototype struct {
@@ -92,6 +95,13 @@ func NewStringPrototype(base *String) *StringPrototype {
 		defer sp.mu.RUnlock()
 
 		return NewString(strings.ToLower(base.Data), base.debug), nil
+	}, nil))
+
+	sp.SetObject("capitalize", NewFunction(func(o []Object) (Object, error) {
+		sp.mu.RLock()
+		defer sp.mu.RUnlock()
+
+		return NewString(cases.Title(language.English, cases.Compact).String(base.Data), base.debug), nil
 	}, nil))
 
 	sp.SetObject("trim", NewFunction(func(o []Object) (Object, error) {

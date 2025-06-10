@@ -93,7 +93,7 @@ func NewTypedFunction(argTypes []FnArg, returnType *Type, data func([]Object) (O
 		}
 
 		if value == nil {
-			if returnType != TypeVoid {
+			if !returnType.Compare(TypeVoid) {
 				return nil, fmt.Errorf("expected return type %s, got %s", returnType.String(), TypeVoid.String())
 			}
 		} else if !returnType.Compare(value.Type()) {

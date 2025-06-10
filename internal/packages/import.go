@@ -5,6 +5,7 @@ import (
 
 	"github.com/nubolang/nubo/internal/packages/io"
 	"github.com/nubolang/nubo/internal/packages/json"
+	"github.com/nubolang/nubo/internal/packages/layoutjs"
 	"github.com/nubolang/nubo/internal/packages/log"
 	"github.com/nubolang/nubo/internal/packages/math"
 	"github.com/nubolang/nubo/internal/packages/process"
@@ -38,6 +39,8 @@ func ImportPackage(name string) (language.Object, bool) {
 		return random.NewRandom(), true
 	case "process":
 		return process.NewProcess(), true
+	case "layoutjs":
+		return layoutjs.NewLayoutJS(), true
 	}
 
 	return nil, false

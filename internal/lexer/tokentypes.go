@@ -10,13 +10,10 @@ const (
 	TokenLet   TokenType = "let"
 	TokenConst TokenType = "const"
 
-	TokenEvent  TokenType = "event"
-	TokenServer TokenType = "server"
-	TokenClient TokenType = "client"
+	TokenEvent TokenType = "event"
 
-	TokenPub     TokenType = "pub"
-	TokenSub     TokenType = "sub"
-	TokenRequest TokenType = "request"
+	TokenPub TokenType = "pub"
+	TokenSub TokenType = "sub"
 
 	TokenImport TokenType = "import"
 	TokenFrom   TokenType = "from"
@@ -100,12 +97,9 @@ func Keywords() []TokenType {
 		TokenConst,
 
 		TokenEvent,
-		TokenServer,
-		TokenClient,
 
 		TokenPub,
 		TokenSub,
-		TokenRequest,
 
 		TokenImport,
 		TokenFrom,

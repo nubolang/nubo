@@ -10,9 +10,10 @@ type Node struct {
 	Type NodeType `yaml:"type"`
 	Kind string   `yaml:"kind,omitempty"`
 
-	Content   string `yaml:"content,omitempty"`
-	Value     any    `yaml:"value,omitempty"`
-	ValueType *Node  `yaml:"value_type,omitempty"`
+	Content       string `yaml:"content,omitempty"`
+	Value         any    `yaml:"value,omitempty"`
+	ValueType     *Node  `yaml:"value_type,omitempty"`
+	FallbackValue *Node  `yaml:"fallback_value,omitempty"`
 
 	IsReference bool `yaml:"is_reference,omitempty"`
 

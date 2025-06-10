@@ -1,0 +1,23 @@
+import response from "@server/response"
+import request from "@server/request"
+
+const name = "martin"
+
+const dom = <html>
+    <head></head>
+    <body>
+        <h1>Hello, World!</h1>
+        <p>Response:</p>
+        <pre>
+            {response}
+        </pre>
+        <p>Request:</p>
+        <pre>
+            {request}
+        </pre>
+        <a :href="'/' + name">Check {'@'}{name}{"'"}s page.</a>
+    </body>
+</html>
+
+response.write("<!DOCTYPE html>")
+response.write(dom)

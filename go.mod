@@ -3,6 +3,7 @@ module github.com/nubolang/nubo
 go 1.23.7
 
 require (
+	github.com/cespare/xxhash/v2 v2.3.0
 	github.com/expr-lang/expr v1.17.4
 	github.com/stoewer/go-strcase v1.3.0
 	go.uber.org/zap v1.27.0
@@ -17,6 +18,7 @@ require (
 )
 
 require (
+	github.com/buger/goterm v1.0.4
 	github.com/fatih/color v1.18.0
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/spf13/cobra v1.9.1

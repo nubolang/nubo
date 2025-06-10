@@ -23,7 +23,7 @@ func (i *Interpreter) handleEventDecl(node *astnode.Node) (language.Object, erro
 	}
 
 	for j, child := range node.Args {
-		typ, err := i.stringToType(child.ValueType.Content)
+		typ, err := i.parseTypeNode(child.ValueType)
 		if err != nil {
 			return nil, err
 		}

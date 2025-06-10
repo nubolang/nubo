@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Fatal Error - Nubo</title>
+        {{ .Style }}
+    </head>
+    <body class="bg-gray-800 text-white">
+        <header
+            class="w-full p-4 max-w-screen-lg mx-auto flex items-center justify-between"
+        >
+            <h2 class="text-lg font-bold">Fatal Error</h2>
+            <div class="flex items-center space-x-3">
+                <p>{{ .Version }}</p>
+                <a
+                    target="_blank"
+                    href="https://nubo.mrtn.vip"
+                    class="flex items-center space-x-1 px-3 py-1 rounded transition bg-gray-700 hover:bg-gray-600"
+                >
+                    <img
+                        class="w-6 h-6"
+                        alt="Nubo Logo"
+                        src="data:image/webp;base64,UklGRowCAABXRUJQVlA4WAoAAAAQAAAARQAARQAAQUxQSOEAAAABgBsAkmplvkJsoRXgXoM2QBXkpFICRGSE3gGpNaAtuOskX27nBo0iYgLwH/GDVw5eSBq4pIV9WliihTHW/MislbUn8yqzLvKmBxoYAtjgczYPbLwvGzYJEyQXTJA5fHp4o4VbWjhg2ha1RSaG+DgttDH5plSBob06jH4ToeKyADVbwyg6H0VVBFMVwVMqiG4RQfyKBDRfwyDbFVPWAbCXrhvayWZhYQ0WLqD+nOYN8kz6Dguf8IAva9UEfVVzwEkCZPut6KvTCQDr+bzXmkPmrLkBC8ew8AAL7zB4xU/8RwQAVlA4IIQBAADQDACdASpGAEYAPpE+mkklpqKhLNTaqNASCUAaJiOkMzzG4A3k3eYsAY/mf0V9+O1mc4CBj73qgZ+Mb2LcuCm3TocAcRcMcV/pxdPiqzL3wx/ZPl76luxLkorxQnT5vQvNVU9OosveSuQyYk0cAwAA/vv9W54q7f9WAEFVTAtJ/61m7odEpTf1pHxIj8/gxUBgzhWbc6QA6BTiH4TabBpMAGq1JFAADSP3seS4uzrr2t+pTj6gCNcglkqRrXU60x1fgWey3A0TwMvGaJixbw3wXFDdXbKBT0PiD0KYc3rKpuPa/EmPuLDiK2qCxXGNmBcB55KPkFgslurhS+CijEocgBgAvQ7cSi3C6W29NrZ+ByTdkIq7La0yMWiOZRf7bamO2AkSw5l4oqbiPBOrzSCVovkBeduHc1BOIWndeQfOIbHvzSlAGJoYO66F/z3x5HX1H+rhHcvUlsE84J7/3O9wnvKMTl+WQUg23bhSXLu1A/TVTjiPkQGYg11YWO/g9kAAAAAA"
+                    />
+                    <span class="text-lg">Docs</span>
+                </a>
+            </div>
+        </header>
+        <main class="w-full p-4 max-w-screen-lg mx-auto mt-3">
+            <header class="bg-gray-700 px-4 py-3 rounded">
+                <p class="text-lg">{{ .Message }}</p>
+            </header>
+            <section>
+                <h2 class="mt-5 mb-2 text-lg">Trace:</h2>
+                <div class="bg-gray-700 px-4 py-3 rounded">
+                    <div
+                        class="mb-2 flex items-center justify-between border-b border-b-gray-400 pb-1.5"
+                    >
+                        <p class="text-gray-200 text-sm">{{ .File }}</p>
+                        <div class="flex items-center space-x-1">
+                            <div class="h-3 w-3 bg-red-300 rounded-full"></div>
+                            <div
+                                class="h-3 w-3 bg-orange-300 rounded-full"
+                            ></div>
+                            <div
+                                class="h-3 w-3 bg-green-300 rounded-full"
+                            ></div>
+                        </div>
+                    </div>
+                    <div class="flex space-x-3 pt-2">
+                        <pre class="noselect pl-1 pr-3 border-r text-gray-400">
+{{ .Lines }}</pre
+                        >
+                        <pre class="overflow-x-scroll w-full">{{ .Code }}</pre>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </body>
+</html>

@@ -67,7 +67,7 @@ func (i *Dict) String() string {
 		itemsString = append(itemsString, fmt.Sprintf("%v: %s", key, value.String()))
 	}
 
-	return fmt.Sprintf("dict[%s]", strings.Join(itemsString, ", "))
+	return fmt.Sprintf("dict{%s}", strings.Join(itemsString, ", "))
 }
 
 func (i *Dict) GetPrototype() Prototype {

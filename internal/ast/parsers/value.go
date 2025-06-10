@@ -211,7 +211,7 @@ func singleValueParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Toke
 			IsReference: true,
 		}, nil
 	case lexer.TokenFn:
-		n, err := FnParser(ctx, tokens, inx, sn, true)
+		n, err := FnParser(ctx, sn, tokens, inx, sn, true)
 		if err != nil {
 			return nil, err
 		}
