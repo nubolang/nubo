@@ -24,7 +24,7 @@ var (
 	TypeChar           = &Type{BaseType: ObjectTypeChar, Content: "char"}
 	TypeByte           = &Type{BaseType: ObjectTypeByte, Content: "byte"}
 	TypeList           = &Type{BaseType: ObjectTypeList, Element: TypeAny}
-	TypeDict           = &Type{BaseType: ObjectTypeDict}
+	TypeDict           = &Type{BaseType: ObjectTypeDict, Key: TypeAny, Value: TypeAny}
 	TypeStructInstance = &Type{BaseType: ObjectTypeStructInstance}
 	TypeNil            = &Type{BaseType: ObjectTypeNil, Content: "nil"}
 	TypeAny            = &Type{BaseType: ObjectTypeAny, Content: "any"}

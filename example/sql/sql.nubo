@@ -1,0 +1,20 @@
+import sql from "@std/sql"
+import sqlite from "@std/sql/driver/sqlite"
+
+const db = sql.open(sqlite("app.db"))
+
+const setupQuery = `CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL UNIQUE,
+    email TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL
+)`
+
+println(db.exec(setupQuery))
+
+// let data = ["martin", "bndrmrtn@gmail.com", "passwordHashValue"]
+// println(db.exec(`INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)`, data))
+
+
+let result = db.query("SELECT * FROM users")
+println("DATA:", result[0]["username"])

@@ -197,7 +197,11 @@ func (lx *Lexer) parse(s string) ([]*Token, error) {
 
 			realValue, err := escapeString(value, quote)
 			if err != nil {
-				return nil, err
+				return nil, newErr(ErrSyntaxError, err.Error(), &debug.Debug{
+					Line:   line,
+					Column: col,
+					File:   lx.file,
+				})
 			}
 
 			// Add the string token to the parsed tokens

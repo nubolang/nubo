@@ -10,6 +10,7 @@ import (
 	"github.com/nubolang/nubo/internal/packages/math"
 	"github.com/nubolang/nubo/internal/packages/process"
 	"github.com/nubolang/nubo/internal/packages/random"
+	"github.com/nubolang/nubo/internal/packages/sql"
 	"github.com/nubolang/nubo/internal/packages/thread"
 	"github.com/nubolang/nubo/language"
 )
@@ -41,6 +42,14 @@ func ImportPackage(name string) (language.Object, bool) {
 		return process.NewProcess(), true
 	case "layoutjs":
 		return layoutjs.NewLayoutJS(), true
+	case "sql":
+		return sql.NewSQL(), true
+	case "sql/driver/sqlite":
+		return sql.NewSQLite(), true
+	case "sql/driver/mysql":
+		return sql.NewMySQL(), true
+	case "sql/driver/postgres":
+		return sql.NewPostgres(), true
 	}
 
 	return nil, false
