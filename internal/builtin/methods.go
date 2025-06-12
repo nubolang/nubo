@@ -10,6 +10,7 @@ import (
 	"github.com/nubolang/nubo/internal/debug"
 	"github.com/nubolang/nubo/language"
 	"github.com/nubolang/nubo/native"
+	"github.com/nubolang/nubo/native/n"
 )
 
 func GetBuiltins() map[string]language.Object {
@@ -18,12 +19,14 @@ func GetBuiltins() map[string]language.Object {
 		"println": native.NewFunction(printlnFn),
 		"print":   native.NewFunction(printFn),
 		"type":    native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeString, typeFn),
+		"_type":   native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeString, _typeFn),
 		"inspect": native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeString, inspectFn),
 		"sleep":   native.NewTypedFunction(native.OneArg("ms", language.TypeInt, language.NewInt(0, nil)), language.TypeVoid, sleepFn),
 		"ref":     native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeAny, refFn),
 		"unwrap":  native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeAny, unwrapFn),
 		"clone":   native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeAny, cloneFn),
 		"exit":    native.NewTypedFunction(native.OneArg("code", language.TypeInt, language.NewInt(0, nil)), language.TypeVoid, exitFn),
+		"range":   n.Function(n.Describe(n.Arg("start", n.TInt), n.Arg("stop", n.TUnion(n.TInt, n.TNil), language.Nil), n.Arg("step", n.TInt, n.Int(1))).Returns(n.TTList(n.TInt)), rangeFn),
 
 		// Types
 		"string": native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeString, stringFn),
@@ -67,6 +70,14 @@ func typeFn(ctx native.FnCtx) (language.Object, error) {
 		return nil, err
 	}
 	return language.NewString(obj.TypeString(), nil), nil
+}
+
+func _typeFn(ctx native.FnCtx) (language.Object, error) {
+	obj, err := ctx.Get("obj")
+	if err != nil {
+		return nil, err
+	}
+	return language.NewString(obj.Type().String(), nil), nil
 }
 
 func inspectFn(ctx native.FnCtx) (language.Object, error) {

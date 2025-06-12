@@ -62,12 +62,19 @@ func (i *Dict) TypeString() string {
 }
 
 func (i *Dict) String() string {
-	var itemsString []string
-	for key, value := range i.Data {
-		itemsString = append(itemsString, fmt.Sprintf("%v: %s", key, value.String()))
+	if len(i.Data) == 0 {
+		return "dict{}"
 	}
 
-	return fmt.Sprintf("dict{%s}", strings.Join(itemsString, ", "))
+	var items []string
+	for key, value := range i.Data {
+		items = append(items, fmt.Sprintf("%v: %s", key, indentString(value.String(), "\t")))
+	}
+
+	return fmt.Sprintf(
+		"dict{\n\t%s\n}",
+		strings.Join(items, ",\n\t"),
+	)
 }
 
 func (i *Dict) GetPrototype() Prototype {
@@ -96,5 +103,25 @@ func (i *Dict) Clone() Object {
 		KeyType:   i.KeyType,
 		ValueType: i.ValueType,
 		debug:     i.debug,
+	}
+}
+
+func (i *Dict) Iterator() func() (Object, Object, bool) {
+	keys := make([]Object, 0, len(i.Data))
+	for k := range i.Data {
+		keys = append(keys, k)
+	}
+	inx := 0
+
+	return func() (Object, Object, bool) {
+		if inx >= len(keys) {
+			return nil, nil, false
+		}
+
+		key := keys[inx]
+		value := i.Data[key]
+
+		inx++
+		return key, value, true
 	}
 }

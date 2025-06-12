@@ -1,23 +1,17 @@
 import response from "@server/response"
 import request from "@server/request"
+import layout from "layout/layout"
 
-const name = "martin"
+const name = "john"
+let userPath = "/user/" + name
 
-const dom = <html>
-    <head></head>
-    <body>
-        <h1>Hello, World!</h1>
-        <p>Response:</p>
-        <pre>
-            {response}
-        </pre>
-        <p>Request:</p>
-        <pre>
-            {request}
-        </pre>
-        <a :href="'/' + name">Check {'@'}{name}{"'"}s page.</a>
-    </body>
-</html>
+const dom = <div>
+    <h1>Hello, World!</h1>
+    <a :to="userPath">Check {'@'}{name}{"'"}s page.</a>
+    <p>Response:</p>
+    <pre>{response}</pre>
+    <p>Request:</p>
+    <pre>{request}</pre>
+</div>
 
-response.write("<!DOCTYPE html>")
-response.write(dom)
+response.write(layout.Use(dom))

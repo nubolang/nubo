@@ -21,7 +21,7 @@ func (i *Interpreter) handleVariableDecl(parent *astnode.Node) error {
 		node = parent.Value.(*astnode.Node)
 	}
 
-	var typ = language.TypeAny
+	var typ *language.Type
 
 	if parent.ValueType != nil {
 		typ, err = i.parseTypeNode(parent.ValueType)
@@ -57,6 +57,10 @@ func (i *Interpreter) handleVariableDecl(parent *astnode.Node) error {
 
 	if err != nil {
 		return err
+	}
+
+	if typ == nil {
+		typ = value.Type()
 	}
 
 	if !typ.Compare(value.Type()) {

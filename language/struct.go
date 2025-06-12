@@ -54,12 +54,21 @@ func (i *Struct) TypeString() string {
 }
 
 func (i *Struct) String() string {
-	var itemsString []string
-	for name, item := range i.GetPrototype().Objects() {
-		itemsString = append(itemsString, name+": "+item.String())
+	objs := i.GetPrototype().Objects()
+	if len(objs) == 0 {
+		return fmt.Sprintf("%s{objects=[]}", i.Name)
 	}
 
-	return fmt.Sprintf("%s{objects=[%s]}", i.Name, strings.Join(itemsString, ", "))
+	var items []string
+	for name, item := range objs {
+		items = append(items, fmt.Sprintf("%s: %s", name, indentString(item.String(), "\t")))
+	}
+
+	return fmt.Sprintf(
+		"%s{objects=[\n\t%s\n]}",
+		i.Name,
+		strings.Join(items, ",\n\t"),
+	)
 }
 
 func (i *Struct) GetPrototype() Prototype {

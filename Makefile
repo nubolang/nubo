@@ -13,4 +13,4 @@ format: build
 	@./bin/nubo format ./example/$(FILE) --dev
 
 serve: build
-	@./bin/nubo serve ./example/clientserver --dev --loglevel=WARN
+	@./bin/nubo serve ./example/$(FOLDER) --dev --loglevel=WARN

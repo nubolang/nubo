@@ -39,7 +39,8 @@ const (
 	NodeTypeDict      NodeType = "dict"
 	NodeTypeDictField NodeType = "dict_field"
 
-	NodeTypeWhile = "while"
-	NodeTypeIf    = "if"
-	NodeTypeElse  = "else"
+	NodeTypeWhile NodeType = "while"
+	NodeTypeIf    NodeType = "if"
+	NodeTypeElse  NodeType = "else"
+	NodeTypeFor   NodeType = "for"
 )

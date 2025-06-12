@@ -1,0 +1,5 @@
+import response from "@server/response"
+
+for i in range(100, 0, -5) {
+    response.write(string(i) + "<br/>\n")
+}

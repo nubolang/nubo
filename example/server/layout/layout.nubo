@@ -7,6 +7,7 @@ fn Use(children: string) -> string {
             <head>
                 <meta charset="UTF-8" />
                 @{layoutjs.script()}
+                <style>{"body { font-family: Arial, Helvetica, sans-serif }"}</style>
             </head>
             <body>
                 @{children}

@@ -132,7 +132,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	run := runtime.New(events.NewDefaultProvider())
 
 	// Bind the response object to the runtime
-	res := modules.NewResponse(w)
+	res := modules.NewResponse(w, r)
 	run.ProvidePackage(ServerPrefix+"response", res.Pkg())
 	req, err := modules.NewRequest(r)
 	if err != nil {

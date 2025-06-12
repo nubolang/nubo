@@ -1,5 +1,14 @@
 import response from "@server/response"
 import request from "@server/request"
+import layout from "../layout/layout"
 
-const dom = <h1>Hello, {request.param("name").capitalize()}!</h1>
-response.write(dom)
+const dom = <div>
+    <h1>Hello, {request.param("name").capitalize()}!</h1>
+    <a to="/">Back to Home</a>
+    <p>Response:</p>
+    <pre>{response}</pre>
+    <p>Request:</p>
+    <pre>{request}</pre>
+</div>
+
+response.write(layout.Use(dom))

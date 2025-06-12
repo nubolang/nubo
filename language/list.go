@@ -68,3 +68,19 @@ func (i *List) Debug() *debug.Debug {
 func (i *List) Clone() Object {
 	return NewList(i.Data, i.ItemType, i.debug)
 }
+
+func (i *List) Iterator() func() (Object, Object, bool) {
+	var inx = 0
+
+	return func() (Object, Object, bool) {
+		if inx >= len(i.Data) {
+			return nil, nil, false
+		}
+
+		value := i.Data[inx]
+		key := NewInt(int64(inx), i.debug)
+
+		inx++
+		return key, value, true
+	}
+}

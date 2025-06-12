@@ -30,7 +30,7 @@ func NewDictType(key *language.Type, value *language.Type) *language.Type {
 }
 
 func Nullable(typ *language.Type) *language.Type {
-	return language.NewUnionType(typ, TNil)
+	return language.Nullable(typ)
 }
 
 func TUnion(types ...*language.Type) *language.Type {

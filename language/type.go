@@ -44,7 +44,7 @@ func NewDictType(key *Type, value *Type) *Type {
 }
 
 func Nullable(typ *Type) *Type {
-	return NewUnionType(typ, TypeNil)
+	return NewUnionType(typ.DeepClone(), TypeNil)
 }
 
 func (t *Type) Base() ObjectType {
@@ -56,7 +56,7 @@ func (t *Type) String() string {
 		return "<invalid>"
 	}
 
-	var next string
+	var next = ""
 	if t.Next != nil {
 		next = "|" + t.Next.String()
 	}
@@ -152,6 +152,10 @@ func NewUnionType(types ...*Type) *Type {
 		return nil
 	}
 
+	if len(types) == 1 {
+		return types[0]
+	}
+
 	head := types[0]
 	current := head
 
@@ -161,4 +165,40 @@ func NewUnionType(types ...*Type) *Type {
 	}
 
 	return head
+}
+
+func (t *Type) DeepClone() *Type {
+	if t == nil {
+		return nil
+	}
+
+	clone := &Type{
+		BaseType: t.BaseType,
+		Content:  t.Content,
+	}
+
+	if t.Key != nil {
+		clone.Key = t.Key.DeepClone()
+	}
+
+	if t.Value != nil {
+		clone.Value = t.Value.DeepClone()
+	}
+
+	if t.Element != nil {
+		clone.Element = t.Element.DeepClone()
+	}
+
+	if t.Next != nil {
+		clone.Next = t.Next.DeepClone()
+	}
+
+	if len(t.Args) > 0 {
+		clone.Args = make([]*Type, len(t.Args))
+		for i, arg := range t.Args {
+			clone.Args[i] = arg.DeepClone()
+		}
+	}
+
+	return clone
 }

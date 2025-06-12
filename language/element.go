@@ -80,7 +80,7 @@ func (e *Element) Value() any {
 	for _, arg := range e.Data.Args {
 		attrName := strcase.KebabCase(arg.Name)
 
-		if e.Data.TagName == "a" && attrName == "n-to" {
+		if e.Data.TagName == "a" && attrName == "to" {
 			sb.WriteRune(' ')
 			sb.WriteString("href=")
 
@@ -92,7 +92,7 @@ func (e *Element) Value() any {
 			sb.WriteString(strconv.Quote(valueStr))
 
 			sb.WriteRune(' ')
-			sb.WriteString("n-to=\"\"")
+			sb.WriteString("nubo-link")
 			continue
 		}
 

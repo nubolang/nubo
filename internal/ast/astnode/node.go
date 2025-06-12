@@ -6,6 +6,11 @@ import (
 	"github.com/nubolang/nubo/internal/debug"
 )
 
+type ForValue struct {
+	Iterator *Node `yaml:"iterator,omitempty"`
+	Value    *Node `yaml:"value"`
+}
+
 type Node struct {
 	Type NodeType `yaml:"type"`
 	Kind string   `yaml:"kind,omitempty"`

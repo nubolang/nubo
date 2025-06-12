@@ -1,1 +1,32 @@
-document.addEventListener("DOMContentLoaded",(()=>{const e=()=>{document.querySelectorAll("a[n-to]").forEach((t=>{t.addEventListener("click",(n=>{n.preventDefault(),fetch(t.href,{headers:{"X-Nubo-Link":"true"}}).then((e=>e.text())).then((n=>{document.body.innerHTML=n,history.pushState({},"",t.href),e()})).catch((()=>{window.location.href=t.href}))}))}))};e()}));
+document.addEventListener("DOMContentLoaded", () => {
+  const loadPartial = (targetUrl, push = true) => {
+    const url = new URL(targetUrl, location.origin);
+    url.searchParams.set("__nubo_fragment", "partial");
+
+    fetch(url.toString())
+      .then((res) => res.text())
+      .then((text) => {
+        document.body.innerHTML = text;
+        if (push) history.pushState({}, "", targetUrl);
+        setupNTags();
+      })
+      .catch(() => {
+        window.location.href = targetUrl;
+      });
+  };
+
+  const setupNTags = () => {
+    document.querySelectorAll("a[nubo-link]").forEach((link) => {
+      link.addEventListener("click", (e) => {
+        e.preventDefault();
+        loadPartial(link.href);
+      });
+    });
+  };
+
+  window.addEventListener("popstate", () => {
+    loadPartial(location.href, false);
+  });
+
+  setupNTags();
+});

@@ -2,11 +2,13 @@ package modules
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"github.com/nubolang/nubo/language"
 	"github.com/nubolang/nubo/native"
+	"github.com/nubolang/nubo/native/n"
 )
 
 type Response struct {
@@ -18,11 +20,13 @@ type Response struct {
 	written bool
 
 	w http.ResponseWriter
+	r *http.Request
 }
 
-func NewResponse(w http.ResponseWriter) *Response {
+func NewResponse(w http.ResponseWriter, req *http.Request) *Response {
 	r := &Response{
 		w:       w,
+		r:       req,
 		body:    &bytes.Buffer{},   // Initialize body as a new bytes.Buffer
 		code:    http.StatusOK,     // Default HTTP status code to 200 OK
 		headers: make(http.Header), // Initialize headers as an empty http.Header map
@@ -78,6 +82,14 @@ func (r *Response) setupInstance(inst *language.Struct) {
 		&language.BasicFnArg{TypeVal: language.TypeString, NameVal: "value"},
 	}, language.TypeVoid, r.fnHeader))
 	proto.SetObject("flushbuf", native.NewTypedFunction(nil, language.TypeVoid, r.fnFlushbuf))
+	proto.SetObject("json", native.NewTypedFunction(native.OneArg("data", language.TypeAny), language.TypeVoid, r.fnJSON))
+	proto.SetObject("setCookie", native.NewTypedFunction([]language.FnArg{
+		&language.BasicFnArg{TypeVal: language.TypeString, NameVal: "name"},
+		&language.BasicFnArg{TypeVal: language.TypeString, NameVal: "value"},
+		&language.BasicFnArg{TypeVal: language.Nullable(language.TypeInt), NameVal: "maxAge", DefaultVal: language.Nil},
+		&language.BasicFnArg{TypeVal: language.TypeString, NameVal: "path", DefaultVal: n.String("/")},
+	}, language.TypeVoid, r.fnSetCookie))
+	proto.SetObject("redirect", native.NewTypedFunction(native.OneArg("url", language.TypeString), language.TypeVoid, r.fnRedirect))
 }
 
 func (r *Response) fnStatus(ctx native.FnCtx) (language.Object, error) {
@@ -115,5 +127,46 @@ func (r *Response) fnHeader(ctx native.FnCtx) (language.Object, error) {
 
 func (r *Response) fnFlushbuf(ctx native.FnCtx) (language.Object, error) {
 	r.body.Reset()
+	return nil, nil
+}
+
+func (r *Response) fnJSON(ctx native.FnCtx) (language.Object, error) {
+	data, _ := ctx.Get("data")
+
+	r.w.Header().Set("Content-Type", "application/json")
+	bytes, err := json.Marshal(data)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = r.w.Write(bytes)
+	return nil, err
+}
+
+func (r *Response) fnSetCookie(ctx native.FnCtx) (language.Object, error) {
+	name, _ := ctx.Get("name")
+	value, _ := ctx.Get("value")
+	maxAgeObj, _ := ctx.Get("maxAge")
+	pathObj, _ := ctx.Get("path")
+
+	cookie := &http.Cookie{
+		Name:  name.String(),
+		Value: value.String(),
+		Path:  pathObj.String(),
+	}
+
+	if maxAgeObj.Type() != n.TNil {
+		cookie.MaxAge = int(maxAgeObj.Value().(int64))
+	}
+
+	http.SetCookie(r.w, cookie)
+	return nil, nil
+}
+
+func (r *Response) fnRedirect(ctx native.FnCtx) (language.Object, error) {
+	urlObj, _ := ctx.Get("url")
+	url := urlObj.String()
+
+	http.Redirect(r.w, r.r, url, http.StatusFound)
 	return nil, nil
 }

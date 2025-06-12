@@ -1,0 +1,13 @@
+let li = dict{
+    user: "Martin",
+    id: 5,
+    idk: dict{
+        key: "sh"
+    }
+}
+
+println(li)
+
+for key, item in li {
+    println(key, item)
+}

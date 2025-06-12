@@ -6,9 +6,10 @@ import (
 
 	"github.com/nubolang/nubo/language"
 	"github.com/nubolang/nubo/native"
+	"github.com/nubolang/nubo/native/n"
 )
 
-//go:embed layout.js
+//go:embed layout.min.js
 var jsFile embed.FS
 
 func NewLayoutJS() language.Object {
@@ -18,11 +19,11 @@ func NewLayoutJS() language.Object {
 	proto.SetObject("create", native.NewTypedFunction([]language.FnArg{
 		&language.BasicFnArg{TypeVal: language.TypeString, NameVal: "children"},
 		&language.BasicFnArg{TypeVal: language.NewFunctionType(language.TypeString, language.TypeString), NameVal: "handler"},
-		&language.BasicFnArg{TypeVal: language.NewDictType(language.TypeString, language.NewListType(language.TypeString)), NameVal: "headers"},
+		&language.BasicFnArg{TypeVal: language.TypeStructInstance, NameVal: "request"},
 	}, language.TypeString, fnCreate))
 
 	proto.SetObject("script", native.NewTypedFunction(nil, language.TypeString, func(ctx native.FnCtx) (language.Object, error) {
-		script, err := jsFile.Open("layout.js")
+		script, err := jsFile.Open("layout.min.js")
 		if err != nil {
 			return nil, err
 		}
@@ -40,8 +41,8 @@ func NewLayoutJS() language.Object {
 }
 
 func fnCreate(ctx native.FnCtx) (language.Object, error) {
-	headers, _ := ctx.Get("headers")
-	is := isSdk(headers)
+	request, _ := ctx.Get("request")
+	is := isSdk(request)
 
 	children, _ := ctx.Get("children")
 	if !is {
@@ -53,24 +54,17 @@ func fnCreate(ctx native.FnCtx) (language.Object, error) {
 	return children, nil
 }
 
-func isSdk(headers language.Object) bool {
-	getter, ok := headers.GetPrototype().GetObject("get")
+func isSdk(request language.Object) bool {
+	query, ok := request.GetPrototype().GetObject("query")
 	if !ok {
 		return false
 	}
 
-	get := getter.Value().(func([]language.Object) (language.Object, error))
-	val, err := get([]language.Object{language.NewString("X-Nubo-Link", nil)})
+	get := query.(*language.Function)
+	val, err := get.Data([]language.Object{n.String("__nubo_fragment")})
 	if err != nil {
 		return false
 	}
 
-	vals := val.(*language.List)
-	for _, value := range vals.Data {
-		if value.String() == "true" {
-			return true
-		}
-	}
-
-	return false
+	return val.String() == "partial"
 }
