@@ -49,15 +49,15 @@ func (e *Element) ID() string {
 }
 
 func (e *Element) Type() *Type {
-	return TypeString
+	return TypeHtml
 }
 
 func (e *Element) Inspect() string {
-	return fmt.Sprintf("<Object(element @ %s)>", e.String())
+	return fmt.Sprintf("<Object(html @ %s)>", e.String())
 }
 
 func (e *Element) TypeString() string {
-	return "<Object(Element(string))>"
+	return "<Object(html)>"
 }
 
 func (e *Element) String() string {

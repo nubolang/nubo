@@ -25,6 +25,8 @@ func (i *Interpreter) stringToType(s string) (*language.Type, error) {
 		return language.TypeChar, nil
 	case "any":
 		return language.TypeAny, nil
+	case "html":
+		return language.TypeHtml, nil
 	default:
 		return nil, fmt.Errorf("unknown type: %s", s)
 	}

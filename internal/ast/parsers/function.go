@@ -21,6 +21,7 @@ func fnCallParser(ctx context.Context, attrParser Parser_HTML, id string, tokens
 	fn := &astnode.Node{
 		Type:    astnode.NodeTypeFunctionCall,
 		Content: id,
+		Debug:   token.Debug,
 	}
 
 	var (

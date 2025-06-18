@@ -60,9 +60,14 @@ func New(root string) (*Server, error) {
 // Serve starts the server
 func (s *Server) Serve(addr string) error {
 	blue := color.New(color.FgBlue, color.Bold)
+	mode := "PROD"
+	if os.Getenv("NUBO_DEV") == "true" {
+		mode = "DEV"
+	}
 
 	fmt.Printf("%s\n", blue.Sprint("Nubo Web - ", version.Version))
 	color.New(color.FgYellow).Printf("Server listening on %s\n", addr)
+	fmt.Println(color.New(color.FgHiWhite).Sprintf("Mode: %s | LogLevel: %s", mode, os.Getenv("NUBO_LOG")))
 	color.New(color.FgRed).Printf("Press Ctrl+C to quit\n\n")
 
 	return http.ListenAndServe(addr, s)

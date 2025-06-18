@@ -29,6 +29,7 @@ var (
 	TypeNil            = &Type{BaseType: ObjectTypeNil, Content: "nil"}
 	TypeAny            = &Type{BaseType: ObjectTypeAny, Content: "any"}
 	TypeVoid           = &Type{BaseType: ObjectTypeVoid, Content: "void"}
+	TypeHtml           = &Type{BaseType: ObjectTypeString, Content: "html"}
 )
 
 func NewFunctionType(returnType *Type, argsType ...*Type) *Type {
