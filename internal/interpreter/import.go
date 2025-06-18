@@ -3,6 +3,7 @@ package interpreter
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/nubolang/nubo/internal/ast/astnode"
 	"github.com/nubolang/nubo/native"
@@ -23,6 +24,19 @@ func (ir *Interpreter) handleImport(node *astnode.Node) error {
 	ir.mu.RUnlock()
 
 	fileName := node.Value.(string)
+
+	if strings.HasPrefix(fileName, "pkg:") {
+		fileName = strings.TrimPrefix(fileName, "pkg:")
+		p, err := ir.runtime.GetPacker()
+		if err != nil {
+			return err
+		}
+		name, err := p.ImportFile(fileName)
+		if err != nil {
+			return err
+		}
+		fileName = name
+	}
 
 	obj, ok := ir.runtime.ImportPackage(fileName)
 	if ok {

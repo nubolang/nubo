@@ -6,6 +6,7 @@ import (
 	"github.com/nubolang/nubo/events"
 	"github.com/nubolang/nubo/internal/ast/astnode"
 	"github.com/nubolang/nubo/language"
+	"github.com/nubolang/nubo/packer"
 )
 
 type Runtime interface {
@@ -14,6 +15,7 @@ type Runtime interface {
 	NewID() uint
 	RemoveInterpreter(id uint)
 	ImportPackage(name string) (language.Object, bool)
+	GetPacker() (*packer.Packer, error)
 }
 
 type Scope int

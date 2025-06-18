@@ -9,6 +9,7 @@ import (
 	"github.com/nubolang/nubo/internal/interpreter"
 	"github.com/nubolang/nubo/internal/packages"
 	"github.com/nubolang/nubo/language"
+	"github.com/nubolang/nubo/packer"
 )
 
 type Runtime struct {
@@ -20,6 +21,7 @@ type Runtime struct {
 
 	builtins map[string]language.Object
 	packages map[string]language.Object
+	packer   *packer.Packer
 }
 
 func New(pubsubProvider events.Provider) *Runtime {
@@ -36,6 +38,21 @@ func (r *Runtime) GetBuiltin(name string) (language.Object, bool) {
 	defer r.mu.RUnlock()
 	obj, ok := r.builtins[name]
 	return obj, ok
+}
+
+func (r *Runtime) GetPacker() (*packer.Packer, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if r.packer == nil {
+		p, err := packer.New(".")
+		if err != nil {
+			return nil, err
+		}
+		r.packer = p
+	}
+
+	return r.packer, nil
 }
 
 func (r *Runtime) GetEventProvider() events.Provider {
