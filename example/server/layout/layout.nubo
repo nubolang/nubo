@@ -1,7 +1,7 @@
 import layoutjs from "@std/layoutjs"
 import request from "@server/request"
 
-fn Use(children: string) -> string {
+fn Use(children: html) -> string {
     const handler = fn(children: string) -> string {
         const document = <html>
             <head>
@@ -13,8 +13,8 @@ fn Use(children: string) -> string {
                 @{children}
             </body>
         </html>
-        return "<!DOCTYPE html>" + document
+        return "<!DOCTYPE html>" + string(document)
     }
 
-    return layoutjs.create(children, handler, request)
+    return layoutjs.create(string(children), handler, request)
 }

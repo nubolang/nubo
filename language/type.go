@@ -65,6 +65,8 @@ func (t *Type) String() string {
 	switch t.BaseType {
 	default:
 		return t.BaseType.String() + next
+	case ObjectTypeString:
+		return t.Content
 	case ObjectTypeFunction:
 		args := make([]string, len(t.Args))
 		for i, arg := range t.Args {
