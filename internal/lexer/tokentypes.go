@@ -83,6 +83,9 @@ const (
 	TokenNewLine           = "<newline>"
 	TokenWhiteSpace        = "<whitespace>"
 
+	TokenHtmlBlock = "<html-block>"
+	TokenHtmlText  = "<html-text>"
+
 	TokenUnknown = "<unknown>"
 )
 

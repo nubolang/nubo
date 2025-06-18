@@ -137,7 +137,7 @@ func NewStringPrototype(base *String) *StringPrototype {
 		[]FnArg{
 			&BasicFnArg{TypeVal: TypeString, NameVal: "old"},
 			&BasicFnArg{TypeVal: TypeString, NameVal: "new"},
-			&BasicFnArg{TypeVal: TypeInt, NameVal: "n"},
+			&BasicFnArg{TypeVal: TypeInt, NameVal: "n", DefaultVal: NewInt(-1, nil)},
 		},
 		TypeString,
 		func(o []Object) (Object, error) {
@@ -146,7 +146,7 @@ func NewStringPrototype(base *String) *StringPrototype {
 
 			old := o[0].(*String).Data
 			newStr := o[1].(*String).Data
-			n := int(o[2].(*Int).Data)
+			n := int(o[2].(*Int).Data) // -1 means all
 			return NewString(strings.Replace(base.Data, old, newStr, n), base.debug), nil
 		}, nil))
 

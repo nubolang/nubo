@@ -18,8 +18,11 @@ func NodesFromFile(path string) ([]*astnode.Node, error) {
 	}
 	defer file.Close()
 
-	lx := lexer.New(filepath.Base(path))
-	tokens, err := lx.Parse(file)
+	lx, err := lexer.New(file, filepath.Base(path))
+	if err != nil {
+		return nil, err
+	}
+	tokens, err := lx.Parse()
 	if err != nil {
 		return nil, err
 	}

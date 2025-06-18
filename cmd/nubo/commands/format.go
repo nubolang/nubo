@@ -38,14 +38,19 @@ func execFormat(cmd *cobra.Command, args []string) {
 	}
 
 	for _, path := range files {
-		lx := lexer.New(path)
 		file, err := os.Open(path)
 		if err != nil {
 			cmd.PrintErrln(err)
 			return
 		}
 
-		tokens, err := lx.Parse(file)
+		lx, err := lexer.New(file, path)
+		if err != nil {
+			cmd.PrintErrln(err)
+			return
+		}
+
+		tokens, err := lx.Parse()
 		file.Close()
 		if err != nil {
 			cmd.PrintErrln(err)

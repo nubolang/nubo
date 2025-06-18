@@ -15,7 +15,6 @@ import (
 type Ast struct {
 	ctx         context.Context
 	nodeTimeout time.Duration
-	lx          *lexer.Lexer
 }
 
 func New(ctx context.Context, nodeTimeout ...time.Duration) *Ast {
@@ -27,7 +26,6 @@ func New(ctx context.Context, nodeTimeout ...time.Duration) *Ast {
 	return &Ast{
 		ctx:         ctx,
 		nodeTimeout: nt,
-		lx:          lexer.New("<htmlattr-parser>"),
 	}
 }
 

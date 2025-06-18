@@ -47,8 +47,11 @@ func PrepareFiles(dir string) error {
 		}
 		defer file.Close()
 
-		lx := lexer.New(path)
-		tokens, err := lx.Parse(file)
+		lx, err := lexer.New(file, path)
+		if err != nil {
+			return err
+		}
+		tokens, err := lx.Parse()
 		if err != nil {
 			return err
 		}

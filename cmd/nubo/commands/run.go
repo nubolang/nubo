@@ -60,8 +60,12 @@ func execRun(cmd *cobra.Command, args []string) {
 		}
 		defer file.Close()
 
-		lx := lexer.New(filePath)
-		tokens, err := lx.Parse(file)
+		lx, err := lexer.New(file, filePath)
+		if err != nil {
+			cmd.PrintErrln(err)
+			return
+		}
+		tokens, err := lx.Parse()
 		if err != nil {
 			cmd.PrintErrln(err)
 			return

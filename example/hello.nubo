@@ -1,3 +1,4 @@
-let s = ["hello", "world"]
-
-println(type(s))
+print("Hello")
+const middle = ",<space>"
+print(middle.replace("<space>", " "))
+println("World")

@@ -13,6 +13,17 @@ import (
 
 type HTMLAttrValueParser interface {
 	ParseHTMLAttrValue(s string) (*astnode.Node, error)
+	ParseHTML(s string, dg *debug.Debug) ([]*lexer.Token, error)
+}
+
+func HTMLBlockParser(ctx context.Context, sn HTMLAttrValueParser, token *lexer.Token) (*astnode.Node, error) {
+	tokens, err := sn.ParseHTML(token.Value, token.Debug)
+	if err != nil {
+		return nil, err
+	}
+
+	inx := 0
+	return HTMLParser(ctx, sn, tokens, &inx)
 }
 
 func HTMLParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {

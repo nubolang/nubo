@@ -88,8 +88,11 @@ func (s *Server) getFile(path string) ([]*astnode.Node, bool, error) {
 	}
 	defer file.Close()
 
-	lx := lexer.New(path)
-	tokens, err := lx.Parse(file)
+	lx, err := lexer.New(file, path)
+	if err != nil {
+		return nil, false, err
+	}
+	tokens, err := lx.Parse()
 	if err != nil {
 		return nil, false, err
 	}

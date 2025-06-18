@@ -217,6 +217,8 @@ func singleValueParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Toke
 		}
 		*inx--
 		return n, nil
+	case lexer.TokenHtmlBlock:
+		return HTMLBlockParser(ctx, sn, token)
 	}
 }
 

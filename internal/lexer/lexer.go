@@ -3,585 +3,345 @@ package lexer
 import (
 	"io"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/nubolang/nubo/internal/debug"
 )
 
+// Lexer performs rune‑oriented lexical analysis.
 type Lexer struct {
-	file string
+	input  []rune
+	pos    int // absolute rune index
+	line   int // 1‑based
+	col    int // 1‑based (runes, NOT bytes)
+	file   string
+	tokens []*Token
 }
 
-// New creates a new lexer
-func New(file string) *Lexer {
-	return &Lexer{
-		file: file,
-	}
-}
-
-// Parse reads the content of the reader and returns the tokens
-func (lx *Lexer) Parse(r io.Reader) ([]*Token, error) {
-	b, err := io.ReadAll(r)
+// New returns a new lexer initialised for s.
+func New(r io.Reader, file string) (*Lexer, error) {
+	data, err := io.ReadAll(r)
 	if err != nil {
-		return nil, newErr(ErrReadFailed, err.Error())
+		return nil, err
 	}
 
-	return lx.parse(string(b) + "\n")
+	return &Lexer{
+		input: []rune(strings.ReplaceAll(string(data), "\r", "")),
+		file:  file,
+		line:  1,
+		col:   1,
+	}, nil
 }
 
-// parse reads the content of the string and returns the tokens
-func (lx *Lexer) parse(s string) ([]*Token, error) {
-	// Fix Carriage Return error on Windows PCs
-	s = strings.ReplaceAll(s, "\r", "")
+// ---------- small helpers ----------
 
-	var (
-		runes  = []rune(s)
-		pos    int
-		line   int = 1
-		col    int = 1
-		parsed []*Token
-	)
+func (lx *Lexer) curr() rune {
+	if lx.pos >= len(lx.input) {
+		return 0
+	}
+	return lx.input[lx.pos]
+}
 
-	for pos < len(runes) {
-		switch runes[pos] {
-		// Handle new lines
+func (lx *Lexer) peek(n int) rune {
+	idx := lx.pos + n
+	if idx >= len(lx.input) || idx < 0 {
+		return 0
+	}
+	return lx.input[idx]
+}
+
+func (lx *Lexer) prev() rune { return lx.peek(-1) }
+
+func (lx *Lexer) advance() {
+	if lx.pos >= len(lx.input) {
+		return
+	}
+	if lx.curr() == '\n' {
+		lx.line++
+		lx.col = 1
+	} else {
+		lx.col++
+	}
+	lx.pos++
+}
+
+func (lx *Lexer) add(t TokenType, v string, extra map[string]any) {
+	end := lx.col + utf8.RuneCountInString(v) - 1
+	tok := &Token{Type: t, Value: v, Map: extra, Debug: &debug.Debug{Line: lx.line, Column: lx.col, ColumnEnd: end, File: lx.file}}
+	lx.tokens = append(lx.tokens, tok)
+}
+
+func (lx *Lexer) newErr(base error, err string) error {
+	return newErr(base, err, &debug.Debug{Line: lx.line, Column: lx.col, File: lx.file})
+}
+
+// ---------- public entry ----------
+
+// Parse performs lexical analysis and returns collected tokens.
+func (lx *Lexer) Parse() ([]*Token, error) {
+	for lx.curr() != 0 {
+		switch lx.curr() {
 		case '\n':
-			// Add the new line token for debugging purposes
-			parsed = append(parsed, &Token{
-				Type:  TokenNewLine,
-				Value: "\n",
-				Debug: &debug.Debug{
-					Line:   line,
-					Column: col,
-					File:   lx.file,
-				},
-			})
-			line++
-			col = 1
-		// Handle single line comments
-		case '/':
-			if pos+1 < len(s) && runes[pos+1] == '/' {
-				// Skip the entire comment line
-				pos += 2
-
-				var sb strings.Builder
-				sb.WriteString("//")
-
-				for pos < len(s) && runes[pos] != '\n' {
-					sb.WriteByte(s[pos])
-					pos++
-				}
-
-				// Add the single line comment token for debugging purposes
-				parsed = append(parsed, &Token{
-					Type:  TokenSingleLineComment,
-					Value: sb.String(),
-					Debug: &debug.Debug{
-						Line:   line,
-						Column: col,
-						File:   lx.file,
-					},
-				})
-				sb.Reset()
-				// Add the newline to the end
-				parsed = append(parsed, &Token{
-					Type:  TokenNewLine,
-					Value: "\n",
-					Debug: &debug.Debug{
-						Line:   line,
-						Column: col,
-						File:   lx.file,
-					},
-				})
-				// New line reached
-				line++
-				col = 1
-			} else if pos+1 < len(s) && runes[pos+1] == '*' {
-				pos += 2
-
-				var sb strings.Builder
-				sb.WriteString("/*")
-
-				for pos < len(s) {
-					if runes[pos] == '*' && pos+1 < len(s) && runes[pos+1] == '/' {
-						pos += 2
-
-						// Add the multi line comment token for debugging purposes
-						sb.WriteString("*/")
-						parsed = append(parsed, &Token{
-							Type:  TokenMultiLineComment,
-							Value: sb.String(),
-							Debug: &debug.Debug{
-								Line:   line,
-								Column: col,
-								File:   lx.file,
-							},
-						})
-						sb.Reset()
-						break
-					} else if runes[pos] == '\n' {
-						sb.WriteByte('\n')
-						line++
-						col = 1
-						pos++
-					} else {
-						sb.WriteByte(s[pos])
-						pos++
-					}
-				}
-			} else if pos+1 < len(s) && runes[pos+1] == '>' {
-				pos++
-				parsed = append(parsed, &Token{
-					Type:  TokenSelfClosingTag,
-					Value: "/>",
-					Debug: &debug.Debug{
-						Line:   line,
-						Column: col,
-						File:   lx.file,
-					},
-				})
-				col++
-			} else {
-				parsed = append(parsed, &Token{
-					Type:  TokenSlash,
-					Value: "/",
-					Debug: &debug.Debug{
-						Line:   line,
-						Column: col,
-						File:   lx.file,
-					},
-				})
-				col++
-			}
-		// Handle strings
-		case '"', '\'', '`':
-			// Skip the opening quote
-			quote := runes[pos] // Store the opening quote character
-			pos++
-
-			var value string
-			start := pos // Start of the string content
-
-			for pos < len(s) {
-				if runes[pos] == '\\' {
-					// Escape sequence detected
-					if pos+1 < len(s) {
-						pos += 2
-					} else {
-						// Syntax error: escape character at the end
-						return nil, newErr(ErrSyntaxError, "incomplete escape sequence", &debug.Debug{
-							Line:   line,
-							Column: col,
-							File:   lx.file,
-						})
-					}
-				} else if runes[pos] == quote {
-					// Closing quote found
-					value = string(runes[start:pos]) // Extract the string content
-					pos++                            // Skip the closing quote
-					break
-				} else {
-					pos++
-				}
-			}
-
-			// If we exited the loop without finding a closing quote
-			if value == "" && pos >= len(s) {
-				return nil, newErr(ErrSyntaxError, "missing closing quote for string starting", &debug.Debug{
-					Line:   line,
-					Column: col,
-					File:   lx.file,
-				})
-			}
-
-			typ := TokenString
-
-			realValue, err := escapeString(value, quote)
-			if err != nil {
-				return nil, newErr(ErrSyntaxError, err.Error(), &debug.Debug{
-					Line:   line,
-					Column: col,
-					File:   lx.file,
-				})
-			}
-
-			// Add the string token to the parsed tokens
-			parsed = append(parsed, &Token{
-				Type:  typ,
-				Value: realValue,
-				Debug: &debug.Debug{
-					Line:   line,
-					Column: col,
-					File:   lx.file,
-				},
-				Map: map[string]any{
-					"quote": string(quote),
-				},
-			})
-			pos--
+			lx.add(TokenNewLine, "\n", nil)
+			lx.advance()
 		case ' ', '\t':
-			// Whitespace token for debugging purposes
-			parsed = append(parsed, &Token{
-				Type:  TokenWhiteSpace,
-				Value: string(s[pos]),
-				Debug: &debug.Debug{
-					Line:   line,
-					Column: col,
-					File:   lx.file,
-				},
-			})
-			col++
-		case '?':
-			parsed = append(parsed, &Token{
-				Type:  TokenQuestion,
-				Value: "?",
-				Debug: &debug.Debug{
-					Line:   line,
-					Column: col,
-					File:   lx.file,
-				},
-			})
-			col++
-		case ';', ':', ',', '.', '(', ')', '{', '}', '[', ']':
-			ch := runes[pos]
-			parsed = append(parsed, &Token{
-				Type:  lx.getCharIdent(ch),
-				Value: string(ch),
-				Debug: &debug.Debug{
-					Line:   line,
-					Column: col,
-					File:   lx.file,
-				},
-			})
-			col++
-		case '=':
-			if pos+1 < len(s) && runes[pos+1] == '=' {
-				parsed = append(parsed, &Token{
-					Type:  TokenEqual,
-					Value: "==",
-					Debug: &debug.Debug{
-						Line:   line,
-						Column: col,
-						File:   lx.file,
-					},
-				})
-				pos++
-			} else if pos+1 < len(s) && runes[pos+1] == '>' {
-				parsed = append(parsed, &Token{
-					Type:  TokenArrow,
-					Value: "=>",
-					Debug: &debug.Debug{
-						Line:   line,
-						Column: col,
-						File:   lx.file,
-					},
-				})
-				pos++
+			lx.add(TokenWhiteSpace, string(lx.curr()), nil)
+			lx.advance()
+		case '/':
+			if lx.peek(1) == '/' {
+				if err := lx.lexSingleLineComment(); err != nil {
+					return nil, err
+				}
+			} else if lx.peek(1) == '*' {
+				if err := lx.lexMultiLineComment(); err != nil {
+					return nil, err
+				}
+			} else if lx.peek(1) == '>' {
+				lx.advance() // consume '/'
+				lx.advance() // consume '>'
+				lx.add(TokenSelfClosingTag, "/>", nil)
 			} else {
-				parsed = append(parsed, &Token{
-					Type:  TokenAssign,
-					Value: "=",
-					Debug: &debug.Debug{
-						Line:   line,
-						Column: col,
-						File:   lx.file,
-					},
-				})
+				lx.add(TokenSlash, "/", nil)
+				lx.advance()
+			}
+		case '"', '\'', '`':
+			if err := lx.lexString(); err != nil {
+				return nil, err
+			}
+		case '?':
+			lx.add(TokenQuestion, "?", nil)
+			lx.advance()
+		case ';', ':', ',', '.', '(', ')', '{', '}', '[', ']':
+			ch := lx.curr()
+			lx.add(lx.getCharIdent(ch), string(ch), nil)
+			lx.advance()
+		case '+':
+			if lx.peek(1) == '+' {
+				lx.add(TokenIncrement, "++", nil)
+				lx.advance()
+				lx.advance()
+			} else {
+				lx.add(TokenPlus, "+", nil)
+				lx.advance()
+			}
+		case '-':
+			switch lx.peek(1) {
+			case '-':
+				lx.add(TokenDecrement, "--", nil)
+				lx.advance()
+				lx.advance()
+			case '>':
+				lx.add(TokenFnReturnArrow, "->", nil)
+				lx.advance()
+				lx.advance()
+			default:
+				lx.add(TokenMinus, "-", nil)
+				lx.advance()
+			}
+		case '*':
+			if lx.peek(1) == '*' {
+				lx.add(TokenPower, "**", nil)
+				lx.advance()
+				lx.advance()
+			} else {
+				lx.add(TokenAsterisk, "*", nil)
+				lx.advance()
+			}
+		case '=':
+			switch lx.peek(1) {
+			case '=':
+				lx.add(TokenEqual, "==", nil)
+				lx.advance()
+				lx.advance()
+			case '>':
+				lx.add(TokenArrow, "=>", nil)
+				lx.advance()
+				lx.advance()
+			default:
+				lx.add(TokenAssign, "=", nil)
+				lx.advance()
 			}
 		case '!':
-			if pos+1 < len(s) && runes[pos+1] == '=' {
-				parsed = append(parsed, &Token{
-					Type:  TokenNotEqual,
-					Value: "!=",
-					Debug: &debug.Debug{
-						Line:   line,
-						Column: col,
-						File:   lx.file,
-					},
-				})
-				col += 2
-				pos++
+			if lx.peek(1) == '=' {
+				lx.add(TokenNotEqual, "!=", nil)
+				lx.advance()
+				lx.advance()
 			} else {
-				parsed = append(parsed, &Token{
-					Type:  TokenNot,
-					Value: "!",
-					Debug: &debug.Debug{
-						Line:   line,
-						Column: col,
-						File:   lx.file,
-					},
-				})
+				lx.add(TokenNot, "!", nil)
+				lx.advance()
 			}
 		case '&':
-			if pos+1 < len(s) && runes[pos+1] == '&' {
-				parsed = append(parsed, &Token{
-					Type:  TokenAnd,
-					Value: "&&",
-					Debug: &debug.Debug{
-						Line:   line,
-						Column: col,
-						File:   lx.file,
-					},
-				})
-				col += 2
-				pos++
+			if lx.peek(1) == '&' {
+				lx.add(TokenAnd, "&&", nil)
+				lx.advance()
+				lx.advance()
 			} else {
-				parsed = append(parsed, &Token{
-					Type:  TokenAnd,
-					Value: "&",
-					Debug: &debug.Debug{
-						Line:   line,
-						Column: col,
-						File:   lx.file,
-					},
-				})
-				col++
+				lx.add(TokenAnd, "&", nil)
+				lx.advance()
 			}
 		case '|':
-			if pos+1 < len(s) && runes[pos+1] == '|' {
-				parsed = append(parsed, &Token{
-					Type:  TokenOr,
-					Value: "||",
-					Debug: &debug.Debug{
-						Line:   line,
-						Column: col,
-						File:   lx.file,
-					},
-				})
-				col += 2
-				pos++
+			if lx.peek(1) == '|' {
+				lx.add(TokenOr, "||", nil)
+				lx.advance()
+				lx.advance()
 			} else {
-				parsed = append(parsed, &Token{
-					Type:  TokenOr,
-					Value: "|",
-					Debug: &debug.Debug{
-						Line:   line,
-						Column: col,
-						File:   lx.file,
-					},
-				})
-				col++
-			}
-		case '+':
-			if pos+1 < len(s) && runes[pos+1] == '+' {
-				parsed = append(parsed, &Token{
-					Type:  TokenIncrement,
-					Value: "++",
-					Debug: &debug.Debug{
-						Line:   line,
-						Column: col,
-						File:   lx.file,
-					},
-				})
-				pos++
-			} else {
-				parsed = append(parsed, &Token{
-					Type:  TokenPlus,
-					Value: "+",
-					Debug: &debug.Debug{
-						Line:   line,
-						Column: col,
-						File:   lx.file,
-					},
-				})
-			}
-			col++
-		case '-':
-			if pos+1 < len(s) && runes[pos+1] == '-' {
-				parsed = append(parsed, &Token{
-					Type:  TokenDecrement,
-					Value: "--",
-					Debug: &debug.Debug{
-						Line:   line,
-						Column: col,
-						File:   lx.file,
-					},
-				})
-				pos++
-			} else if pos+1 < len(s) && runes[pos+1] == '>' {
-				parsed = append(parsed, &Token{
-					Type:  TokenFnReturnArrow,
-					Value: "->",
-					Debug: &debug.Debug{
-						Line:   line,
-						Column: col,
-						File:   lx.file,
-					},
-				})
-				pos++
-			} else {
-				parsed = append(parsed, &Token{
-					Type:  TokenMinus,
-					Value: "-",
-					Debug: &debug.Debug{
-						Line:   line,
-						Column: col,
-						File:   lx.file,
-					},
-				})
-			}
-			col++
-		case '*':
-			if pos+1 < len(s) && runes[pos+1] == '*' {
-				parsed = append(parsed, &Token{
-					Type:  TokenPower,
-					Value: "**",
-					Debug: &debug.Debug{
-						Line:   line,
-						Column: col,
-						File:   lx.file,
-					},
-				})
-				pos++
-			} else {
-				parsed = append(parsed, &Token{
-					Type:  TokenAsterisk,
-					Value: "*",
-					Debug: &debug.Debug{
-						Line:   line,
-						Column: col,
-						File:   lx.file,
-					},
-				})
+				lx.add(TokenOr, "|", nil)
+				lx.advance()
 			}
 		case '<':
-			if pos+1 < len(s) && runes[pos+1] == '=' {
-				parsed = append(parsed, &Token{
-					Type:  TokenLessEqual,
-					Value: "<=",
-					Debug: &debug.Debug{
-						Line:   line,
-						Column: col,
-						File:   lx.file,
-					},
-				})
-				pos++
-			} else if pos+1 < len(s) && runes[pos+1] == '/' {
-				parsed = append(parsed, &Token{
-					Type:  TokenClosingStartTag,
-					Value: "</",
-					Debug: &debug.Debug{
-						Line:   line,
-						Column: col,
-						File:   lx.file,
-					},
-				})
-				pos++
+			if unicode.IsLetter(lx.peek(1)) { // valódi HTML‑kezdés
+				if err := lx.lexHtmlBlock(); err != nil {
+					return nil, err
+				}
 			} else {
-				parsed = append(parsed, &Token{
-					Type:  TokenLessThan,
-					Value: "<",
-					Debug: &debug.Debug{
-						Line:   line,
-						Column: col,
-						File:   lx.file,
-					},
-				})
+				switch lx.peek(1) {
+				case '=':
+					lx.add(TokenLessEqual, "<=", nil)
+					lx.advance()
+					lx.advance()
+				case '/':
+					lx.add(TokenClosingStartTag, "</", nil)
+					lx.advance()
+					lx.advance()
+				default:
+					lx.add(TokenLessThan, "<", nil)
+					lx.advance()
+				}
 			}
+			break
 		case '>':
-			if pos+1 < len(s) && runes[pos+1] == '=' {
-				parsed = append(parsed, &Token{
-					Type:  TokenGreaterEqual,
-					Value: ">=",
-					Debug: &debug.Debug{
-						Line:   line,
-						Column: col,
-						File:   lx.file,
-					},
-				})
-				pos++
+			if lx.peek(1) == '=' {
+				lx.add(TokenGreaterEqual, ">=", nil)
+				lx.advance()
+				lx.advance()
 			} else {
-				parsed = append(parsed, &Token{
-					Type:  TokenGreaterThan,
-					Value: ">",
-					Debug: &debug.Debug{
-						Line:   line,
-						Column: col,
-						File:   lx.file,
-					},
-				})
+				lx.add(TokenGreaterThan, ">", nil)
+				lx.advance()
 			}
 		case '@':
-			if pos+1 < len(s) && runes[pos+1] == '{' {
-				parsed = append(parsed, &Token{
-					Type:  TokenUnescapedBrace,
-					Value: "@{",
-					Debug: &debug.Debug{
-						Line:   line,
-						Column: col,
-						File:   lx.file,
-					},
-				})
-				pos++
+			if lx.peek(1) == '{' {
+				lx.add(TokenUnescapedBrace, "@{", nil)
+				lx.advance()
+				lx.advance()
+			} else {
+				lx.add(TokenUnknown, "@", nil)
+				lx.advance()
 			}
 		default:
-			start := pos
-			if isLetter(runes[pos]) {
-				// Identifier parsing
-				for pos < len(runes) && (isLetter(runes[pos]) || isDigit(runes[pos])) {
-					pos++
+			if unicode.IsLetter(lx.curr()) || lx.curr() == '_' {
+				lx.lexIdentifierOrKeyword()
+			} else if unicode.IsDigit(lx.curr()) || (lx.curr() == '.' && unicode.IsDigit(lx.peek(1))) {
+				if err := lx.lexNumber(); err != nil {
+					return nil, err
 				}
-				value := string(runes[start:pos])
-				// Appending the identifier
-				parsed = append(parsed, &Token{
-					Type:  lx.getIdentType(value),
-					Value: value,
-					Debug: &debug.Debug{
-						Line:   line,
-						Column: col,
-						File:   lx.file,
-					},
-				})
-				pos--
-			} else if isDigit(runes[pos]) || (s[pos] == '.' && pos+1 < len(s) && isDigit(runes[pos+1])) {
-				// Number parsing (integer or float)
-				isFloat := false
-				for pos < len(s) && (isDigit(runes[pos]) || runes[pos] == '.') {
-					if runes[pos] == '.' {
-						if isFloat {
-							// Second dot found, invalid number
-							return nil, newErr(ErrSyntaxError, "invalid number format", &debug.Debug{
-								Line:   line,
-								Column: col,
-								File:   lx.file,
-							})
-						}
-						isFloat = true
-					}
-					pos++
-				}
-				value := string(runes[start:pos])
-				// Appending the number
-				parsed = append(parsed, &Token{
-					Type:  TokenNumber,
-					Value: value,
-					Map: map[string]any{
-						"isFloat": isFloat,
-					},
-					Debug: &debug.Debug{
-						Line:   line,
-						Column: col,
-						File:   lx.file,
-					},
-				})
-				pos--
 			} else {
-				parsed = append(parsed, &Token{
-					Type:  TokenUnknown,
-					Value: string(s[pos]),
-					Debug: &debug.Debug{
-						Line:   line,
-						Column: col,
-						File:   lx.file,
-					},
-				})
-				col++
+				lx.add(TokenUnknown, string(lx.curr()), nil)
+				lx.advance()
 			}
 		}
-		pos++
 	}
-
-	return parsed, nil
+	return lx.tokens, nil
 }
+
+// ---------- specialised lexers ----------
+
+func (lx *Lexer) lexSingleLineComment() error {
+	startCol := lx.col
+	lx.advance()
+	lx.advance() // skip "//"
+	var sb strings.Builder
+	sb.WriteString("//")
+	for lx.curr() != 0 && lx.curr() != '\n' {
+		sb.WriteRune(lx.curr())
+		lx.advance()
+	}
+	lx.add(TokenSingleLineComment, sb.String(), nil)
+	// newline token (kept for debug parity with old impl)
+	if lx.curr() == '\n' {
+		lx.add(TokenNewLine, "\n", nil)
+	}
+	_ = startCol // col already correct due to advance
+	return nil
+}
+
+func (lx *Lexer) lexMultiLineComment() error {
+	lx.advance()
+	lx.advance() // skip "/*"
+	var sb strings.Builder
+	sb.WriteString("/*")
+	for lx.curr() != 0 {
+		if lx.curr() == '*' && lx.peek(1) == '/' {
+			sb.WriteString("*/")
+			lx.advance()
+			lx.advance()
+			lx.add(TokenMultiLineComment, sb.String(), nil)
+			return nil
+		}
+		sb.WriteRune(lx.curr())
+		lx.advance()
+	}
+	return newErr(ErrSyntaxError, "unterminated multi‑line comment", &debug.Debug{Line: lx.line, Column: lx.col, File: lx.file})
+}
+
+func (lx *Lexer) lexString() error {
+	quote := lx.curr()
+	lx.advance() // skip opening quote
+	startLine, startCol := lx.line, lx.col
+	var sb strings.Builder
+	for lx.curr() != 0 {
+		if lx.curr() == '\\' { // escape
+			sb.WriteRune(lx.curr())
+			lx.advance()
+			if lx.curr() == 0 {
+				return newErr(ErrSyntaxError, "incomplete escape sequence", &debug.Debug{Line: lx.line, Column: lx.col, File: lx.file})
+			}
+			sb.WriteRune(lx.curr())
+			lx.advance()
+			continue
+		}
+		if lx.curr() == quote {
+			lx.advance() // consume closing quote
+			strVal, err := escapeString(sb.String(), quote)
+			if err != nil {
+				return newErr(ErrSyntaxError, err.Error(), &debug.Debug{Line: startLine, Column: startCol, File: lx.file})
+			}
+			lx.add(TokenString, strVal, map[string]any{"quote": string(quote)})
+			return nil
+		}
+		sb.WriteRune(lx.curr())
+		lx.advance()
+	}
+	return newErr(ErrSyntaxError, "missing closing quote", &debug.Debug{Line: startLine, Column: startCol, File: lx.file})
+}
+
+func (lx *Lexer) lexIdentifierOrKeyword() {
+	startPos := lx.pos
+	for unicode.IsLetter(lx.curr()) || unicode.IsDigit(lx.curr()) || lx.curr() == '_' {
+		lx.advance()
+	}
+	value := string(lx.input[startPos:lx.pos])
+	lx.add(lx.getIdentType(value), value, nil)
+}
+
+func (lx *Lexer) lexNumber() error {
+	startPos := lx.pos
+	isFloat := false
+	for unicode.IsDigit(lx.curr()) || lx.curr() == '.' {
+		if lx.curr() == '.' {
+			if isFloat {
+				return newErr(ErrSyntaxError, "invalid number format", &debug.Debug{Line: lx.line, Column: lx.col, File: lx.file})
+			}
+			isFloat = true
+		}
+		lx.advance()
+	}
+	value := string(lx.input[startPos:lx.pos])
+	lx.add(TokenNumber, value, map[string]any{"isFloat": isFloat})
+	return nil
+}
+
+// ---------- helpers ----------
 
 func (lx *Lexer) getCharIdent(ch rune) TokenType {
 	chStr := string(ch)
