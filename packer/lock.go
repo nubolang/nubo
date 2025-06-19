@@ -17,11 +17,11 @@ const LockYaml = "lock.yaml"
 
 // LockEntry represents a Puff lock entry
 type LockEntry struct {
-	Name    string            `yaml:"name"` // user/repo
-	Version string            `yaml:"version,omitempty"`
-	Source  string            `yaml:"source,omitempty"` // example: https://github.com/user/repo
-	Hash    string            `yaml:"hash,omitempty"`   // checksum, if any
-	Meta    map[string]string `yaml:"meta,omitempty"`   // metadata
+	Name       string            `yaml:"name"`                  // user/repo
+	Source     string            `yaml:"source,omitempty"`      // example: https://github.com/user/repo
+	CommitHash string            `yaml:"commit_hash,omitempty"` // commit hash
+	Hash       string            `yaml:"hash,omitempty"`        // checksum, if any
+	Meta       map[string]string `yaml:"meta,omitempty"`        // metadata
 }
 
 // LockFile (lock.yaml)

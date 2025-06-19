@@ -1,0 +1,5 @@
+let x = dict{
+    hello: "world"
+}
+
+println(x)

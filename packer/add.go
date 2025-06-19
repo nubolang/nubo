@@ -100,7 +100,7 @@ func (p *Packer) realAdd(uri string) error {
 		if err == nil && headRef != nil {
 			version = headRef.Hash().String()
 		} else {
-			version = "master"
+			version = "main"
 		}
 	}
 
@@ -118,7 +118,7 @@ func (p *Packer) realAdd(uri string) error {
 			return err
 		}
 
-		return p.updatePackageFiles(domain, user, repo, subpath, repoURL, hash.String(), shortHash)
+		return p.updatePackageFiles(user, repo, subpath, repoURL, hash.String(), shortHash, finalPath)
 	}
 
 	err = w.Checkout(&git.CheckoutOptions{Hash: hash})
@@ -135,7 +135,7 @@ func (p *Packer) realAdd(uri string) error {
 	}
 
 	// Update Package with short hash and LockEntry with long hash
-	if err := p.updatePackageFiles(domain, user, repo, subpath, repoURL, hash.String(), shortHash); err != nil {
+	if err := p.updatePackageFiles(user, repo, subpath, repoURL, hash.String(), shortHash, finalPath); err != nil {
 		return err
 	}
 
@@ -158,7 +158,7 @@ func (p *Packer) realAdd(uri string) error {
 	return nil
 }
 
-func (p *Packer) updatePackageFiles(domain, user, repo, subpath, repoURL, hash, shortHash string) error {
+func (p *Packer) updatePackageFiles(user, repo, subpath, repoURL, hash, shortHash, finalPath string) error {
 	pkgName := user + "/" + repo
 	if subpath != "" {
 		pkgName += "/" + subpath
@@ -167,37 +167,43 @@ func (p *Packer) updatePackageFiles(domain, user, repo, subpath, repoURL, hash, 
 	found := false
 	for _, pkg := range p.Package.Packages {
 		if pkg.Name == pkgName {
-			pkg.Version = shortHash
+			pkg.CommitHashShort = shortHash
 			found = true
 			break
 		}
 	}
 	if !found {
 		p.Package.Packages = append(p.Package.Packages, &Package{
-			Name:    pkgName,
-			Version: shortHash,
+			Name:            pkgName,
+			CommitHashShort: shortHash,
+			Source:          repoURL,
 		})
 	}
 	if err := p.Package.Save(p.root); err != nil {
 		return err
 	}
 
+	folderHash, err := hashDir(finalPath)
+	if err != nil {
+		return err
+	}
+
 	foundLock := false
 	for _, entry := range p.Lock.Entries {
 		if entry.Name == pkgName {
-			entry.Version = shortHash
 			entry.Source = repoURL
-			entry.Hash = hash
+			entry.CommitHash = hash
+			entry.Hash = "sha256:" + folderHash
 			foundLock = true
 			break
 		}
 	}
 	if !foundLock {
 		p.Lock.Entries = append(p.Lock.Entries, &LockEntry{
-			Name:    pkgName,
-			Version: shortHash,
-			Source:  repoURL,
-			Hash:    hash,
+			Name:       pkgName,
+			Source:     repoURL,
+			CommitHash: hash,
+			Hash:       "sha256" + folderHash,
 		})
 	}
 

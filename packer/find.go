@@ -17,7 +17,7 @@ func (p *Packer) ImportFile(path string) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			return filepath.Join(cache, entry.Domain(), entry.Name+"@"+entry.Hash, remaining), nil
+			return filepath.Join(cache, entry.Domain(), entry.Name+"@"+entry.CommitHash, remaining), nil
 		}
 	}
 	return path, nil

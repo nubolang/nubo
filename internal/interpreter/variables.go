@@ -45,7 +45,7 @@ func (i *Interpreter) handleVariableDecl(parent *astnode.Node) error {
 			valueType *language.Type
 		)
 
-		if typ.Base() == language.ObjectTypeDict {
+		if typ != nil && typ.Base() == language.ObjectTypeDict {
 			keyType = typ.Key
 			valueType = typ.Element
 		}

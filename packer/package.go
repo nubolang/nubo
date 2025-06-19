@@ -9,13 +9,14 @@ import (
 
 const PackageYaml = "package.yaml"
 
-// Package represents a Puff package
+// Package represents a Packer package
 type Package struct {
-	Name    string `yaml:"name"`              // user/repo
-	Version string `yaml:"version,omitempty"` // commit hash or version
+	Name            string `yaml:"name"`   // user/repo
+	Source          string `yaml:"source"` // source repository
+	CommitHashShort string `yaml:"commit"` // commit hash
 }
 
-// PackageFile (puff.yaml)
+// PackageFile (package.yaml)
 type PackageFile struct {
 	Author   string     `yaml:"author"`
 	Packages []*Package `yaml:"packages"`
