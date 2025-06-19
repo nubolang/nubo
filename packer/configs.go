@@ -6,7 +6,7 @@ import (
 )
 
 func BaseDir() (string, error) {
-	base, err := os.UserCacheDir()
+	base, err := os.UserHomeDir()
 	if err != nil {
 		return "", err
 	}
@@ -20,24 +20,6 @@ func PackageDir() (string, error) {
 	}
 
 	return makeDir(filepath.Join(base, "packages"))
-}
-
-func CacheDir() (string, error) {
-	base, err := BaseDir()
-	if err != nil {
-		return "", err
-	}
-
-	return makeDir(filepath.Join(base, "cache"))
-}
-
-func SumDBDir() (string, error) {
-	base, err := BaseDir()
-	if err != nil {
-		return "", err
-	}
-
-	return makeDir(filepath.Join(base, "sumdb"))
 }
 
 func makeDir(dir string) (string, error) {
