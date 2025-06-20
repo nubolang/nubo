@@ -41,7 +41,7 @@ func (ot ObjectType) String() string {
 	case ObjectTypeStructInstance:
 		return "struct"
 	case ObjectTypeFunction:
-		return "function"
+		return "fn"
 	case ObjectTypeNil:
 		return "nil"
 	case ObjectTypeAny:

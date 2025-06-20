@@ -27,7 +27,11 @@ func TypeParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.
 
 		switch node.Content {
 		case "dict":
-			return TypeDictParser(ctx, node, tokens, inx)
+			dict, err := TypeDictParser(ctx, node, tokens, inx)
+			if err != nil {
+				return nil, err
+			}
+			return multiType(dict, ctx, tokens, inx)
 		case "ref":
 			if err := inxPP(tokens, inx); err != nil {
 				return nil, err
@@ -37,7 +41,7 @@ func TypeParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.
 				return nil, err
 			}
 			node.Kind = "REF"
-			return node, nil
+			return multiType(node, ctx, tokens, inx)
 		}
 
 		*inx++
@@ -47,7 +51,7 @@ func TypeParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.
 			*inx++
 		}
 
-		return node, nil
+		return multiType(node, ctx, tokens, inx)
 	}
 
 	if tokens[*inx].Type == lexer.TokenOpenBracket && *inx+1 < len(tokens) && tokens[*inx+1].Type == lexer.TokenCloseBracket {
@@ -58,10 +62,32 @@ func TypeParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.
 		}
 		node.Body = append(node.Body, typ)
 		node.Kind = "LIST"
-		return node, nil
+		return multiType(node, ctx, tokens, inx)
 	}
 
 	return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("expected identifier, got %s", tokens[*inx].Type), tokens[*inx].Debug)
+}
+
+func multiType(node *astnode.Node, ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
+	if *inx >= len(tokens) {
+		return node, nil
+	}
+
+	token := tokens[*inx]
+	if token.Type == lexer.TokenPipe {
+		if err := inxPP(tokens, inx); err != nil {
+			return nil, err
+		}
+
+		next, err := TypeParser(ctx, tokens, inx)
+		if err != nil {
+			return nil, err
+		}
+
+		node.Children = append(node.Children, next)
+	}
+
+	return node, nil
 }
 
 func TypeDictParser(ctx context.Context, node *astnode.Node, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {

@@ -9,7 +9,7 @@ import (
 var addCmd = &cobra.Command{
 	Use:   "add <url>",
 	Short: "Add a package to the current project from a remote host",
-	Run:   addPrepare,
+	Run:   execAdd,
 }
 
 func init() {
@@ -17,7 +17,7 @@ func init() {
 	rootCmd.AddCommand(addCmd)
 }
 
-func addPrepare(cmd *cobra.Command, args []string) {
+func execAdd(cmd *cobra.Command, args []string) {
 	if len(args) == 0 {
 		cmd.Help()
 		return

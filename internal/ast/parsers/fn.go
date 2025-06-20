@@ -82,6 +82,25 @@ loop:
 
 	token = tokens[*inx]
 
+	if token.Type == lexer.TokenArrow {
+		if err := inxPP(tokens, inx); err != nil {
+			return nil, err
+		}
+
+		body, err := ValueParser(ctx, sn, tokens, inx)
+		if err != nil {
+			return nil, err
+		}
+
+		node.Body = append(node.Body, &astnode.Node{
+			Type:  astnode.NodeTypeReturn,
+			Value: body,
+			Flags: astnode.AppendFlags{"NODEVALUE"},
+		})
+
+		return node, nil
+	}
+
 	if token.Type != lexer.TokenOpenBrace {
 		return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("expected '{', got %s", token.Type), token.Debug)
 	}

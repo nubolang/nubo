@@ -1,0 +1,28 @@
+fn map(s: string) {}
+fn map(i: int) {}
+
+fn MyElement(attributes: dict[string, any], children: []html|string) -> html|string {
+    const element = <div>
+        @{ attributes["side-bar"] }
+        <h1>{ attributes["title"] }</h1>
+        @{ children.join('') }
+    </div>
+
+    for key, value in attributes {
+        if key != "title" && key != "side-bar" {
+            element.setAttribute(key, value)
+        }
+    }
+
+    return element
+}
+
+const username = "@john"
+let myEl = <MyElement title="Hello, John!" id="element" :sideBar="<div>SideBar</div>">
+    <div>
+        Hello
+    </div>
+    { username }
+</MyElement>
+
+println(myEl)

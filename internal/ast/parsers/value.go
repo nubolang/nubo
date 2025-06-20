@@ -27,6 +27,10 @@ func ValueParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, inx
 		return DictParser(ctx, sn, tokens, inx)
 	}
 
+	if token.Type == lexer.TokenOpenBrace {
+		return DictParser(ctx, sn, tokens, inx)
+	}
+
 	node := &astnode.Node{
 		Type:  astnode.NodeTypeExpression,
 		Debug: token.Debug,

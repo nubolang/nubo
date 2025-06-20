@@ -35,7 +35,7 @@ func (i *Interpreter) handleVariableDecl(parent *astnode.Node) error {
 		value, err = i.evaluateElement(node)
 	} else if node.Type == astnode.NodeTypeList {
 		var elType = language.TypeAny
-		if typ.Base() == language.ObjectTypeList {
+		if typ != nil && typ.Base() == language.ObjectTypeList {
 			elType = typ.Element
 		}
 		value, err = i.evalList(node, elType)

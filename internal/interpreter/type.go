@@ -101,5 +101,14 @@ func (i *Interpreter) parseTypeNode(n *astnode.Node) (*language.Type, error) {
 	}
 
 	t.BaseType = baseType.Base()
+
+	if len(n.Children) > 0 {
+		next, err := i.parseTypeNode(n.Children[0])
+		if err != nil {
+			return nil, err
+		}
+		t = language.NewUnionType(t, next)
+	}
+
 	return t, nil
 }

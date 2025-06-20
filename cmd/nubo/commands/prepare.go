@@ -19,6 +19,7 @@ func init() {
 	// Add the prepare command to the root command
 	rootCmd.AddCommand(prepareCmd)
 	gob.Register(&astnode.Node{})
+	gob.Register(&astnode.ForValue{})
 }
 
 func execPrepare(cmd *cobra.Command, args []string) {

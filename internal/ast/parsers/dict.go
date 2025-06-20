@@ -18,8 +18,10 @@ func DictParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, inx 
 
 	node.Flags.Append("NODEVALUE")
 
-	if err := inxPP(tokens, inx); err != nil {
-		return nil, err
+	if token.Type != lexer.TokenOpenBrace {
+		if err := inxPP(tokens, inx); err != nil {
+			return nil, err
+		}
 	}
 
 	token = tokens[*inx]

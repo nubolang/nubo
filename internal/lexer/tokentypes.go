@@ -73,9 +73,10 @@ const (
 	TokenIn           TokenType = "in"
 
 	// Logical
-	TokenAnd TokenType = "&&"
-	TokenOr  TokenType = "||"
-	TokenNot TokenType = "!"
+	TokenAnd  TokenType = "&&"
+	TokenOr   TokenType = "||"
+	TokenNot  TokenType = "!"
+	TokenPipe TokenType = "|"
 
 	//
 	TokenSingleLineComment = "<comment>"
@@ -157,5 +158,6 @@ func Operators() []TokenType {
 		TokenAnd,
 		TokenOr,
 		TokenNot,
+		TokenPipe,
 	}
 }

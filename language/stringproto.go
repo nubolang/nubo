@@ -5,6 +5,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/stoewer/go-strcase"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
@@ -213,6 +214,27 @@ func NewStringPrototype(base *String) *StringPrototype {
 			}
 			return NewInt(int64(runes[idx]), base.debug), nil
 		}, nil))
+
+	sp.SetObject("toKebabCase", NewFunction(func(o []Object) (Object, error) {
+		sp.mu.RLock()
+		defer sp.mu.RUnlock()
+
+		return NewString(strcase.KebabCase(base.Data), base.debug), nil
+	}, nil))
+
+	sp.SetObject("toCamelCase", NewFunction(func(o []Object) (Object, error) {
+		sp.mu.RLock()
+		defer sp.mu.RUnlock()
+
+		return NewString(strcase.LowerCamelCase(base.Data), base.debug), nil
+	}, nil))
+
+	sp.SetObject("toSnakeCase", NewFunction(func(o []Object) (Object, error) {
+		sp.mu.RLock()
+		defer sp.mu.RUnlock()
+
+		return NewString(strcase.SnakeCase(base.Data), base.debug), nil
+	}, nil))
 
 	return sp
 }

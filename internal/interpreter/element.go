@@ -1,10 +1,24 @@
 package interpreter
 
 import (
+	"fmt"
+	"html"
+	"strings"
+	"unicode"
+
 	"github.com/nubolang/nubo/internal/ast/astnode"
 	"github.com/nubolang/nubo/language"
 	"github.com/stoewer/go-strcase"
 )
+
+func endsWithCapitalTag(tagName string) bool {
+	parts := strings.Split(tagName, ".")
+	last := parts[len(parts)-1]
+	if last == "" {
+		return false
+	}
+	return unicode.IsUpper(rune(last[0]))
+}
 
 func (i *Interpreter) evaluateElement(node *astnode.Node) (language.Object, error) {
 	elem := &language.ElementData{
@@ -65,5 +79,60 @@ func (i *Interpreter) evaluateElement(node *astnode.Node) (language.Object, erro
 		}
 	}
 
-	return language.NewElement(elem, node.Debug), nil
+	tagName := node.Content
+	if !endsWithCapitalTag(tagName) {
+		return language.NewElement(elem, node.Debug), nil
+	}
+
+	ob, ok := i.GetObject(tagName)
+	if !ok {
+		return language.NewElement(elem, node.Debug), nil
+	}
+
+	fn, ok := ob.(*language.Function)
+	if !ok {
+		return language.NewElement(elem, node.Debug), nil
+	}
+
+	fnType := language.NewFunctionType(
+		language.NewUnionType(language.TypeString, language.TypeHtml),
+		language.NewDictType(language.TypeString, language.TypeAny),
+		language.NewListType(language.NewUnionType(language.TypeString, language.TypeHtml)),
+	)
+
+	if !fnType.Compare(fn.Type()) {
+		return nil, newErr(ErrInvalid, fmt.Sprintf("Invalid element, expected type: %s, got %s", fnType, fn.Type()), node.Debug)
+	}
+
+	var (
+		argKeys   = make([]language.Object, len(elem.Args))
+		argValues = make([]language.Object, len(elem.Args))
+		children  = make([]language.Object, len(elem.Children))
+	)
+
+	for i, attr := range elem.Args {
+		argKeys[i] = language.NewString(attr.Name, node.Debug)
+		argValues[i] = attr.Value
+	}
+
+	for i, child := range elem.Children {
+		if child.Type == astnode.NodeTypeElementRawText {
+			value := child.Content
+			if child.IsEscaped {
+				value = html.EscapeString(value)
+			}
+			children[i] = language.NewString(value, node.Debug)
+		} else {
+			children[i] = child.Value
+		}
+	}
+
+	d, err := language.NewDict(argKeys, argValues, language.TypeString, language.TypeAny, node.Debug)
+	if err != nil {
+		return nil, newErr(ErrTypeMismatch, err.Error(), node.Debug)
+	}
+
+	c := language.NewList(children, language.NewUnionType(language.TypeString, language.TypeHtml), node.Debug)
+
+	return fn.Data([]language.Object{d, c})
 }

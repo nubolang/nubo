@@ -186,7 +186,7 @@ func (lx *Lexer) Parse() ([]*Token, error) {
 				lx.advance()
 				lx.advance()
 			} else {
-				lx.add(TokenOr, "|", nil)
+				lx.add(TokenPipe, "|", nil)
 				lx.advance()
 			}
 		case '<':
