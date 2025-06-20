@@ -258,6 +258,14 @@ func (i *Interpreter) evalDict(node *astnode.Node, keyType, valueType *language.
 		valueType = inferredValueType
 	}
 
+	if keyType == nil {
+		keyType = language.TypeAny
+	}
+
+	if valueType == nil {
+		valueType = language.TypeAny
+	}
+
 	dict, err := language.NewDict(keys, values, keyType, valueType, node.Debug)
 	if err != nil {
 		return nil, newErr(ErrTypeMismatch, err.Error(), node.Debug)
