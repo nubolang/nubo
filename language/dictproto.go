@@ -32,6 +32,32 @@ func NewDictPrototype(base *Dict) *DictPrototype {
 			return nil, fmt.Errorf("Key %s not found", getterKey)
 		}, base.Debug()))
 
+	dp.SetObject("keys", NewTypedFunction(nil, NewListType(base.KeyType),
+		func(o []Object) (Object, error) {
+			dp.mu.RLock()
+			defer dp.mu.RUnlock()
+
+			var keys = make([]Object, 0, len(base.Data))
+			for key := range base.Data {
+				keys = append(keys, key)
+			}
+
+			return NewList(keys, base.KeyType, base.Debug()), nil
+		}, base.Debug()))
+
+	dp.SetObject("values", NewTypedFunction(nil, NewListType(base.ValueType),
+		func(o []Object) (Object, error) {
+			dp.mu.RLock()
+			defer dp.mu.RUnlock()
+
+			var values = make([]Object, 0, len(base.Data))
+			for _, value := range base.Data {
+				values = append(values, value)
+			}
+
+			return NewList(values, base.KeyType, base.Debug()), nil
+		}, base.Debug()))
+
 	return dp
 }
 

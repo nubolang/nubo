@@ -97,6 +97,21 @@ func NewListPrototype(base *List) *ListPrototype {
 		return NewList(newItems, TypeAny, fn.Debug()), nil
 	}, base.Debug()))
 
+	lp.SetObject("includes", NewTypedFunction([]FnArg{&BasicFnArg{TypeVal: TypeAny, NameVal: "search"}}, TypeBool,
+		func(o []Object) (Object, error) {
+			lp.mu.RLock()
+			defer lp.mu.RUnlock()
+
+			search := o[0].Value()
+			for _, value := range lp.base.Data {
+				if search == value.Value() {
+					return NewBool(true, lp.base.Debug()), nil
+				}
+			}
+
+			return NewBool(false, lp.base.Debug()), nil
+		}, base.Debug()))
+
 	return lp
 }
 
