@@ -14,6 +14,7 @@ const (
 	ObjectTypeList
 	ObjectTypeDict
 	ObjectTypeStructInstance
+	ObjectTypeStructDefinition
 	ObjectTypeFunction
 	ObjectTypeNil
 	ObjectTypeAny
@@ -48,6 +49,8 @@ func (ot ObjectType) String() string {
 		return "any"
 	case ObjectTypeVoid:
 		return "void"
+	case ObjectTypeStructDefinition:
+		return "structdef"
 	default:
 		return "unknown"
 	}

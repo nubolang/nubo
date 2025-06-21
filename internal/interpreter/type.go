@@ -4,10 +4,11 @@ import (
 	"fmt"
 
 	"github.com/nubolang/nubo/internal/ast/astnode"
+	"github.com/nubolang/nubo/internal/debug"
 	"github.com/nubolang/nubo/language"
 )
 
-func (i *Interpreter) stringToType(s string) (*language.Type, error) {
+func (i *Interpreter) stringToType(s string, dg *debug.Debug) (*language.Type, error) {
 	switch s {
 	case "void":
 		return language.TypeVoid, nil
@@ -28,7 +29,12 @@ func (i *Interpreter) stringToType(s string) (*language.Type, error) {
 	case "html":
 		return language.TypeHtml, nil
 	default:
-		return nil, fmt.Errorf("unknown type: %s", s)
+		ob, ok := i.GetObject(s)
+		if !ok || ob.Type().Base() != language.ObjectTypeStructDefinition {
+			return nil, newErr(ErrTypeMismatch, fmt.Sprintf("unknown type: %s", s), dg)
+		}
+
+		return ob.Type(), nil
 	}
 }
 
@@ -95,7 +101,7 @@ func (i *Interpreter) parseTypeNode(n *astnode.Node) (*language.Type, error) {
 		return t, nil
 	}
 
-	baseType, err := i.stringToType(n.Content)
+	baseType, err := i.stringToType(n.Content, n.Debug)
 	if err != nil {
 		return nil, err
 	}

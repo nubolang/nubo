@@ -17,19 +17,20 @@ type Type struct {
 }
 
 var (
-	TypeInt            = &Type{BaseType: ObjectTypeInt, Content: "int"}
-	TypeFloat          = &Type{BaseType: ObjectTypeFloat, Content: "float"}
-	TypeBool           = &Type{BaseType: ObjectTypeBool, Content: "bool"}
-	TypeString         = &Type{BaseType: ObjectTypeString, Content: "string"}
-	TypeChar           = &Type{BaseType: ObjectTypeChar, Content: "char"}
-	TypeByte           = &Type{BaseType: ObjectTypeByte, Content: "byte"}
-	TypeList           = &Type{BaseType: ObjectTypeList, Element: TypeAny}
-	TypeDict           = &Type{BaseType: ObjectTypeDict, Key: TypeAny, Value: TypeAny}
-	TypeStructInstance = &Type{BaseType: ObjectTypeStructInstance}
-	TypeNil            = &Type{BaseType: ObjectTypeNil, Content: "nil"}
-	TypeAny            = &Type{BaseType: ObjectTypeAny, Content: "any"}
-	TypeVoid           = &Type{BaseType: ObjectTypeVoid, Content: "void"}
-	TypeHtml           = &Type{BaseType: ObjectTypeString, Content: "html"}
+	TypeInt              = &Type{BaseType: ObjectTypeInt, Content: "int"}
+	TypeFloat            = &Type{BaseType: ObjectTypeFloat, Content: "float"}
+	TypeBool             = &Type{BaseType: ObjectTypeBool, Content: "bool"}
+	TypeString           = &Type{BaseType: ObjectTypeString, Content: "string"}
+	TypeChar             = &Type{BaseType: ObjectTypeChar, Content: "char"}
+	TypeByte             = &Type{BaseType: ObjectTypeByte, Content: "byte"}
+	TypeList             = &Type{BaseType: ObjectTypeList, Element: TypeAny}
+	TypeDict             = &Type{BaseType: ObjectTypeDict, Key: TypeAny, Value: TypeAny}
+	TypeStructInstance   = Nullable(&Type{BaseType: ObjectTypeStructInstance})
+	TypeStructDefinition = &Type{BaseType: ObjectTypeStructDefinition}
+	TypeNil              = &Type{BaseType: ObjectTypeNil, Content: "nil"}
+	TypeAny              = &Type{BaseType: ObjectTypeAny, Content: "any"}
+	TypeVoid             = &Type{BaseType: ObjectTypeVoid, Content: "void"}
+	TypeHtml             = &Type{BaseType: ObjectTypeString, Content: "html"}
 )
 
 func NewFunctionType(returnType *Type, argsType ...*Type) *Type {
@@ -46,6 +47,36 @@ func NewDictType(key *Type, value *Type) *Type {
 
 func Nullable(typ *Type) *Type {
 	return NewUnionType(typ.DeepClone(), TypeNil)
+}
+
+func DefaultValue(typ *Type) Object {
+	switch typ.BaseType {
+	case ObjectTypeByte:
+		return NewByte(0, nil)
+	case ObjectTypeInt:
+		return NewInt(0, nil)
+	case ObjectTypeFloat:
+		return NewFloat(0.0, nil)
+	case ObjectTypeString:
+		return NewString("", nil)
+	case ObjectTypeList:
+		return NewList(nil, typ.Element, nil)
+	case ObjectTypeDict:
+		dict, _ := NewDict(nil, nil, typ.Key, typ.Value, nil)
+		return dict
+	case ObjectTypeStructInstance:
+		return nil
+	case ObjectTypeStructDefinition:
+		return nil
+	case ObjectTypeNil:
+		return Nil
+	case ObjectTypeAny:
+		return Nil
+	case ObjectTypeVoid:
+		return nil
+	default:
+		return nil
+	}
 }
 
 func (t *Type) Base() ObjectType {
@@ -106,8 +137,10 @@ func (t *Type) Compare(other *Type) bool {
 			t.BaseType == ObjectTypeFunction
 	}
 
-	if t.BaseType != other.BaseType {
-		return t.NextMatch(other)
+	if t.BaseType != ObjectTypeStructDefinition && t.BaseType != ObjectTypeStructInstance {
+		if t.BaseType != other.BaseType {
+			return t.NextMatch(other)
+		}
 	}
 
 	switch t.BaseType {
@@ -141,6 +174,8 @@ func (t *Type) Compare(other *Type) bool {
 			return t.NextMatch(other)
 		}
 		return ok
+	case ObjectTypeStructDefinition:
+		return t.Content == other.Content
 	}
 
 	ok := t.Content == other.Content
@@ -160,11 +195,11 @@ func NewUnionType(types ...*Type) *Type {
 	}
 
 	head := types[0]
-	current := head
+	current := head.DeepClone()
 
 	for _, t := range types[1:] {
-		current.Next = t
-		current = t
+		current.Next = t.DeepClone()
+		current = t.DeepClone()
 	}
 
 	return head

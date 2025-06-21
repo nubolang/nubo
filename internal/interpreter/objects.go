@@ -62,6 +62,7 @@ func (i *Interpreter) assignNested(name string, value language.Object) error {
 	if !ok {
 		return newErr(ErrUndefinedVariable, fmt.Sprintf("Undefined variable %s", name), value.Debug())
 	}
+	parts = parts[1:]
 
 	current := obj.value
 	for _, part := range parts[:len(parts)-1] {
@@ -72,7 +73,7 @@ func (i *Interpreter) assignNested(name string, value language.Object) error {
 		var ok bool
 		current, ok = prototype.GetObject(part)
 		if !ok {
-			return newErr(ErrUndefinedVariable, fmt.Sprintf("Undefined property %s", part), nil)
+			return newErr(ErrUndefinedVariable, fmt.Sprintf("Undefined property '%s'", part), nil)
 		}
 	}
 	return current.GetPrototype().SetObject(parts[len(parts)-1], value)

@@ -18,23 +18,42 @@ type StructDefinition struct {
 	Debug  debug.Debug
 }
 
-/*func (sd *StructDefinition) NewStruct(values map[string]language.Object) *Struct {
-	return &Struct{}
-}*/
-
 type Struct struct {
-	Name      string
-	Data      []StructField
-	prototype *StructPrototype
-	debug     *debug.Debug
+	Name       string
+	structType *Type
+	Data       []StructField
+	prototype  *StructPrototype
+	debug      *debug.Debug
 }
 
 func NewStruct(name string, fields []StructField, debug *debug.Debug) *Struct {
-	return &Struct{
-		Name:  name,
-		Data:  fields,
-		debug: debug,
+	structType := &Type{
+		BaseType: ObjectTypeStructDefinition,
+		Content:  name,
 	}
+
+	return &Struct{
+		Name:       name,
+		structType: structType,
+		Data:       fields,
+		debug:      debug,
+	}
+}
+
+func (s *Struct) NewInstance() (*StructInstance, error) {
+	if s.prototype == nil {
+		s.prototype = NewStructPrototype(s)
+	}
+
+	return NewStructInstance(s, s.Name, s.Debug())
+}
+
+func (s *Struct) Settable() []string {
+	var settable = make([]string, len(s.Data))
+	for i, field := range s.Data {
+		settable[i] = field.Name
+	}
+	return settable
 }
 
 func (i *Struct) ID() string {
@@ -42,7 +61,7 @@ func (i *Struct) ID() string {
 }
 
 func (i *Struct) Type() *Type {
-	return TypeStructInstance
+	return i.structType
 }
 
 func (i *Struct) Inspect() string {
@@ -50,7 +69,14 @@ func (i *Struct) Inspect() string {
 }
 
 func (i *Struct) TypeString() string {
-	return "<Object(struct)>"
+	typ := i.Name + "{"
+	for inx, field := range i.Data {
+		typ += fmt.Sprintf("%s: %s", field.Name, field.Type.String())
+		if inx < len(i.Data)-1 {
+			typ += ", "
+		}
+	}
+	return typ + "}"
 }
 
 func (i *Struct) String() string {

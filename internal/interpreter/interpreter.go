@@ -39,7 +39,6 @@ type Interpreter struct {
 
 	imports map[string]*Interpreter
 	objects map[uint32]*entry
-	structs map[string]*language.StructDefinition
 
 	mu sync.RWMutex
 }

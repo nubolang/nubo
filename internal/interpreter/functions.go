@@ -83,6 +83,10 @@ func (i *Interpreter) handleFunctionCall(node *astnode.Node) (language.Object, e
 	}
 
 	if fn.Type().Base() != language.ObjectTypeFunction {
+		if fn.Type().Base() == language.ObjectTypeStructDefinition {
+			return i.handleStructCreation(fn, node)
+		}
+
 		return nil, newErr(ErrExpectedFunction, fmt.Sprintf("got %s", node.Type), node.Debug)
 	}
 
