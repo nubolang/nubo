@@ -29,12 +29,7 @@ func (i *Interpreter) stringToType(s string, dg *debug.Debug) (*language.Type, e
 	case "html":
 		return language.TypeHtml, nil
 	default:
-		ob, ok := i.GetObject(s)
-		if !ok || ob.Type().Base() != language.ObjectTypeStructDefinition {
-			return nil, newErr(ErrTypeMismatch, fmt.Sprintf("unknown type: %s", s), dg)
-		}
-
-		return ob.Type(), nil
+		return nil, newErr(ErrTypeMismatch, fmt.Sprintf("unknown type: %s", s), dg)
 	}
 }
 
@@ -103,7 +98,11 @@ func (i *Interpreter) parseTypeNode(n *astnode.Node) (*language.Type, error) {
 
 	baseType, err := i.stringToType(n.Content, n.Debug)
 	if err != nil {
-		return nil, err
+		ob, ok := i.GetObject(n.Content)
+		if !ok || ob.Type().Base() != language.ObjectTypeStructDefinition {
+			return nil, newErr(ErrTypeMismatch, fmt.Sprintf("unknown type: %s", n.Content), n.Debug)
+		}
+		return ob.Type(), nil
 	}
 
 	t.BaseType = baseType.Base()

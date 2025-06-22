@@ -46,6 +46,10 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 					return nil, newErr(ErrUndefinedVariable, child.Value.(string), node.Debug)
 				}
 
+				if obj.Type().Base() == language.ObjectTypeStructDefinition {
+					return nil, newErr(ErrUnsupported, fmt.Sprintf("cannot operate on type %s", obj.Type()), obj.Debug())
+				}
+
 				if len(node.Body) == 1 {
 					if len(node.Body[0].Children) > 0 {
 						if ob, err := i.checkGetter(obj, child); err != nil {

@@ -32,12 +32,16 @@ func NewStruct(name string, fields []StructField, debug *debug.Debug) *Struct {
 		Content:  name,
 	}
 
-	return &Struct{
+	s := &Struct{
 		Name:       name,
 		structType: structType,
 		Data:       fields,
 		debug:      debug,
 	}
+
+	structType.ID = fmt.Sprintf("%p", s)
+
+	return s
 }
 
 func (s *Struct) NewInstance() (*StructInstance, error) {

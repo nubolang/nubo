@@ -4,6 +4,8 @@ struct User {
     age: int
 }
 
+struct Role {}
+
 let user = User()
 
 user.id = 1
@@ -11,7 +13,7 @@ user.name = "John Doe"
 user.age = 30
 
 fn greet(user: User) {
-    println("Hello", user.name)
+    println("Hello, ", user.name + "!")
 }
 
 greet(user)

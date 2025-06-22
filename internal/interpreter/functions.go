@@ -7,7 +7,7 @@ import (
 	"github.com/nubolang/nubo/language"
 )
 
-func (i *Interpreter) handleFunctionDecl(node *astnode.Node) (language.Object, error) {
+func (i *Interpreter) handleFunctionDecl(node *astnode.Node, ret ...bool) (language.Object, error) {
 	var args = make([]language.FnArg, len(node.Args))
 	var returnType *language.Type
 
@@ -72,6 +72,10 @@ func (i *Interpreter) handleFunctionDecl(node *astnode.Node) (language.Object, e
 
 		return ir.Run(node.Body)
 	}, node.Debug)
+
+	if len(ret) > 0 && ret[0] {
+		return fn, nil
+	}
 
 	return nil, i.Declare(node.Content, fn, fn.Type(), false)
 }

@@ -32,6 +32,20 @@ func StructParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnod
 		return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("expected '{', got %s", token.Type), token.Debug)
 	}
 
+	if err := inxPP(tokens, inx); err != nil {
+		return nil, err
+	}
+
+	token = tokens[*inx]
+	if token.Type == lexer.TokenCloseBrace {
+		if err := inxPP(tokens, inx); err != nil {
+			return nil, err
+		}
+		return node, nil
+	} else {
+		*inx--
+	}
+
 	if err := nl(tokens, inx); err != nil {
 		return nil, err
 	}

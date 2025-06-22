@@ -14,6 +14,7 @@ const (
 	NodeTypeType        NodeType = "type"
 	NodeTypeStruct      NodeType = "struct"
 	NodeTypeStructField NodeType = "struct_field"
+	NodeTypeImpl        NodeType = "impl"
 
 	NodeTypeEvent         NodeType = "event"
 	NodeTypeEventArgument NodeType = "event_argument"

@@ -13,6 +13,7 @@ type Type struct {
 	Value    *Type   // if Kind == "DICT", represents the value type or if Kind == "FUNCTION", represents the return type
 	Element  *Type   // if Kind == "LIST", represents the element type
 	Args     []*Type // if Kind == "FUNCTION", represents the function argument types
+	ID       string  // if BaseType == ObjectTypeStructInstance, represents the struct ID
 	Next     *Type   // if it's an union type, represents the next type in the union
 }
 
@@ -108,8 +109,8 @@ func (t *Type) String() string {
 		return fmt.Sprintf("[]%s%s", t.Element.String(), next)
 	case ObjectTypeDict:
 		return fmt.Sprintf("dict[%s, %s]%s", t.Key.String(), t.Value.String(), next)
-	case ObjectTypeStructInstance:
-		return fmt.Sprintf("%s{}%s", t.Content, next)
+	case ObjectTypeStructInstance, ObjectTypeStructDefinition:
+		return fmt.Sprintf("%s[%s]{}%s", t.Content, t.ID, next)
 	}
 }
 
@@ -175,7 +176,7 @@ func (t *Type) Compare(other *Type) bool {
 		}
 		return ok
 	case ObjectTypeStructDefinition:
-		return t.Content == other.Content
+		return t.ID == other.ID
 	}
 
 	ok := t.Content == other.Content
@@ -213,6 +214,7 @@ func (t *Type) DeepClone() *Type {
 	clone := &Type{
 		BaseType: t.BaseType,
 		Content:  t.Content,
+		ID:       t.ID,
 	}
 
 	if t.Key != nil {

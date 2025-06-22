@@ -1,0 +1,19 @@
+struct Person {
+    name: string
+    age: int
+}
+
+impl Person {
+    fn new(self: Person, name: string, age: int) -> Person {
+        self.name = name
+        self.age = age
+        return self
+    }
+
+    fn introduce(self: Person) -> string {
+        return "Hello, my name is " + self.name + " and I am " + string(self.age) + " years old."
+    }
+}
+
+const john = Person("John", 30);
+println(john.introduce())

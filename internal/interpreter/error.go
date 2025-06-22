@@ -37,4 +37,5 @@ var (
 	ErrAst               = fmt.Errorf("Ast error")
 	ErrValueError        = fmt.Errorf("Value error")
 	ErrInvalid           = fmt.Errorf("Invalid syntax")
+	ErrInvalidImpl       = fmt.Errorf("Invalid implementation")
 )

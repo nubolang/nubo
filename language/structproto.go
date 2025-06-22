@@ -8,14 +8,16 @@ import (
 type StructPrototype struct {
 	base     *Struct
 	instance *StructInstance
+	setters  map[string]Object
 	data     map[string]Object
 	mu       sync.RWMutex
 }
 
 func NewStructPrototype(base *Struct) *StructPrototype {
 	sp := &StructPrototype{
-		base: base,
-		data: make(map[string]Object),
+		base:    base,
+		setters: make(map[string]Object),
+		data:    make(map[string]Object),
 	}
 
 	return sp
@@ -35,6 +37,12 @@ func (sp *StructPrototype) NewInstance(instance *StructInstance) (*StructPrototy
 		}
 	}
 
+	for name, set := range sp.setters {
+		if err := cloned.SetObject(name, set); err != nil {
+			return nil, err
+		}
+	}
+
 	return cloned, nil
 }
 
@@ -48,6 +56,10 @@ func (s *StructPrototype) GetObject(name string) (Object, bool) {
 func (s *StructPrototype) SetObject(name string, value Object) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.instance == nil {
+		s.setters[name] = value
+		return nil
+	}
 
 	for _, field := range s.base.Data {
 		if field.Name == name {
@@ -56,6 +68,28 @@ func (s *StructPrototype) SetObject(name string, value Object) error {
 			}
 			s.data[name] = value
 			return nil
+		}
+	}
+
+	if value.Type().Base() == ObjectTypeFunction {
+		fn, ok := value.(*Function)
+		if !ok {
+			return fmt.Errorf("Expected function, got %s", value.Type())
+		}
+
+		if len(fn.ArgTypes) > 0 {
+			if fn.ArgTypes[0].Type().Compare(s.base.structType) {
+				newFn := NewTypedFunction(fn.ArgTypes[1:], fn.ReturnType, func(o []Object) (Object, error) {
+					objs := make([]Object, 0, len(o)+1)
+					objs = append(objs, s.instance)
+					for _, obj := range o {
+						objs = append(objs, obj)
+					}
+					return fn.Data(objs)
+				}, fn.Debug())
+				s.data[name] = newFn
+				return nil
+			}
 		}
 	}
 
