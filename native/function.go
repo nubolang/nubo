@@ -23,6 +23,10 @@ func (ctx FnCtx) Get(name string) (language.Object, error) {
 	return nil, debug.NewError(fmt.Errorf("Undefined function argument"), name, nil)
 }
 
+func (ctx FnCtx) All() []language.Object {
+	return ctx.providedArgs
+}
+
 func NewFunction(fn func(args []language.Object) (language.Object, error)) *language.Function {
 	return language.NewFunction(fn, nil)
 }

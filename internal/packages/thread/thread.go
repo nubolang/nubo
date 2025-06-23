@@ -4,13 +4,15 @@ import (
 	"fmt"
 	"runtime"
 
+	"github.com/nubolang/nubo/internal/debug"
 	"github.com/nubolang/nubo/language"
 	"github.com/nubolang/nubo/native"
+	"github.com/nubolang/nubo/native/n"
 	"go.uber.org/zap"
 )
 
-func NewThread() language.Object {
-	instance := language.NewStruct("@std/thread", nil, nil)
+func NewThread(dg *debug.Debug) language.Object {
+	instance := n.NewPackage("thread", dg)
 	proto := instance.GetPrototype()
 
 	proto.SetObject("spawn", native.NewFunction(func(args []language.Object) (language.Object, error) {

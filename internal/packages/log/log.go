@@ -6,8 +6,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/nubolang/nubo/internal/debug"
 	"github.com/nubolang/nubo/language"
 	"github.com/nubolang/nubo/native"
+	"github.com/nubolang/nubo/native/n"
 )
 
 var currentLogLevel = 1 // 0=DEBUG, 1=INFO, 2=WARN, 3=ERROR
@@ -19,8 +21,8 @@ var logLevels = map[string]int{
 	"ERROR": 3,
 }
 
-func NewLog() language.Object {
-	instance := language.NewStruct("@std/log", nil, nil)
+func NewLog(dg *debug.Debug) language.Object {
+	instance := n.NewPackage("log", dg)
 	proto := instance.GetPrototype()
 
 	proto.SetObject("debug", native.NewFunction(logFn("DEBUG")))

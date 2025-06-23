@@ -1,0 +1,25 @@
+struct Add {
+    num1: int
+    num2: int
+}
+
+impl Add {
+    fn init(self: Add, num1: int, num2: int) -> Add {
+        self.num1 = num1
+        self.num2 = num2
+        return self
+    }
+
+    fn add(self: Add) -> int {
+        return self.num1 + self.num2
+    }
+
+    fn name() {
+        println("Add")
+    }
+}
+
+let add = Add(1, 2)
+println(add)
+println(add.add())
+add.name()

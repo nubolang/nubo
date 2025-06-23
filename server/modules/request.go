@@ -13,8 +13,26 @@ import (
 	"github.com/nubolang/nubo/native/n"
 )
 
+var requestStruct *language.Struct
+
+func RequestStruct() *language.Struct {
+	if requestStruct == nil {
+		requestStruct = language.NewStruct("request", nil, nil)
+	}
+
+	return requestStruct
+}
+
 func NewRequest(r *http.Request) (language.Object, error) {
-	inst := language.NewStruct("@server/request", nil, nil)
+	if requestStruct == nil {
+		requestStruct = language.NewStruct("request", nil, nil)
+	}
+
+	inst, err := requestStruct.NewInstance()
+	if err != nil {
+		return nil, err
+	}
+
 	proto := inst.GetPrototype()
 
 	headers, err := newHeadersDict(r)

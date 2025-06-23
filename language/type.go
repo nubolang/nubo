@@ -60,6 +60,10 @@ func DefaultValue(typ *Type) Object {
 		return NewFloat(0.0, nil)
 	case ObjectTypeString:
 		return NewString("", nil)
+	case ObjectTypeBool:
+		return NewBool(false, nil)
+	case ObjectTypeChar:
+		return NewChar('\000', nil)
 	case ObjectTypeList:
 		return NewList(nil, typ.Element, nil)
 	case ObjectTypeDict:

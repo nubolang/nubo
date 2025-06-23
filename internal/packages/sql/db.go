@@ -18,7 +18,11 @@ func NewDB(conn *SQLConn) (language.Object, error) {
 
 	configureDBConnection(db, driver)
 
-	obj := language.NewStruct("@sql/conn", nil, nil)
+	obj, err := dbStruct.NewInstance()
+	if err != nil {
+		return nil, err
+	}
+
 	inst := obj.GetPrototype()
 
 	emptyList, _ := n.List(nil)

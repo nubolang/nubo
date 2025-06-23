@@ -3,6 +3,7 @@ package packages
 import (
 	"strings"
 
+	"github.com/nubolang/nubo/internal/debug"
 	"github.com/nubolang/nubo/internal/packages/io"
 	"github.com/nubolang/nubo/internal/packages/json"
 	"github.com/nubolang/nubo/internal/packages/layoutjs"
@@ -19,7 +20,7 @@ const (
 	BuiltInModulePrefix = "@std/"
 )
 
-func ImportPackage(name string) (language.Object, bool) {
+func ImportPackage(name string, dg *debug.Debug) (language.Object, bool) {
 	if !strings.HasPrefix(name, BuiltInModulePrefix) {
 		return nil, false
 	}
@@ -27,23 +28,23 @@ func ImportPackage(name string) (language.Object, bool) {
 	name = strings.TrimPrefix(name, BuiltInModulePrefix)
 	switch name {
 	case "io":
-		return io.NewIO(), true
+		return io.NewIO(dg), true
 	case "math":
-		return math.NewMath(), true
+		return math.NewMath(dg), true
 	case "json":
-		return json.NewJSON(), true
+		return json.NewJSON(dg), true
 	case "log":
-		return log.NewLog(), true
+		return log.NewLog(dg), true
 	case "thread":
-		return thread.NewThread(), true
+		return thread.NewThread(dg), true
 	case "random":
-		return random.NewRandom(), true
+		return random.NewRandom(dg), true
 	case "process":
-		return process.NewProcess(), true
+		return process.NewProcess(dg), true
 	case "layoutjs":
-		return layoutjs.NewLayoutJS(), true
+		return layoutjs.NewLayoutJS(dg), true
 	case "sql":
-		return sql.NewSQL(), true
+		return sql.NewSQL(dg), true
 	case "sql/driver/sqlite":
 		return sql.NewSQLite(), true
 	case "sql/driver/mysql":

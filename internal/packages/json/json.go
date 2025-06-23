@@ -3,12 +3,14 @@ package json
 import (
 	"encoding/json"
 
+	"github.com/nubolang/nubo/internal/debug"
 	"github.com/nubolang/nubo/language"
 	"github.com/nubolang/nubo/native"
+	"github.com/nubolang/nubo/native/n"
 )
 
-func NewJSON() language.Object {
-	instance := language.NewStruct("@std/json", nil, nil)
+func NewJSON(dg *debug.Debug) language.Object {
+	instance := n.NewPackage("json", dg)
 	proto := instance.GetPrototype()
 
 	proto.SetObject("parse", native.NewTypedFunction(native.OneArg("string", language.TypeString), language.TypeAny, parseFn))

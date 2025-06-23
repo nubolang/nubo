@@ -1,0 +1,4 @@
+import json from "@std/json"
+
+const data = "{}"
+println(json.parse(data))

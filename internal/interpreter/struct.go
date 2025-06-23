@@ -48,7 +48,7 @@ func (i *Interpreter) handleStructCreation(obj language.Object, node *astnode.No
 		return nil, err
 	}
 
-	if newer, ok := instance.GetPrototype().GetObject("new"); ok {
+	if newer, ok := instance.GetPrototype().GetObject("init"); ok {
 		fn, ok := newer.(*language.Function)
 		if !ok {
 			return nil, newErr(ErrTypeMismatch, fmt.Sprintf("expected function, got %s", newer.Type()), node.Debug)

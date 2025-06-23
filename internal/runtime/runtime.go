@@ -6,6 +6,7 @@ import (
 	"github.com/nubolang/nubo/events"
 	"github.com/nubolang/nubo/internal/ast/astnode"
 	"github.com/nubolang/nubo/internal/builtin"
+	"github.com/nubolang/nubo/internal/debug"
 	"github.com/nubolang/nubo/internal/interpreter"
 	"github.com/nubolang/nubo/internal/packages"
 	"github.com/nubolang/nubo/language"
@@ -65,7 +66,7 @@ func (r *Runtime) ProvidePackage(name string, pkg language.Object) {
 	r.packages[name] = pkg
 }
 
-func (r *Runtime) ImportPackage(name string) (language.Object, bool) {
+func (r *Runtime) ImportPackage(name string, dg *debug.Debug) (language.Object, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	pkg, ok := r.packages[name]
@@ -73,7 +74,7 @@ func (r *Runtime) ImportPackage(name string) (language.Object, bool) {
 		return pkg, true
 	}
 
-	return packages.ImportPackage(name)
+	return packages.ImportPackage(name, dg)
 }
 
 func (r *Runtime) Interpret(file string, nodes []*astnode.Node) (language.Object, error) {

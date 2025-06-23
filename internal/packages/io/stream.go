@@ -11,7 +11,11 @@ import (
 )
 
 func NewIOStream(r io.Reader) language.Object {
-	instance := language.NewStruct("@std/io:stream", nil, nil)
+	instance, err := streamStruct.NewInstance()
+	if err != nil {
+		return nil
+	}
+
 	proto := instance.GetPrototype()
 
 	proto.SetObject("read", native.NewTypedFunction(nil, language.TypeString, streamReadFn(r)))

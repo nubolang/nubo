@@ -50,19 +50,24 @@ func (i *StructInstance) TypeString() string {
 }
 
 func (i *StructInstance) String() string {
-	objs := i.GetPrototype().Objects()
-	if len(objs) == 0 {
-		return fmt.Sprintf("%s{objects=[]}", i.Name)
+	if len(i.base.Data) == 0 {
+		return fmt.Sprintf("%s[%s]{}", i.Name, i.base.structType.ID)
 	}
 
-	var items []string
-	for name, item := range objs {
-		items = append(items, fmt.Sprintf("%s: %s", name, indentString(item.String(), "\t")))
+	var items = make([]string, len(i.base.Data))
+	for inx, field := range i.base.Data {
+		ob, ok := i.GetPrototype().GetObject(field.Name)
+		if !ok {
+			items[inx] = fmt.Sprintf("%s: <invalid>", field.Name)
+		} else {
+			items[inx] = fmt.Sprintf("%s: %s", field.Name, indentString(ob.String(), "\t"))
+		}
 	}
 
 	return fmt.Sprintf(
-		"%s{objects=[\n\t%s\n]}",
+		"%s[%s]{\n\t%s\n}",
 		i.Name,
+		i.base.structType.ID,
 		strings.Join(items, ",\n\t"),
 	)
 }

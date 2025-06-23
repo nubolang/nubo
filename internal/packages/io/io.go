@@ -3,19 +3,28 @@ package io
 import (
 	"fmt"
 
+	"github.com/nubolang/nubo/internal/debug"
 	"github.com/nubolang/nubo/language"
 	"github.com/nubolang/nubo/native"
+	"github.com/nubolang/nubo/native/n"
 )
 
-func NewIO() language.Object {
-	instance := language.NewStruct("@std/io", nil, nil)
+var streamStruct *language.Struct
+
+func NewIO(dg *debug.Debug) language.Object {
+	instance := n.NewPackage("io", dg)
 	proto := instance.GetPrototype()
 
+	if streamStruct == nil {
+		streamStruct = language.NewStruct("Stream", nil, dg)
+	}
+
+	proto.SetObject("Stream", streamStruct)
 	proto.SetObject("read", native.NewTypedFunction(native.OneArg("text", language.TypeString, language.NewString("", nil)), language.TypeString, readFn))
 	proto.SetObject("open", native.NewTypedFunction([]language.FnArg{
 		&language.BasicFnArg{TypeVal: language.TypeString, NameVal: "file"},
 		&language.BasicFnArg{TypeVal: language.TypeString, NameVal: "encoding", DefaultVal: language.NewString("utf-8", nil)},
-	}, language.TypeStructInstance, openFn))
+	}, streamStruct.Type(), openFn))
 
 	return instance
 }

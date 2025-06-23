@@ -38,7 +38,7 @@ func (ir *Interpreter) handleImport(node *astnode.Node) error {
 		fileName = name
 	}
 
-	obj, ok := ir.runtime.ImportPackage(fileName)
+	obj, ok := ir.runtime.ImportPackage(fileName, node.Debug)
 	if ok {
 		return ir.Declare(node.Content, obj, obj.Type(), false)
 	}

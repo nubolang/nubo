@@ -64,7 +64,7 @@ func printFn(args []language.Object) (language.Object, error) {
 	return nil, nil
 }
 
-func typeFn(ctx native.FnCtx) (language.Object, error) {
+func _typeFn(ctx native.FnCtx) (language.Object, error) {
 	obj, err := ctx.Get("obj")
 	if err != nil {
 		return nil, err
@@ -72,7 +72,7 @@ func typeFn(ctx native.FnCtx) (language.Object, error) {
 	return language.NewString(obj.TypeString(), nil), nil
 }
 
-func _typeFn(ctx native.FnCtx) (language.Object, error) {
+func typeFn(ctx native.FnCtx) (language.Object, error) {
 	obj, err := ctx.Get("obj")
 	if err != nil {
 		return nil, err
@@ -362,7 +362,6 @@ func unwrapFn(ctx native.FnCtx) (language.Object, error) {
 		return nil, err
 	}
 
-	fmt.Printf("%T\n", obj)
 	if ref, ok := obj.(*language.Ref); ok {
 		return ref.Data, nil
 	}

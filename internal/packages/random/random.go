@@ -4,12 +4,14 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/nubolang/nubo/internal/debug"
 	"github.com/nubolang/nubo/language"
 	"github.com/nubolang/nubo/native"
+	"github.com/nubolang/nubo/native/n"
 )
 
-func NewRandom() language.Object {
-	instance := language.NewStruct("@std/random", nil, nil)
+func NewRandom(dg *debug.Debug) language.Object {
+	instance := n.NewPackage("random", dg)
 	proto := instance.GetPrototype()
 
 	random := rand.New(rand.NewSource(time.Now().Unix()))

@@ -14,13 +14,16 @@ func (i *Interpreter) handleImpl(node *astnode.Node) error {
 		return newErr(ErrInvalidImpl, fmt.Sprintf("Cannot implement %s", name), node.Debug)
 	}
 
-	proto := definition.GetPrototype()
-	_, ok = proto.GetObject("#impl")
-	if ok {
-		return newErr(ErrInvalidImpl, fmt.Sprintf("Cannot re-implement %s", name), node.Debug)
+	proto, ok := definition.GetPrototype().(*language.StructPrototype)
+	if !ok {
+		return newErr(ErrInvalidImpl, fmt.Sprintf("Cannot implement %s", name), node.Debug)
 	}
 
-	proto.SetObject("#impl", language.NewBool(true, node.Debug))
+	if proto.Implemented() {
+		return newErr(ErrInvalidImpl, fmt.Sprintf("Cannot re-implement %s", name), node.Debug)
+	}
+	proto.Implement()
+
 	for _, child := range node.Body {
 		name := child.Content
 		fn, err := i.handleFunctionDecl(child, true)

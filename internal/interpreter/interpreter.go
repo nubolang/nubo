@@ -5,6 +5,7 @@ import (
 
 	"github.com/nubolang/nubo/events"
 	"github.com/nubolang/nubo/internal/ast/astnode"
+	"github.com/nubolang/nubo/internal/debug"
 	"github.com/nubolang/nubo/language"
 	"github.com/nubolang/nubo/packer"
 )
@@ -14,7 +15,7 @@ type Runtime interface {
 	GetEventProvider() events.Provider
 	NewID() uint
 	RemoveInterpreter(id uint)
-	ImportPackage(name string) (language.Object, bool)
+	ImportPackage(name string, dg *debug.Debug) (language.Object, bool)
 	GetPacker() (*packer.Packer, error)
 }
 

@@ -3,12 +3,14 @@ package math
 import (
 	"math"
 
+	"github.com/nubolang/nubo/internal/debug"
 	"github.com/nubolang/nubo/language"
 	"github.com/nubolang/nubo/native"
+	"github.com/nubolang/nubo/native/n"
 )
 
-func NewMath() language.Object {
-	instance := language.NewStruct("@std/math", nil, nil)
+func NewMath(dg *debug.Debug) language.Object {
+	instance := n.NewPackage("math", dg)
 	proto := instance.GetPrototype()
 
 	proto.SetObject("abs", native.NewTypedFunction(native.OneArg("number", language.TypeNumber), language.TypeNumber, absFn))

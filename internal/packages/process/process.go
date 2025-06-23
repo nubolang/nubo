@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"os/exec"
 
+	"github.com/nubolang/nubo/internal/debug"
 	"github.com/nubolang/nubo/language"
 	"github.com/nubolang/nubo/native"
+	"github.com/nubolang/nubo/native/n"
 )
 
-func NewProcess() language.Object {
-	instance := language.NewStruct("@std/process", nil, nil)
+func NewProcess(dg *debug.Debug) language.Object {
+	instance := n.NewPackage("process", dg)
 	proto := instance.GetPrototype()
 
 	proto.SetObject("run", native.NewTypedFunction(

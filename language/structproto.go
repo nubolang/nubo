@@ -8,9 +8,12 @@ import (
 type StructPrototype struct {
 	base     *Struct
 	instance *StructInstance
-	setters  map[string]Object
-	data     map[string]Object
-	mu       sync.RWMutex
+
+	setters     map[string]Object
+	implemented bool
+
+	data map[string]Object
+	mu   sync.RWMutex
 }
 
 func NewStructPrototype(base *Struct) *StructPrototype {
@@ -78,7 +81,7 @@ func (s *StructPrototype) SetObject(name string, value Object) error {
 		}
 
 		if len(fn.ArgTypes) > 0 {
-			if fn.ArgTypes[0].Type().Compare(s.base.structType) {
+			if fn.ArgTypes[0].Type().Base() != ObjectTypeAny && fn.ArgTypes[0].Type().Compare(s.base.structType) {
 				newFn := NewTypedFunction(fn.ArgTypes[1:], fn.ReturnType, func(o []Object) (Object, error) {
 					objs := make([]Object, 0, len(o)+1)
 					objs = append(objs, s.instance)
@@ -87,6 +90,7 @@ func (s *StructPrototype) SetObject(name string, value Object) error {
 					}
 					return fn.Data(objs)
 				}, fn.Debug())
+
 				s.data[name] = newFn
 				return nil
 			}
@@ -120,4 +124,12 @@ func (s *StructPrototype) Clone() *StructPrototype {
 	cloned.data = data
 
 	return cloned
+}
+
+func (s *StructPrototype) Implement() {
+	s.implemented = true
+}
+
+func (s *StructPrototype) Implemented() bool {
+	return s.implemented
 }

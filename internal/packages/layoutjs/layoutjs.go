@@ -4,22 +4,24 @@ import (
 	"embed"
 	"io"
 
+	"github.com/nubolang/nubo/internal/debug"
 	"github.com/nubolang/nubo/language"
 	"github.com/nubolang/nubo/native"
 	"github.com/nubolang/nubo/native/n"
+	"github.com/nubolang/nubo/server/modules"
 )
 
 //go:embed layout.min.js
 var jsFile embed.FS
 
-func NewLayoutJS() language.Object {
-	instance := language.NewStruct("@std/sdkjs", nil, nil)
+func NewLayoutJS(dg *debug.Debug) language.Object {
+	instance := n.NewPackage("sdkjs", dg)
 	proto := instance.GetPrototype()
 
 	proto.SetObject("create", native.NewTypedFunction([]language.FnArg{
 		&language.BasicFnArg{TypeVal: language.TypeString, NameVal: "children"},
 		&language.BasicFnArg{TypeVal: language.NewFunctionType(language.TypeString, language.TypeString), NameVal: "handler"},
-		&language.BasicFnArg{TypeVal: language.TypeStructInstance, NameVal: "request"},
+		&language.BasicFnArg{TypeVal: modules.RequestStruct().Type(), NameVal: "request"},
 	}, language.TypeString, fnCreate))
 
 	proto.SetObject("script", native.NewTypedFunction(nil, language.TypeString, func(ctx native.FnCtx) (language.Object, error) {
@@ -48,6 +50,7 @@ func fnCreate(ctx native.FnCtx) (language.Object, error) {
 	if !is {
 		handler, _ := ctx.Get("handler")
 		handl := handler.Value().(func(args []language.Object) (language.Object, error))
+
 		return handl([]language.Object{children})
 	}
 

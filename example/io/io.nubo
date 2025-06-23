@@ -1,7 +1,7 @@
 import io from "@std/io"
 
-const file = io.open("input.txt", "utf-8")
+const file: io.Stream = io.open("input.txt", "utf-8")
 
 const data = file.readLine().trim().split()
 
-println(data, type(data))
+println(data)

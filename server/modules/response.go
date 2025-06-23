@@ -12,7 +12,7 @@ import (
 )
 
 type Response struct {
-	inst *language.Struct
+	inst *language.StructInstance
 
 	body    *bytes.Buffer
 	code    int
@@ -22,6 +22,8 @@ type Response struct {
 	w http.ResponseWriter
 	r *http.Request
 }
+
+var responseStruct *language.Struct
 
 func NewResponse(w http.ResponseWriter, req *http.Request) *Response {
 	r := &Response{
@@ -36,7 +38,11 @@ func NewResponse(w http.ResponseWriter, req *http.Request) *Response {
 	// Default content-type
 	r.headers.Set("Content-Type", "text/html")
 
-	inst := language.NewStruct("@server/response", nil, nil)
+	if responseStruct == nil {
+		responseStruct = language.NewStruct("response", nil, nil)
+	}
+
+	inst, _ := responseStruct.NewInstance()
 	r.setupInstance(inst)
 	r.inst = inst
 
@@ -72,7 +78,7 @@ func (r *Response) Sync() {
 	r.w.Write(r.body.Bytes())
 }
 
-func (r *Response) setupInstance(inst *language.Struct) {
+func (r *Response) setupInstance(inst *language.StructInstance) {
 	proto := inst.GetPrototype()
 
 	proto.SetObject("status", native.NewTypedFunction(native.OneArg("code", language.TypeInt), language.TypeVoid, r.fnStatus))
@@ -167,6 +173,7 @@ func (r *Response) fnRedirect(ctx native.FnCtx) (language.Object, error) {
 	urlObj, _ := ctx.Get("url")
 	url := urlObj.String()
 
+	r.written = true
 	http.Redirect(r.w, r.r, url, http.StatusFound)
 	return nil, nil
 }

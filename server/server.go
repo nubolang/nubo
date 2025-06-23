@@ -78,11 +78,15 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var cached bool
 	start := time.Now()
 
+	if os.Getenv("NUBO_DEV") == "true" {
+		_ = s.router.Reload()
+	}
+
 	defer func() {
 		if rcv := recover(); rcv != nil {
 			log.Printf("PANIC RECOVERED: %v. Request: %s %s", rcv, r.Method, r.URL.Path)
 
-			w.Write([]byte("Nubo - Internal Server Error #(PANIC)"))
+			w.Write(fmt.Appendf([]byte{}, "Nubo - Internal Server Error:\n%s", rcv))
 			w.WriteHeader(http.StatusInternalServerError)
 
 			if os.Getenv("NUBO_DEV") == "true" {
@@ -109,7 +113,10 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if s.isDir {
 		route, ok := s.router.Match(r.URL.Path)
 		if !ok {
-			s.handleError(errNotFound, w, r)
+			err := serveStatic(w, r)
+			if err != nil {
+				s.handleError(errNotFound, w, r)
+			}
 			return
 		}
 
