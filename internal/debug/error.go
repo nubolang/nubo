@@ -36,6 +36,9 @@ func (de *DebugErr) Unwrap() error {
 func NewError(base error, err string, debug ...*Debug) error {
 	var dg *DebugErr
 	if errors.As(base, &dg) {
+		if dg.debug == nil && len(debug) > 0 {
+			dg.debug = debug[0]
+		}
 		return dg
 	}
 

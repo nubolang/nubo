@@ -23,7 +23,9 @@ func NewDB(conn *SQLConn) (language.Object, error) {
 		return nil, err
 	}
 
-	inst := obj.GetPrototype()
+	inst := obj.GetPrototype().(*language.StructPrototype)
+	inst.Unlock()
+	defer inst.Lock()
 
 	emptyList, _ := n.List(nil)
 	inst.SetObject("query", n.Function(n.Describe(n.Arg("query", n.TString), n.Arg("args", n.TList, emptyList)).Returns(n.TTList(n.TDict)), fnQuery(conn)))

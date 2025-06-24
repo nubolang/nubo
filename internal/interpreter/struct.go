@@ -45,7 +45,7 @@ func (i *Interpreter) handleStructCreation(obj language.Object, node *astnode.No
 
 	instance, err := definition.NewInstance()
 	if err != nil {
-		return nil, err
+		return nil, newErr(ErrStructInstantiation, err.Error(), node.Debug)
 	}
 
 	if newer, ok := instance.GetPrototype().GetObject("init"); ok {

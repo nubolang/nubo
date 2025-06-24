@@ -16,7 +16,9 @@ func NewIOStream(r io.Reader) language.Object {
 		return nil
 	}
 
-	proto := instance.GetPrototype()
+	proto := instance.GetPrototype().(*language.StructPrototype)
+	proto.Unlock()
+	defer proto.Lock()
 
 	proto.SetObject("read", native.NewTypedFunction(nil, language.TypeString, streamReadFn(r)))
 	proto.SetObject("readAll", native.NewTypedFunction(nil, language.TypeString, streamReadAllFn(r)))

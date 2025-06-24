@@ -69,18 +69,10 @@ func DefaultValue(typ *Type) Object {
 	case ObjectTypeDict:
 		dict, _ := NewDict(nil, nil, typ.Key, typ.Value, nil)
 		return dict
-	case ObjectTypeStructInstance:
-		return nil
-	case ObjectTypeStructDefinition:
-		return nil
-	case ObjectTypeNil:
-		return Nil
-	case ObjectTypeAny:
-		return Nil
 	case ObjectTypeVoid:
 		return nil
 	default:
-		return nil
+		return Nil
 	}
 }
 
@@ -127,7 +119,7 @@ func (t *Type) NextMatch(other *Type) bool {
 
 func (t *Type) Compare(other *Type) bool {
 	if t == nil || other == nil {
-		return t.NextMatch(other)
+		return false
 	}
 
 	if t.BaseType == ObjectTypeAny {
@@ -139,6 +131,7 @@ func (t *Type) Compare(other *Type) bool {
 			t.BaseType == ObjectTypeList ||
 			t.BaseType == ObjectTypeDict ||
 			t.BaseType == ObjectTypeStructInstance ||
+			t.BaseType == ObjectTypeStructDefinition ||
 			t.BaseType == ObjectTypeFunction
 	}
 

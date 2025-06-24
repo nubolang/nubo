@@ -10,7 +10,8 @@ import (
 
 func FnParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, inx *int, p parser, inline bool) (*astnode.Node, error) {
 	node := &astnode.Node{
-		Type: astnode.NodeTypeFunction,
+		Type:  astnode.NodeTypeFunction,
+		Debug: tokens[*inx].Debug,
 	}
 
 	if inline {

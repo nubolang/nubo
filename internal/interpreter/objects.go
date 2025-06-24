@@ -76,7 +76,11 @@ func (i *Interpreter) assignNested(name string, value language.Object) error {
 			return newErr(ErrUndefinedVariable, fmt.Sprintf("Undefined property '%s'", part), nil)
 		}
 	}
-	return current.GetPrototype().SetObject(parts[len(parts)-1], value)
+	err := current.GetPrototype().SetObject(parts[len(parts)-1], value)
+	if err != nil {
+		return newErr(ErrPrototype, err.Error(), value.Debug())
+	}
+	return nil
 }
 
 func (i *Interpreter) assignInCurrentScope(name string, value language.Object) error {

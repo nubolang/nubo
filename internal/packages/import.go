@@ -13,14 +13,30 @@ import (
 	"github.com/nubolang/nubo/internal/packages/random"
 	"github.com/nubolang/nubo/internal/packages/sql"
 	"github.com/nubolang/nubo/internal/packages/thread"
+	"github.com/nubolang/nubo/internal/packages/time"
 	"github.com/nubolang/nubo/language"
+	"github.com/nubolang/nubo/native/n"
 )
 
 const (
 	BuiltInModulePrefix = "@std/"
 )
 
+var packageList = []string{"io", "math", "json", "log", "thread", "random", "process", "layoutjs", "sql", "time"}
+
 func ImportPackage(name string, dg *debug.Debug) (language.Object, bool) {
+	if name == "@std" {
+		pkg := n.NewPackage("@std", dg)
+		for _, pkgName := range packageList {
+			getPkg, ok := ImportPackage("@std/"+pkgName, dg)
+			if !ok {
+				continue
+			}
+			pkg.GetPrototype().SetObject(pkgName, getPkg)
+		}
+		return pkg, true
+	}
+
 	if !strings.HasPrefix(name, BuiltInModulePrefix) {
 		return nil, false
 	}
@@ -51,6 +67,8 @@ func ImportPackage(name string, dg *debug.Debug) (language.Object, bool) {
 		return sql.NewMySQL(), true
 	case "sql/driver/postgres":
 		return sql.NewPostgres(), true
+	case "time":
+		return time.NewTime(dg), true
 	}
 
 	return nil, false

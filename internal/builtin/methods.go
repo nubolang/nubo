@@ -27,6 +27,7 @@ func GetBuiltins() map[string]language.Object {
 		"clone":   native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeAny, cloneFn),
 		"exit":    native.NewTypedFunction(native.OneArg("code", language.TypeInt, language.NewInt(0, nil)), language.TypeVoid, exitFn),
 		"range":   n.Function(n.Describe(n.Arg("start", n.TInt), n.Arg("stop", n.TUnion(n.TInt, n.TNil), language.Nil), n.Arg("step", n.TInt, n.Int(1))).Returns(n.TTList(n.TInt)), rangeFn),
+		"env":     n.Function(n.Describe(n.Arg("name", n.TString), n.Arg("value", n.Nullable(n.TString), language.Nil)).Returns(n.Nullable(n.TString)), envFn),
 
 		// Types
 		"string": native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeString, stringFn),
@@ -367,4 +368,17 @@ func unwrapFn(ctx native.FnCtx) (language.Object, error) {
 	}
 
 	return nil, fmt.Errorf("Cannot unwrap non-reference object")
+}
+
+func envFn(a *n.Args) (any, error) {
+	name := a.Name("name").String()
+	value := a.Name("value")
+
+	if value.Type().Base() == language.ObjectTypeNil {
+		return os.Getenv(name), nil
+	}
+
+	val := value.String()
+	os.Setenv(name, val)
+	return language.Nil, nil
 }

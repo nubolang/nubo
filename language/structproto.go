@@ -11,6 +11,7 @@ type StructPrototype struct {
 
 	setters     map[string]Object
 	implemented bool
+	locked      bool
 
 	data map[string]Object
 	mu   sync.RWMutex
@@ -21,6 +22,7 @@ func NewStructPrototype(base *Struct) *StructPrototype {
 		base:    base,
 		setters: make(map[string]Object),
 		data:    make(map[string]Object),
+		locked:  true,
 	}
 
 	return sp
@@ -33,6 +35,7 @@ func (sp *StructPrototype) IsBase() bool {
 func (sp *StructPrototype) NewInstance(instance *StructInstance) (*StructPrototype, error) {
 	cloned := sp.Clone()
 	cloned.instance = instance
+	cloned.Unlock()
 
 	for _, field := range sp.base.Data {
 		if err := cloned.SetObject(field.Name, DefaultValue(field.Type)); err != nil {
@@ -46,6 +49,7 @@ func (sp *StructPrototype) NewInstance(instance *StructInstance) (*StructPrototy
 		}
 	}
 
+	cloned.Lock()
 	return cloned, nil
 }
 
@@ -72,6 +76,10 @@ func (s *StructPrototype) SetObject(name string, value Object) error {
 			s.data[name] = value
 			return nil
 		}
+	}
+
+	if s.locked && s.instance != nil {
+		return fmt.Errorf("Cannot use struct prototype directly, add a field or implement it via the impl block")
 	}
 
 	if value.Type().Base() == ObjectTypeFunction {
@@ -122,6 +130,7 @@ func (s *StructPrototype) Clone() *StructPrototype {
 		data[k] = v.Clone()
 	}
 	cloned.data = data
+	cloned.locked = true
 
 	return cloned
 }
@@ -132,4 +141,12 @@ func (s *StructPrototype) Implement() {
 
 func (s *StructPrototype) Implemented() bool {
 	return s.implemented
+}
+
+func (s *StructPrototype) Lock() {
+	s.locked = true
+}
+
+func (s *StructPrototype) Unlock() {
+	s.locked = false
 }

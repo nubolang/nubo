@@ -22,7 +22,8 @@ func (i *Interpreter) handleImpl(node *astnode.Node) error {
 	if proto.Implemented() {
 		return newErr(ErrInvalidImpl, fmt.Sprintf("Cannot re-implement %s", name), node.Debug)
 	}
-	proto.Implement()
+
+	proto.Unlock()
 
 	for _, child := range node.Body {
 		name := child.Content
@@ -31,9 +32,12 @@ func (i *Interpreter) handleImpl(node *astnode.Node) error {
 			return err
 		}
 		if err := proto.SetObject(name, fn); err != nil {
-			return err
+			return newErr(ErrPrototype, err.Error(), node.Debug)
 		}
 	}
+
+	proto.Lock()
+	proto.Implement()
 
 	return nil
 }

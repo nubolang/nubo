@@ -47,7 +47,7 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 				}
 
 				if obj.Type().Base() == language.ObjectTypeStructDefinition {
-					return nil, newErr(ErrUnsupported, fmt.Sprintf("cannot operate on type %s", obj.Type()), obj.Debug())
+					return nil, newErr(ErrUnsupported, fmt.Sprintf("cannot operate on struct %s", obj.Type()), obj.Debug())
 				}
 
 				if len(node.Body) == 1 {
@@ -60,6 +60,20 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 					}
 
 					return obj, nil
+				}
+
+				if obj.Type().Base() == language.ObjectTypeStructInstance {
+					value, ok := obj.GetPrototype().GetObject("__value__")
+					if ok && language.NewFunctionType(language.TypeAny).Compare(value.Type()) {
+						fn, ok := value.(*language.Function)
+						if ok {
+							value, err := fn.Data(nil)
+							if err != nil {
+								return nil, err
+							}
+							obj = value
+						}
+					}
 				}
 
 				if isNotEvaluable(obj.Type().Base()) {

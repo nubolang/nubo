@@ -44,7 +44,7 @@ func (ot ObjectType) String() string {
 	case ObjectTypeFunction:
 		return "fn"
 	case ObjectTypeNil:
-		return "nil"
+		return "<nil>"
 	case ObjectTypeAny:
 		return "any"
 	case ObjectTypeVoid:

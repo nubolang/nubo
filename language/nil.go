@@ -34,7 +34,7 @@ func (n *NilObj) TypeString() string {
 }
 
 func (n *NilObj) String() string {
-	return ":nil:"
+	return "<nil>"
 }
 
 func (n *NilObj) GetPrototype() Prototype {

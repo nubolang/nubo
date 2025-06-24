@@ -101,6 +101,16 @@ func Int(i int, dg ...*debug.Debug) *language.Int {
 	return language.NewInt(int64(i), d)
 }
 
+// Int64 creates a language.Int poiter
+func Int64(i int64, dg ...*debug.Debug) *language.Int {
+	var d *debug.Debug
+	if len(dg) > 0 {
+		d = dg[0]
+	}
+
+	return language.NewInt(i, d)
+}
+
 // List creates a language.List poiter
 func List(l []any, dg ...*debug.Debug) (*language.List, error) {
 	var d *debug.Debug
