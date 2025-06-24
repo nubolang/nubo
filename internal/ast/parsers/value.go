@@ -118,11 +118,18 @@ func singleValueParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Toke
 	default:
 		return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("expected value, got '%v'", token.Value), token.Debug)
 	case lexer.TokenString:
-		return &astnode.Node{
+		s := &astnode.Node{
 			Type:  astnode.NodeTypeValue,
 			Kind:  "STRING",
 			Value: token.Value,
-		}, nil
+			Debug: token.Debug,
+		}
+
+		if token.Map["quote"] == "`" {
+			s.Flags.Append("TEMPLATE")
+		}
+
+		return s, nil
 	case lexer.TokenBool:
 		value, err := strconv.ParseBool(token.Value)
 		if err != nil {
@@ -133,6 +140,7 @@ func singleValueParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Toke
 			Type:  astnode.NodeTypeValue,
 			Kind:  "BOOLEAN",
 			Value: value,
+			Debug: token.Debug,
 		}, nil
 	case lexer.TokenNumber:
 		isFloat, ok := token.Map["isFloat"].(bool)
@@ -150,6 +158,7 @@ func singleValueParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Toke
 				Type:  astnode.NodeTypeValue,
 				Kind:  "FLOAT",
 				Value: value,
+				Debug: token.Debug,
 			}, nil
 		}
 
@@ -162,12 +171,14 @@ func singleValueParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Toke
 			Type:  astnode.NodeTypeValue,
 			Kind:  "INTEGER",
 			Value: value,
+			Debug: token.Debug,
 		}, nil
 	case lexer.TokenNil:
 		return &astnode.Node{
 			Type:  astnode.NodeTypeValue,
 			Kind:  "NIL",
 			Value: nil,
+			Debug: token.Debug,
 		}, nil
 	case lexer.TokenIdentifier:
 		id, err := TypeWholeIDParser(ctx, tokens, inx)
@@ -183,6 +194,7 @@ func singleValueParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Toke
 				Kind:        "IDENTIFIER",
 				Value:       id,
 				IsReference: true,
+				Debug:       token.Debug,
 			}, nil
 		}
 
@@ -213,6 +225,7 @@ func singleValueParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Toke
 			Kind:        "IDENTIFIER",
 			Value:       id,
 			IsReference: true,
+			Debug:       token.Debug,
 		}, nil
 	case lexer.TokenFn:
 		n, err := FnParser(ctx, sn, tokens, inx, sn, true)
@@ -248,6 +261,7 @@ func arrayKeyParser(ctx context.Context, sn Parser_HTML, id string, tokens []*le
 		Kind:        "IDENTIFIER",
 		Value:       id,
 		IsReference: true,
+		Debug:       tokens[*inx].Debug,
 	}
 
 loop:
@@ -300,6 +314,7 @@ loop:
 				Type:  astnode.NodeTypeValue,
 				Kind:  "IDENTIFIER",
 				Value: prop,
+				Debug: tokens[*inx-1].Debug,
 			}
 			node.Children = append(node.Children, propNode)
 

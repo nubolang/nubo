@@ -1,0 +1,11 @@
+
+let x = 0
+while x < 5 {
+    x++
+    if x == 3 {
+        break
+    }
+    println("X", x)
+}
+
+println("Finish!")

@@ -26,7 +26,7 @@ func (i *Interpreter) handleFor(node *astnode.Node) (language.Object, error) {
 
 	iterator, ok := expr.(Iterator)
 	if !ok {
-		return nil, newErr(ErrValueError, fmt.Sprintf("expected interator, got %s: %s", expr.Type(), expr.Value()), expr.Debug())
+		return nil, newErr(ErrValueError, fmt.Sprintf("expected iterator, got %s(%v)", expr.Type(), expr.Value()), expr.Debug())
 	}
 
 	iterate := iterator.Iterator()
@@ -37,7 +37,7 @@ func (i *Interpreter) handleFor(node *astnode.Node) (language.Object, error) {
 			break
 		}
 
-		ir := NewWithParent(i, ScopeBlock)
+		ir := NewWithParent(i, ScopeBlock, "for")
 		if kv.Iterator != nil {
 			err := ir.Declare(kv.Iterator.Value.(string), key, key.Type(), true)
 			if err != nil {
@@ -56,6 +56,15 @@ func (i *Interpreter) handleFor(node *astnode.Node) (language.Object, error) {
 			return nil, err
 		}
 		if ob != nil {
+			if ob.Type().Base() == language.ObjectTypeSignal {
+				if ob.String() == "break" {
+					break
+				}
+				if ob.String() == "continue" {
+					continue
+				}
+				return nil, newErr(ErrInvalid, fmt.Sprintf("invalid language singnal: %s", ob.String()), ob.Debug())
+			}
 			return ob, nil
 		}
 	}

@@ -42,6 +42,13 @@ func (i *Interpreter) handleNode(node *astnode.Node) (language.Object, error) {
 	case astnode.NodeTypeImpl:
 		return nil, i.handleImpl(node)
 	default:
+		if node.Type == astnode.NodeTypeSignal {
+			if i.isChildOf(ScopeBlock, "for") || i.isChildOf(ScopeBlock, "while") {
+				return language.NewSignal(node.Content, node.Debug), nil
+			} else {
+				return nil, newErr(ErrInvalid, fmt.Sprintf("%s(%s) can only be used within a for or while loop", node.Type, node.Content), node.Debug)
+			}
+		}
 		return nil, newErr(ErrUnknownNode, fmt.Sprintf("%s", node.Type), node.Debug)
 	}
 }

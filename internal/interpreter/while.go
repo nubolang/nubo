@@ -33,12 +33,21 @@ func (i *Interpreter) handleWhile(node *astnode.Node) (language.Object, error) {
 			break
 		}
 
-		ir := NewWithParent(i, ScopeBlock)
+		ir := NewWithParent(i, ScopeBlock, "while")
 		ob, err := ir.Run(node.Body)
 		if err != nil {
 			return nil, err
 		}
 		if ob != nil {
+			if ob.Type().Base() == language.ObjectTypeSignal {
+				if ob.String() == "break" {
+					break
+				}
+				if ob.String() == "continue" {
+					continue
+				}
+				return nil, newErr(ErrInvalid, fmt.Sprintf("invalid language singnal: %s", ob.String()), ob.Debug())
+			}
 			return ob, nil
 		}
 	}

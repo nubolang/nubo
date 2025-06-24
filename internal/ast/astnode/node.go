@@ -29,7 +29,7 @@ type Node struct {
 	Attrs map[string]any `yaml:"attrs,omitempty"`
 	Flags AppendFlags    `yaml:"flags,omitempty"`
 
-	Debug *debug.Debug `yaml:"debug,omitempty"`
+	Debug *debug.Debug `yaml:"-"`
 }
 
 type AppendFlags []string

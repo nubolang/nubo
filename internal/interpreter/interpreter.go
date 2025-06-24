@@ -33,6 +33,7 @@ type Interpreter struct {
 	dependent   bool
 
 	scope  Scope
+	name   string
 	parent *Interpreter
 
 	runtime Runtime
@@ -57,11 +58,17 @@ func New(currentFile string, runtime Runtime, dependent bool) *Interpreter {
 	}
 }
 
-func NewWithParent(parent *Interpreter, scope Scope) *Interpreter {
+func NewWithParent(parent *Interpreter, scope Scope, name ...string) *Interpreter {
+	var n string
+	if len(name) > 0 {
+		n = name[0]
+	}
+
 	return &Interpreter{
 		ID:          parent.ID,
 		currentFile: parent.currentFile,
 		scope:       scope,
+		name:        n,
 		parent:      parent,
 		runtime:     parent.runtime,
 		objects:     make(map[uint32]*entry),
@@ -106,5 +113,19 @@ func (i *Interpreter) MustDetach() {
 
 	for _, child := range i.imports {
 		child.MustDetach()
+	}
+}
+
+func (i *Interpreter) isChildOf(scope Scope, name string) bool {
+	current := i
+	for {
+		if current.scope == scope && current.name == name {
+			return current.scope == scope && current.name == name
+		}
+
+		if current.parent == nil {
+			return false
+		}
+		current = current.parent
 	}
 }

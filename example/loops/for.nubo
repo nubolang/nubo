@@ -1,0 +1,7 @@
+
+for k, v in range(10) {
+    if k == 5 {
+        continue
+    }
+    println(k, v)
+}
