@@ -1,0 +1,58 @@
+// string prototype
+// The basic string type comes with a set of prototype methods
+// Must be known: string is an immutable type, which means
+// that each method attached to it's prototype returns a completely new string object, with a different _id.
+
+let name = "John Doe"
+
+// length
+println("Length of name:", name.length())
+// Any prototype method works like other functions, and they can be referenced.
+let lengthFn = name.length
+println("lengthFn", lengthFn, lengthFn())
+
+// includes
+println("Includes 'John':", name.includes("John"))
+println("Includes 'Jane':", name.includes("Jane"))
+
+// indexOf, lastIndexOf
+println("Index of 'Doe':", name.indexOf("Doe"), name.lastIndexOf("Doe"))
+
+// startsWith, endsWith
+println("Starts with 'John':", name.startsWith("John"))
+println("Ends with 'Doe':", name.endsWith("Doe"))
+
+// toUpperCase, toLowerCase, capilize
+println("To uppercase:", name.toUpperCase())
+println("To lowercase:", name.toLowerCase())
+println("Capitalize:", name.toLowerCase().capitalize())
+
+// trim, trimPrefix, trimSuffix
+name = string("    John Doe   ").trim()
+println("Trim prefix:", name.trimPrefix("John"))
+println("Trim suffix:", name.trimSuffix("Doe"))
+
+// replace
+println("Replace 'John' with 'Jane':", name.replace("John", "Jane"))
+
+// split
+println("Split by space:", name.split(" "))
+
+// substring, charAt, codePointAt
+println("Substring from index 5:", name.substring(5, name.length()))
+println("Character at index 5:", name.charAt(5))
+println("Code point at index 5:", name.codePointAt(5))
+
+// Cases
+println("To kebab-case:", name.toKebabCase())
+println("To camelCase:", name.toCamelCase())
+println("To snake_case:", name.toSnakeCase())
+
+// Iterator
+// String is also an Iterable type
+for ch in name {
+    if string(ch) == ' ' {
+        println("Space found!")
+    }
+	println(ch, type(ch))
+}

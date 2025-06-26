@@ -1,0 +1,69 @@
+// Structs
+// Structs are also a basic type in Nubo. They are a bigger section, so we cover them in a separate file.
+
+// Structs are added to the language to allow for more complex data structures.
+// They are similar to the dict type, but more strict.
+
+// Defining a struct is syntactically easy and straightforward.
+// Every struct must have a name. But they may not have fields.
+struct User {
+    name: string
+    age: int
+    email: string
+}
+
+// Nubo converts everything to an object. User struct is also an object, but it's special and
+// has disabled features until it's not instantiated.
+// Instantiating a struct is like calling a function with the struct name.
+const demoUser = User()
+demoUser.name = "John Doe"
+demoUser.age = 30
+demoUser.email = "john.doe@example.com"
+
+// It sucks setting the fields one by one, right?
+// This is why Nubo added the impl keyword, to implement methods for a struct.
+
+impl User {
+    fn init(self: User, name: string, age: int, email: string) -> User {
+        self.name = name
+        self.age = age
+        self.email = email
+        return self
+    }
+
+    fn introduce(self: User) {
+        println("Hello, my name is", self.name, "and I'm", self.age, "years old.")
+    }
+
+    fn __clone__(self: User) -> User {
+        // string, int are cloneable by default and when passed as arguments
+        // Nubo automatically clones them
+        return User(self.name, self.age, self.email)
+    }
+}
+
+// The impl block can only contain functions. Every function can have a first field with a type
+// of itself. The `self` name is not required to be self, but it's a good practice.
+// There is no new method for structs, because they are already instantiated by the interpreter.
+// Instead, you can use the init method to initialize the newly created instance.
+// NOTE: demoUser will NOT receive these methods, because it's instantiated before the impl block.
+
+const john = User("John", 30, "john.doe@example.com")
+john.introduce()
+println(john)
+// When printing an object, it will always contain an ID (memory address of the struct definition,
+//                                                        not the instance itself, it is used to identify the object)
+// Every function inside the impl and every field of the struct is a prototype wrapper.
+// NOTE: Only ONE implementation of a struct can be defined.
+// And the functions inside the impl block cannot be modified like a normal prototype.
+// But the fields can be modified always with the corresponding declared type.
+john.age = 31
+john.email = "doe.john@example.com"
+john.introduce()
+// Struct fields are also ordered, not like with the dict type.
+
+// NOTE: Struct types are not cloneable by default.
+// You should implement a special method called __clone__ with no arguments (expect self)
+// and return a new instance of the struct with the same values.
+println(_id(john), _id(clone(john)))
+// _id is a helper function that returns the memory address of an object.

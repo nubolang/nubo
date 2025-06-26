@@ -40,4 +40,5 @@ var (
 	ErrInvalidImpl         = fmt.Errorf("Invalid implementation")
 	ErrPrototype           = fmt.Errorf("Prototype error")
 	ErrStructInstantiation = fmt.Errorf("Failed to instantiate a struct")
+	ErrVoidAsValue         = fmt.Errorf("Cannot use void as value")
 )

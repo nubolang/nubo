@@ -60,3 +60,18 @@ func (i *Int) Debug() *debug.Debug {
 func (i *Int) Clone() Object {
 	return NewInt(i.Data, i.debug)
 }
+
+func (i *Int) Iterator() func() (Object, Object, bool) {
+	var inx int64 = 0
+
+	return func() (Object, Object, bool) {
+		if inx >= i.Data {
+			return nil, nil, false
+		}
+
+		key := NewInt(inx, i.debug)
+
+		inx++
+		return key, key, true
+	}
+}

@@ -1,0 +1,17 @@
+// Loops in Nubo depends on a built-in interface called Iterable.
+// You currently cannot define your own Iterable types.
+// But soon, there will be a package for that.
+
+// Future iter package:
+// import iter from "@std/iter"
+// struct YourIterable {
+//     s string
+// }
+//
+// impl YourIterable {
+//      fn __iterate__(self: YourIterable) -> iter.Progress {
+//          return iter.Progress(key, value)
+//          // or...
+//          return iter.End()
+//      }
+//}

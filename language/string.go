@@ -59,3 +59,23 @@ func (i *String) Debug() *debug.Debug {
 func (i *String) Clone() Object {
 	return NewString(i.Data, i.debug)
 }
+
+func (s *String) Iterator() func() (Object, Object, bool) {
+	var (
+		parts    = []rune(s.Data)
+		inx      = 0
+		partsLen = len(parts)
+	)
+
+	return func() (Object, Object, bool) {
+		if inx >= partsLen {
+			return nil, nil, false
+		}
+
+		value := parts[inx]
+		key := NewInt(int64(inx), s.debug)
+
+		inx++
+		return key, NewChar(value, s.debug), true
+	}
+}

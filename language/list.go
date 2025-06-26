@@ -70,10 +70,13 @@ func (i *List) Clone() Object {
 }
 
 func (i *List) Iterator() func() (Object, Object, bool) {
-	var inx = 0
+	var (
+		inx     = 0
+		listLen = len(i.Data)
+	)
 
 	return func() (Object, Object, bool) {
-		if inx >= len(i.Data) {
+		if inx >= listLen {
 			return nil, nil, false
 		}
 

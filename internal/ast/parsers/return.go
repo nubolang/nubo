@@ -21,8 +21,12 @@ func ReturnParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, in
 		return nil, err
 	}
 
-	node.Value = value
-	node.Flags.Append("NODEVALUE")
+	if len(value.Body) > 0 || len(value.Children) > 0 {
+		node.Value = value
+		node.Flags.Append("NODEVALUE")
+	} else {
+		node.Flags.Append("VOID")
+	}
 
 	return node, nil
 }

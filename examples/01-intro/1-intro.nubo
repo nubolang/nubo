@@ -1,0 +1,8 @@
+/*
+    Nubo is a programming language, designed to be easy to learn and use.
+    It has a simple syntax and the ability to write html code inside it.
+*/
+
+let greeting = <h1 id="greeting">Hello, World!</h1>
+println(greeting)
+println(greeting.getAttribute("id"))

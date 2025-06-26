@@ -100,6 +100,11 @@ func (i *Interpreter) handleFunctionCall(node *astnode.Node) (language.Object, e
 		if err != nil {
 			return nil, err
 		}
+
+		if value == nil {
+			return nil, newErr(ErrVoidAsValue, fmt.Sprintf("argument %d is void, expected to be a value", j+1), node.Debug)
+		}
+
 		args[j] = value.Clone()
 	}
 

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/nubolang/nubo/internal/debug"
+	"go.uber.org/zap"
 )
 
 type StructInstance struct {
@@ -85,5 +86,48 @@ func (i *StructInstance) Debug() *debug.Debug {
 }
 
 func (i *StructInstance) Clone() Object {
+	proto := i.GetPrototype()
+	if proto == nil {
+		return i
+	}
+
+	cl, ok := proto.GetObject("__clone__")
+	if ok {
+		clFn, ok := cl.(*Function)
+		if !ok {
+			zap.L().Fatal(i.String(), zap.String("warn", " __clone__ should be a function"))
+			return i
+		}
+		cl, err := clFn.Data(nil)
+		if err != nil {
+			zap.L().Fatal(i.String(), zap.String("error", err.Error()))
+			return i
+		}
+		return cl
+	}
+
 	return i
+}
+
+func (s *StructInstance) Iterator() func() (Object, Object, bool) {
+	var (
+		inx       = 0
+		fieldsLen = len(s.base.Data)
+	)
+
+	return func() (Object, Object, bool) {
+		if inx >= fieldsLen {
+			return nil, nil, false
+		}
+
+		key := s.base.Data[inx]
+		value, ok := s.GetPrototype().GetObject(key.Name)
+		if !ok {
+			zap.L().Warn(s.String(), zap.String("field not found", key.Name))
+			return nil, nil, false
+		}
+
+		inx++
+		return NewString(key.Name, s.debug), value, true
+	}
 }

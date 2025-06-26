@@ -1,0 +1,12 @@
+// For loop
+
+// By default, using the for cycle, it binds the value to the variable
+// if index is not specified.
+for value in range(5) {
+    println(value)
+}
+
+// If there are two identifiers, the first will be the index and the second the value.
+for key, value in "abcd" {
+    println(key, value)
+}

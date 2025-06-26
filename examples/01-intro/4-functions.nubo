@@ -1,0 +1,20 @@
+// Functions
+// Functions are also an object in Nubo. It's a custom type that can be used to define reusable code blocks.
+
+// If not specified, every function has a union type.
+// The union type is basically a union(any, void)
+// The any type accepts any value type, except void.
+fn main() -> void {
+    return
+}
+// Void functions can never be used as a value.
+// A void function returns nothing.
+
+// Alternative function declaration, other syntax but the same as fn foo(name: string) -> void
+const foo = fn(name: string) -> void {
+    println("Hello,", name)
+    return
+}
+
+// Function as a type:
+const myFn: fn(string, string) -> void

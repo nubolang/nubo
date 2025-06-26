@@ -10,6 +10,10 @@ func (i *Interpreter) handleReturn(node *astnode.Node) (language.Object, error) 
 		node = node.Value.(*astnode.Node)
 	}
 
+	if node.Flags.Contains("VOID") {
+		return nil, nil
+	}
+
 	value, err := i.evaluateExpression(node)
 	if err != nil {
 		return nil, err

@@ -1,0 +1,74 @@
+// Nubo is a typed language.
+// It's strict, but also flexible.
+
+// Nubo supports x data types.
+// Almost every type in Nubo comes with a prototype, which provides methods and properties for working with a type.
+// We'll cover the prototype system in an other example later.
+
+// string
+let str: string = "Hello, World!"
+// the part ": string" is not required, Nubo infers the type from the value.
+
+// int
+let num = 42 // with type inference
+// float
+let floatNum = 3.14
+
+// bool
+let boolVal = true
+// or
+let boolVal2: bool = false
+
+// byte
+let byteVal = byte(255)
+// char
+let charVal = char("A")
+
+// html
+// Yes! html is also a type in Nubo.
+let htmlVal: html = <h1>Hello, World!</h1>
+// html type can easily be converted to string via string(htmlVal)
+
+// Let's cover the more complex types.
+// The types below are an interface for a Nubo's inside logic, called Iterator.
+// It means, these types can be used with for loops and other iteration constructs.
+
+// list
+let listVal: []int = [1, 2, 3]
+// Nubo tries to guess the type inference by default. If a list only contains
+// numbers, and the type is not defined before the = sign, it will be inferred as []int.
+
+// dict
+let dictVal: dict[string, int] = {
+    one: 1,
+    "two": 2,
+}
+// Dict is a type that represents a collection of key-value pairs.
+// It provides methods for adding, removing, and accessing elements.
+// Dict is based on Go's map type, which is a hash table implementation.
+// And therefore, the keys are not ordered.
+// The dict type can be used with {} or it can start with dict keyword, for example: dict{} is a valid value.
+// It also infers the type if not explicitly defined.
+
+// dict and list can be accessed with the [] operator.
+let firstElement = listVal[0]
+let value = dictVal["one"]
+// These things are connected to the prototype. These are only wrappers and syntax sugar.
+// listVal[0] is equalent to listVal.get(0), same with the dict type.
+
+// nil
+// Nil is also a type, which represents that a value is not set.
+let nilVal = nil
+// Nil can be used for functions to return a value is not set.
+fn findUser() -> dict[string,string]{
+    if !false {
+        return nil
+    }
+
+    return {
+        id: "123",
+        name: "John Doe",
+        email: "john.doe@example.com",
+    }
+}
+// This is a perfectly fine function, if it returns nothing (aka void) it will fail.
