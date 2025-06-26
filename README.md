@@ -48,3 +48,18 @@ let dashboard = <styled.AdminDashboard context="index" :user="user">
 Nubo will provide a feature to install it as a Go module via `go get`. With this, developers will be
 able to create their custom libraries, define their own Go functions and map them to Nubo's interpreter via
 our `native` module.
+
+## Simple examples
+
+`hello.nubo`
+```jsx
+import io from "@std/io"
+
+const user = io.read("Enter your name: ")
+println("Hello, ", user.capitalize() + "!")
+```
+
+Run:
+```bash
+nubo hello.nubo
+```

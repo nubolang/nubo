@@ -59,6 +59,10 @@ func (i *Interpreter) handleVariableDecl(parent *astnode.Node) error {
 		return err
 	}
 
+	if value == nil {
+		return newErr(ErrValueError, fmt.Sprint("void is not assignable to a variable"), node.Debug)
+	}
+
 	if typ == nil {
 		typ = value.Type()
 	}

@@ -84,7 +84,7 @@ func fnQuery(conn *SQLConn) func(*n.Args) (any, error) {
 			}
 			values := make([]language.Object, len(cols))
 			for i := range rowValues {
-				value, err := language.FromValue(rowValues[i])
+				value, err := language.FromValue(rowValues[i], false)
 				if err != nil {
 					return nil, err
 				}

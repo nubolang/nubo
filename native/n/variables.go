@@ -51,7 +51,7 @@ func Dict(dict map[any]any, dg ...*debug.Debug) (*language.Dict, error) {
 	)
 
 	for key, value := range dict {
-		keyObj, err := language.FromValue(key, d)
+		keyObj, err := language.FromValue(key, false, d)
 		if err != nil {
 			return nil, err
 		}
@@ -64,7 +64,7 @@ func Dict(dict map[any]any, dg ...*debug.Debug) (*language.Dict, error) {
 
 		keys = append(keys, keyObj)
 
-		valueObj, err := language.FromValue(value, d)
+		valueObj, err := language.FromValue(value, false, d)
 		if err != nil {
 			return nil, err
 		}
@@ -124,7 +124,7 @@ func List(l []any, dg ...*debug.Debug) (*language.List, error) {
 	)
 
 	for i, item := range l {
-		itemObj, err := language.FromValue(item, d)
+		itemObj, err := language.FromValue(item, false, d)
 		if err != nil {
 			return nil, err
 		}

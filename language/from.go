@@ -6,7 +6,7 @@ import (
 	"github.com/nubolang/nubo/internal/debug"
 )
 
-func FromValue(data any, dg ...*debug.Debug) (Object, error) {
+func FromValue(data any, voidNil bool, dg ...*debug.Debug) (Object, error) {
 	var dbg *debug.Debug
 	if len(dg) > 0 {
 		dbg = dg[0]
@@ -22,13 +22,13 @@ func FromValue(data any, dg ...*debug.Debug) (Object, error) {
 		)
 
 		for k, v := range value {
-			key, err := FromValue(k)
+			key, err := FromValue(k, voidNil, dbg)
 			if err != nil {
 				return nil, err
 			}
 			keys = append(keys, key)
 
-			val, err := FromValue(v)
+			val, err := FromValue(v, voidNil, dbg)
 			if err != nil {
 				return nil, err
 			}
@@ -43,13 +43,13 @@ func FromValue(data any, dg ...*debug.Debug) (Object, error) {
 		)
 
 		for k, v := range value {
-			key, err := FromValue(k)
+			key, err := FromValue(k, voidNil, dbg)
 			if err != nil {
 				return nil, err
 			}
 			keys = append(keys, key)
 
-			val, err := FromValue(v)
+			val, err := FromValue(v, voidNil, dbg)
 			if err != nil {
 				return nil, err
 			}
@@ -60,7 +60,7 @@ func FromValue(data any, dg ...*debug.Debug) (Object, error) {
 	case []any:
 		var li = make([]Object, len(value))
 		for i, val := range value {
-			value, err := FromValue(val)
+			value, err := FromValue(val, voidNil, dbg)
 			if err != nil {
 				return nil, err
 			}
@@ -87,7 +87,10 @@ func FromValue(data any, dg ...*debug.Debug) (Object, error) {
 	case bool:
 		return NewBool(value, dbg), nil
 	case nil:
-		return NewNil(), nil
+		if voidNil {
+			return nil, nil
+		}
+		return Nil, nil
 	}
 
 	return nil, fmt.Errorf("unsupported type %T", data)

@@ -1,0 +1,12 @@
+import http from "@std/http"
+import time from "@std/time"
+
+const req = http.create()
+req.baseUrl = "https://wizzl.app/api"
+
+const res = req.request("GET", "/content")
+println("Request received", res.status)
+const data = res.json()
+const createdAt = data["data"][0]["user"]["created_at"]
+
+println(time.parseAny(createdAt))

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/fatih/color"
@@ -17,26 +18,9 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// runCmd represents the run command
-var runCmd = &cobra.Command{
-	Use:   "run <file.nubo>",
-	Short: "Interpret and execute Nubo files",
-	Run:   execRun,
-}
-
-func init() {
-	// Add the run command to the root command
-	rootCmd.AddCommand(runCmd)
-}
-
 func execRun(cmd *cobra.Command, args []string) {
 	if len(args) == 0 {
 		cmd.Help()
-		return
-	}
-
-	if len(args) > 1 {
-		cmd.PrintErrln("Only one file can be run at a time")
 		return
 	}
 
@@ -72,14 +56,7 @@ func execRun(cmd *cobra.Command, args []string) {
 		}
 
 		if dev {
-			lxFile, err := os.Create("./bin/gen/lexer.yaml")
-			if err != nil {
-				cmd.PrintErrln(err)
-				return
-			}
-			defer lxFile.Close()
-
-			if err := yaml.NewEncoder(lxFile).Encode(tokens); err != nil {
+			if err := writeDebug("lexer.yaml", tokens); err != nil {
 				cmd.PrintErrln(err)
 				return
 			}
@@ -96,14 +73,7 @@ func execRun(cmd *cobra.Command, args []string) {
 		}
 
 		if dev {
-			astFile, err := os.Create("./bin/gen/ast.yaml")
-			if err != nil {
-				cmd.PrintErrln(err)
-				return
-			}
-			defer astFile.Close()
-
-			if err := yaml.NewEncoder(astFile).Encode(syntaxTree); err != nil {
+			if err := writeDebug("ast.yaml", syntaxTree); err != nil {
 				cmd.PrintErrln(err)
 				return
 			}
@@ -117,4 +87,19 @@ func execRun(cmd *cobra.Command, args []string) {
 		cmd.PrintErrln(err)
 		return
 	}
+}
+
+func writeDebug(filename string, data any) error {
+	const dir = ".nubo/debug"
+	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+		return err
+	}
+
+	file, err := os.OpenFile(filepath.Join(dir, filename), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	return yaml.NewEncoder(file).Encode(data)
 }

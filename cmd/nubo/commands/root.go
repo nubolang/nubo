@@ -13,8 +13,9 @@ import (
 
 // rootCmd is the root command for the CLI
 var rootCmd = &cobra.Command{
-	Use:     "nubo",
+	Use:     "nubo [file|command]",
 	Short:   "Nubo ☁️ A programming language built for real-time web development.",
+	Long:    "Nubo can run a file directly or execute specific commands.",
 	Version: version.Version,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		nocolor, _ := cmd.Flags().GetBool("nocolor")
@@ -27,6 +28,8 @@ var rootCmd = &cobra.Command{
 		logger := logger.Create(loglevel)
 		zap.ReplaceGlobals(logger)
 	},
+	Run:  execRun,
+	Args: cobra.MaximumNArgs(1),
 }
 
 func init() {

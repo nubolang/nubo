@@ -130,7 +130,7 @@ func NewRequest(r *http.Request) (language.Object, error) {
 			return nil, fmt.Errorf("could not parse JSON body: '%v'", err)
 		}
 
-		return language.FromValue(data)
+		return language.FromValue(data, false)
 	}))
 
 	proto.SetObject("form", native.NewTypedFunction(native.OneArg("name", language.TypeString), language.Nullable(language.TypeString), func(ctx native.FnCtx) (language.Object, error) {

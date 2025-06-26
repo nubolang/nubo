@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/nubolang/nubo/internal/debug"
+	"github.com/nubolang/nubo/internal/packages/http"
 	"github.com/nubolang/nubo/internal/packages/io"
 	"github.com/nubolang/nubo/internal/packages/json"
 	"github.com/nubolang/nubo/internal/packages/layoutjs"
@@ -22,7 +23,7 @@ const (
 	BuiltInModulePrefix = "@std/"
 )
 
-var packageList = []string{"io", "math", "json", "log", "thread", "random", "process", "layoutjs", "sql", "time"}
+var packageList = []string{"io", "math", "json", "log", "thread", "random", "process", "layoutjs", "sql", "time", "http"}
 
 func ImportPackage(name string, dg *debug.Debug) (language.Object, bool) {
 	if name == "@std" {
@@ -69,6 +70,8 @@ func ImportPackage(name string, dg *debug.Debug) (language.Object, bool) {
 		return sql.NewPostgres(), true
 	case "time":
 		return time.NewTime(dg), true
+	case "http":
+		return http.NewHttp(dg), true
 	}
 
 	return nil, false

@@ -95,6 +95,6 @@ func Function(describe *FnDescriber, fn func(*Args) (any, error)) *language.Func
 			return nil, err
 		}
 
-		return language.FromValue(value, dg)
+		return language.FromValue(value, true, dg)
 	}, nil)
 }

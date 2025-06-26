@@ -31,7 +31,7 @@ func parseFn(ctx native.FnCtx) (language.Object, error) {
 		return nil, err
 	}
 
-	obj, err := language.FromValue(data, value.Debug())
+	obj, err := language.FromValue(data, false, value.Debug())
 	if err != nil {
 		return nil, err
 	}

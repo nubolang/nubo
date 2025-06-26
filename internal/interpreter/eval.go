@@ -141,7 +141,7 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 		return nil, i.exprEvalHumanError(node.Body, node.Debug)
 	}
 
-	return language.FromValue(output, node.Debug)
+	return language.FromValue(output, false, node.Debug)
 }
 
 func isNotEvaluable(typ language.ObjectType) bool {

@@ -3,6 +3,7 @@ module github.com/nubolang/nubo
 go 1.23.7
 
 require (
+	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
 	github.com/cespare/xxhash/v2 v2.3.0
 	github.com/expr-lang/expr v1.17.4
 	github.com/stoewer/go-strcase v1.3.0

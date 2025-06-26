@@ -4,7 +4,7 @@ build:
 	@go build -o bin/nubo ./cmd/nubo
 
 run: build
-	@./bin/nubo run ./example/$(FILE).nubo --dev
+	@./bin/nubo ./example/$(FILE).nubo --dev
 
 prepare: build
 	@./bin/nubo prepare ./example --dev
