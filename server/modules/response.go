@@ -79,7 +79,9 @@ func (r *Response) Sync() {
 }
 
 func (r *Response) setupInstance(inst *language.StructInstance) {
-	proto := inst.GetPrototype()
+	proto := inst.GetPrototype().(*language.StructPrototype)
+	proto.Unlock()
+	defer proto.Lock()
 
 	proto.SetObject("status", native.NewTypedFunction(native.OneArg("code", language.TypeInt), language.TypeVoid, r.fnStatus))
 	proto.SetObject("write", native.NewTypedFunction(native.OneArg("content", language.TypeAny), language.TypeVoid, r.fnWrite))

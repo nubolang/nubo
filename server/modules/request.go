@@ -33,7 +33,9 @@ func NewRequest(r *http.Request) (language.Object, error) {
 		return nil, err
 	}
 
-	proto := inst.GetPrototype()
+	proto := inst.GetPrototype().(*language.StructPrototype)
+	proto.Unlock()
+	defer proto.Lock()
 
 	headers, err := newHeadersDict(r)
 	if err != nil {
