@@ -38,7 +38,7 @@ func (ir *Interpreter) handleImport(node *astnode.Node) error {
 		fileName = name
 	}
 
-	if strings.HasPrefix(fileName, "@std") {
+	if strings.HasPrefix(fileName, "@std") || strings.HasPrefix(fileName, "@server") {
 		obj, ok := ir.runtime.ImportPackage(fileName, node.Debug)
 		if ok {
 			return ir.Declare(node.Content, obj, obj.Type(), false)
