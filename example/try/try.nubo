@@ -1,0 +1,9 @@
+try err {
+    let x = fail("My Error message")
+}
+
+if !isNil(err) {
+    println("Error occurred:", err.file)
+}
+
+println(err)

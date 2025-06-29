@@ -29,6 +29,10 @@ func GetBuiltins() map[string]language.Object {
 		"range":   n.Function(n.Describe(n.Arg("start", n.TInt), n.Arg("stop", n.TUnion(n.TInt, n.TNil), language.Nil), n.Arg("step", n.TInt, n.Int(1))).Returns(n.TTList(n.TInt)), rangeFn),
 		"env":     n.Function(n.Describe(n.Arg("name", n.TString), n.Arg("value", n.Nullable(n.TString), language.Nil)).Returns(n.Nullable(n.TString)), envFn),
 
+		// Errors
+		"fail":  n.Function(n.Describe(n.Arg("message", n.TString)), failFn),
+		"isNil": n.Function(n.Describe(n.Arg("obj", n.TAny)).Returns(n.TBool), isNilFn),
+
 		// Types
 		"string": native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeString, stringFn),
 		"int":    native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeInt, intFn),
@@ -381,4 +385,15 @@ func envFn(a *n.Args) (any, error) {
 	val := value.String()
 	os.Setenv(name, val)
 	return language.Nil, nil
+}
+
+func failFn(a *n.Args) (any, error) {
+	message := a.Name("message")
+
+	return nil, debug.NewError(nil, message.String(), message.Debug())
+}
+
+func isNilFn(a *n.Args) (any, error) {
+	obj := a.Name("obj")
+	return obj.Value() == nil, nil
 }

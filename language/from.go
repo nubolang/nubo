@@ -119,37 +119,33 @@ func ToValue(obj Object, json ...bool) (any, error) {
 		}
 		return out, nil
 	case *Dict:
-		if v.KeyType == TypeString {
+		if v.KeyType == TypeString || jsonMode {
 			out := make(map[string]any)
-			for key, value := range v.Data {
+			err := v.Data.IterateErr(func(key Object, value Object) error {
 				val, err := ToValue(value, jsonMode)
 				if err != nil {
-					return nil, err
-				}
-				out[key.Value().(string)] = val
-			}
-			return out, nil
-		}
-
-		if jsonMode {
-			out := make(map[string]any)
-			for key, value := range v.Data {
-				val, err := ToValue(value, jsonMode)
-				if err != nil {
-					return nil, err
+					return err
 				}
 				out[key.String()] = val
+				return nil
+			})
+			if err != nil {
+				return nil, err
 			}
 			return out, nil
 		}
 
 		out := make(map[any]any)
-		for key, value := range v.Data {
+		err := v.Data.IterateErr(func(key Object, value Object) error {
 			val, err := ToValue(value, jsonMode)
 			if err != nil {
-				return nil, err
+				return err
 			}
 			out[key.Value()] = val
+			return nil
+		})
+		if err != nil {
+			return nil, err
 		}
 		return out, nil
 	default:

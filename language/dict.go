@@ -8,7 +8,7 @@ import (
 )
 
 type Dict struct {
-	Data      map[Object]Object
+	Data      *OrderedMap
 	KeyType   *Type
 	ValueType *Type
 	proto     *DictPrototype
@@ -16,21 +16,19 @@ type Dict struct {
 }
 
 func NewDict(keys []Object, values []Object, keyType *Type, valueType *Type, debug *debug.Debug) (*Dict, error) {
-	var m = make(map[Object]Object, len(keys))
+	m := NewOrderedMap()
 	for i, key := range keys {
 		if !key.Type().Base().Hashable() {
 			return nil, fmt.Errorf("key %s is not hashable", key.Inspect())
 		}
-
 		if !keyType.Compare(key.Type()) {
 			return nil, fmt.Errorf("key type %s does not match expected type %s", key.Type().String(), keyType.String())
 		}
-
 		if !valueType.Compare(values[i].Type()) {
 			return nil, fmt.Errorf("value type %s does not match expected type %s", values[i].Type().String(), valueType.String())
 		}
 
-		m[key] = values[i]
+		m.Set(key, values[i])
 	}
 
 	return &Dict{
@@ -62,14 +60,15 @@ func (i *Dict) TypeString() string {
 }
 
 func (i *Dict) String() string {
-	if len(i.Data) == 0 {
+	if i.Data.Len() == 0 {
 		return "dict{}"
 	}
 
 	var items []string
-	for key, value := range i.Data {
+	i.Data.Iterate(func(key Object, value Object) bool {
 		items = append(items, fmt.Sprintf("%v: %s", key, indentString(value.String(), "\t")))
-	}
+		return true
+	})
 
 	return fmt.Sprintf(
 		"dict{\n\t%s\n}",
@@ -93,10 +92,12 @@ func (i *Dict) Debug() *debug.Debug {
 }
 
 func (i *Dict) Clone() Object {
-	var m = make(map[Object]Object, len(i.Data))
-	for key, value := range i.Data {
-		m[key] = value.Clone()
-	}
+	m := NewOrderedMap()
+
+	i.Data.Iterate(func(key Object, value Object) bool {
+		m.Set(key, value.Clone())
+		return true
+	})
 
 	return &Dict{
 		Data:      m,
@@ -107,21 +108,16 @@ func (i *Dict) Clone() Object {
 }
 
 func (i *Dict) Iterator() func() (Object, Object, bool) {
-	keys := make([]Object, 0, len(i.Data))
-	for k := range i.Data {
-		keys = append(keys, k)
-	}
-	inx := 0
+	var current *orderedEntry = i.Data.head
 
 	return func() (Object, Object, bool) {
-		if inx >= len(keys) {
+		if current == nil {
 			return nil, nil, false
 		}
 
-		key := keys[inx]
-		value := i.Data[key]
-
-		inx++
+		key := current.key
+		value := current.value
+		current = current.next
 		return key, value, true
 	}
 }

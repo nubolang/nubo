@@ -45,4 +45,5 @@ const (
 	NodeTypeElse   NodeType = "else"
 	NodeTypeFor    NodeType = "for"
 	NodeTypeSignal NodeType = "signal"
+	NodeTypeTry    NodeType = "try"
 )

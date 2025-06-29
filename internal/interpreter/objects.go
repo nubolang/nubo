@@ -55,32 +55,48 @@ func (i *Interpreter) Assign(name string, value language.Object) error {
 
 func (i *Interpreter) assignNested(name string, value language.Object) error {
 	parts := strings.Split(name, ".")
+	if len(parts) < 2 {
+		return newErr(ErrUndefinedVariable, fmt.Sprintf("Invalid nested name %s", name), value.Debug())
+	}
 
 	i.mu.RLock()
 	obj, ok := i.objects[hashKey(parts[0])]
 	i.mu.RUnlock()
-	if !ok {
-		return newErr(ErrUndefinedVariable, fmt.Sprintf("Undefined variable %s", name), value.Debug())
+	if !ok || obj.value == nil {
+		return newErr(ErrUndefinedVariable, fmt.Sprintf("Undefined variable %s", parts[0]), value.Debug())
 	}
-	parts = parts[1:]
 
 	current := obj.value
-	for _, part := range parts[:len(parts)-1] {
-		prototype := current.GetPrototype()
-		if prototype == nil {
+	for _, part := range parts[1 : len(parts)-1] {
+		proto := current.GetPrototype()
+		if proto == nil {
 			return newErr(ErrUndefinedVariable, fmt.Sprintf("Undefined property %s", part), nil)
 		}
 		var ok bool
-		current, ok = prototype.GetObject(part)
-		if !ok {
+		current, ok = proto.GetObject(part)
+		if !ok || current == nil {
 			return newErr(ErrUndefinedVariable, fmt.Sprintf("Undefined property '%s'", part), nil)
 		}
 	}
-	err := current.GetPrototype().SetObject(parts[len(parts)-1], value)
-	if err != nil {
-		return newErr(ErrPrototype, err.Error(), value.Debug())
+
+	lastKey := parts[len(parts)-1]
+	proto := current.GetPrototype()
+	if proto == nil {
+		return newErr(ErrUndefinedVariable, fmt.Sprintf("No prototype for %s", name), value.Debug())
 	}
-	return nil
+
+	// fallback: call set(name, value)
+	if setFn, ok := proto.GetObject("set"); ok {
+		if callErr := i.callSetFunction(setFn, lastKey, value); callErr == nil {
+			return nil
+		}
+	}
+
+	if err := proto.SetObject(lastKey, value); err == nil {
+		return nil
+	}
+
+	return newErr(ErrPrototype, fmt.Sprintf("Failed to assign %s", name), value.Debug())
 }
 
 func (i *Interpreter) assignInCurrentScope(name string, value language.Object) error {
@@ -138,7 +154,6 @@ func (i *Interpreter) GetObject(name string) (language.Object, bool) {
 		i.mu.RLock()
 		imp, ok := i.imports[parts[0]]
 		i.mu.RUnlock()
-
 		if ok {
 			if ob, ok := imp.GetObject(strings.Join(parts[1:], ".")); ok {
 				return ob, true
@@ -157,25 +172,43 @@ func (i *Interpreter) GetObject(name string) (language.Object, bool) {
 			if current == nil {
 				return i.parentGetObject(name)
 			}
-			prototype := current.GetPrototype()
-			if prototype == nil {
+			proto := current.GetPrototype()
+			if proto == nil {
 				return i.parentGetObject(name)
 			}
 			var ok bool
-			current, ok = prototype.GetObject(part)
+			current, ok = proto.GetObject(part)
 			if !ok {
 				return i.parentGetObject(name)
 			}
 		}
 
 		last := parts[len(parts)-1]
-		if current == nil || current.GetPrototype() == nil {
+		if current == nil {
 			return i.parentGetObject(name)
 		}
 
-		return current.GetPrototype().GetObject(last)
+		proto := current.GetPrototype()
+		if proto == nil {
+			return i.parentGetObject(name)
+		}
+
+		val, ok := proto.GetObject(last)
+		if ok {
+			return val, true
+		}
+
+		// fallback: try get(name)
+		if getFn, ok := proto.GetObject("get"); ok {
+			if res, err := i.callGetFunction(getFn, last); err == nil {
+				return res, true
+			}
+		}
+
+		return i.parentGetObject(name)
 	}
 
+	// normal (non-nested) lookup
 	if obj, ok := i.runtime.GetBuiltin(name); ok {
 		return obj, true
 	}
@@ -199,4 +232,23 @@ func (i *Interpreter) parentGetObject(name string) (language.Object, bool) {
 		return nil, false
 	}
 	return i.parent.GetObject(name)
+}
+
+func (i *Interpreter) callGetFunction(fn language.Object, key string) (language.Object, error) {
+	callable, ok := fn.(*language.Function)
+	if !ok {
+		return nil, fmt.Errorf("not callable")
+	}
+	args := []language.Object{language.NewString(key, fn.Debug())}
+	return callable.Data(args)
+}
+
+func (i *Interpreter) callSetFunction(fn language.Object, key string, value language.Object) error {
+	callable, ok := fn.(*language.Function)
+	if !ok {
+		return fmt.Errorf("not callable")
+	}
+	args := []language.Object{language.NewString(key, fn.Debug()), value}
+	_, err := callable.Data(args)
+	return err
 }

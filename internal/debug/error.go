@@ -26,6 +26,10 @@ func (de *DebugErr) Error() string {
 		location = fmt.Sprintf(": %s:%s:%s", blue(de.debug.File), blue(de.debug.Line), blue(de.debug.Column))
 	}
 
+	if de.err == nil {
+		return fmt.Sprintf("%s%s", red(de.msg), location)
+	}
+
 	return fmt.Sprintf("%s %s%s", redBold(de.err.Error()+":"), red(de.msg), location)
 }
 

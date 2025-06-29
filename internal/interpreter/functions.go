@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/nubolang/nubo/internal/ast/astnode"
+	"github.com/nubolang/nubo/internal/debug"
 	"github.com/nubolang/nubo/language"
 )
 
@@ -115,7 +116,11 @@ func (i *Interpreter) handleFunctionCall(node *astnode.Node) (language.Object, e
 
 	value, err := okFn.Data(args)
 	if err != nil {
-		return nil, newErr(fmt.Errorf("Error calling %s(...)", node.Content), err.Error(), node.Debug)
+		e, msg, _ := debug.Unwrap(err)
+		if msg == "" {
+			msg = e.Error()
+		}
+		return nil, newErr(fmt.Errorf("Error calling %s(...)", node.Content), msg, node.Debug)
 	}
 
 	if len(node.Children) == 1 {

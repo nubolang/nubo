@@ -33,6 +33,9 @@ const (
 	TokenBool       TokenType = "bool"
 	TokenNil        TokenType = "nil"
 
+	// Error
+	TokenTry TokenType = "try"
+
 	// Symbols
 	TokenAssign         TokenType = "="
 	TokenComma          TokenType = ","
@@ -119,6 +122,8 @@ func Keywords() []TokenType {
 		TokenNil,
 
 		TokenIn,
+
+		TokenTry,
 	}
 }
 
