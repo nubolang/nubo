@@ -4,4 +4,6 @@ let user = {
     email: "john.doe@example.com"
 };
 
-println(user)
+for field, value in user {
+    println(concat(field, ": ", value))
+}

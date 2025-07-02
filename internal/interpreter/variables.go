@@ -91,6 +91,8 @@ func (i *Interpreter) handleAssignment(node *astnode.Node) error {
 		value, err = i.evaluateExpression(node)
 	} else if node.Type == astnode.NodeTypeElement {
 		value, err = i.evaluateElement(node)
+	} else if node.Type == astnode.NodeTypeDict {
+		value, err = i.evalDict(node, nil, nil)
 	}
 
 	if err != nil {

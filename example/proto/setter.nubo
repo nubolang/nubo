@@ -1,0 +1,26 @@
+struct MyStruct {
+    data: dict[string, any]
+}
+
+impl MyStruct {
+    fn init(self: MyStruct) -> MyStruct {
+        self.data = dict{
+            id: 5,
+            name: "John",
+            age: 24
+        }
+        return self
+    }
+
+    fn __set__(self: MyStruct, key: string, value: any) {
+        self.data.__set__(key, value)
+    }
+
+    fn __get__(self: MyStruct, key: string) -> int {
+        return self.data[key]
+    }
+}
+
+let ms = MyStruct()
+ms.id = 15
+println(ms.id)

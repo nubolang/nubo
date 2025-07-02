@@ -28,6 +28,7 @@ func GetBuiltins() map[string]language.Object {
 		"exit":    native.NewTypedFunction(native.OneArg("code", language.TypeInt, language.NewInt(0, nil)), language.TypeVoid, exitFn),
 		"range":   n.Function(n.Describe(n.Arg("start", n.TInt), n.Arg("stop", n.TUnion(n.TInt, n.TNil), language.Nil), n.Arg("step", n.TInt, n.Int(1))).Returns(n.TTList(n.TInt)), rangeFn),
 		"env":     n.Function(n.Describe(n.Arg("name", n.TString), n.Arg("value", n.Nullable(n.TString), language.Nil)).Returns(n.Nullable(n.TString)), envFn),
+		"concat":  native.NewFunction(concatFn),
 
 		// Errors
 		"fail":  n.Function(n.Describe(n.Arg("message", n.TString)), failFn),
@@ -396,4 +397,17 @@ func failFn(a *n.Args) (any, error) {
 func isNilFn(a *n.Args) (any, error) {
 	obj := a.Name("obj")
 	return obj.Value() == nil, nil
+}
+
+func concatFn(args []language.Object) (language.Object, error) {
+	var dg *debug.Debug
+	if len(args) > 0 {
+		dg = args[0].Debug()
+	}
+
+	var out []string
+	for _, arg := range args {
+		out = append(out, arg.String())
+	}
+	return n.String(strings.Join(out, ""), dg), nil
 }

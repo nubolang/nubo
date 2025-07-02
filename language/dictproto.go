@@ -17,7 +17,7 @@ func NewDictPrototype(base *Dict) *DictPrototype {
 		data: make(map[string]Object),
 	}
 
-	dp.SetObject("get", NewTypedFunction([]FnArg{
+	dp.SetObject("__get__", NewTypedFunction([]FnArg{
 		&BasicFnArg{TypeVal: base.KeyType, NameVal: "key"},
 	}, base.ValueType, func(o []Object) (Object, error) {
 		dp.mu.RLock()
@@ -40,7 +40,7 @@ func NewDictPrototype(base *Dict) *DictPrototype {
 		return found, nil
 	}, base.Debug()))
 
-	dp.SetObject("set", NewTypedFunction([]FnArg{
+	dp.SetObject("__set__", NewTypedFunction([]FnArg{
 		&BasicFnArg{TypeVal: dp.base.KeyType, NameVal: "key"},
 		&BasicFnArg{TypeVal: dp.base.ValueType, NameVal: "value"},
 	}, TypeVoid, func(o []Object) (Object, error) {

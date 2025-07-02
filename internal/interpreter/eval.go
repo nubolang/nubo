@@ -303,7 +303,7 @@ func (i *Interpreter) checkGetter(obj language.Object, node *astnode.Node) (lang
 			return nil, newErr(ErrUnsupported, fmt.Sprintf("cannot operate on type %s", obj.Type()), obj.Debug())
 		}
 
-		getter, ok := obj.GetPrototype().GetObject("get")
+		getter, ok := obj.GetPrototype().GetObject("__get__")
 		if !ok {
 			return nil, newErr(ErrUnsupported, fmt.Sprintf("cannot operate on type %s", obj.Type()), obj.Debug())
 		}

@@ -86,7 +86,7 @@ func (i *Interpreter) assignNested(name string, value language.Object) error {
 	}
 
 	// fallback: call set(name, value)
-	if setFn, ok := proto.GetObject("set"); ok {
+	if setFn, ok := proto.GetObject("__set__"); ok {
 		if callErr := i.callSetFunction(setFn, lastKey, value); callErr == nil {
 			return nil
 		}
@@ -199,7 +199,7 @@ func (i *Interpreter) GetObject(name string) (language.Object, bool) {
 		}
 
 		// fallback: try get(name)
-		if getFn, ok := proto.GetObject("get"); ok {
+		if getFn, ok := proto.GetObject("__get__"); ok {
 			if res, err := i.callGetFunction(getFn, last); err == nil {
 				return res, true
 			}

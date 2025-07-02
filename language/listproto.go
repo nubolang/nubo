@@ -21,7 +21,7 @@ func NewListPrototype(base *List) *ListPrototype {
 	}
 
 	// get(index int) -> ItemType
-	lp.SetObject("get", NewTypedFunction([]FnArg{&BasicFnArg{TypeVal: TypeInt, NameVal: "index"}}, lp.base.ItemType,
+	lp.SetObject("__get__", NewTypedFunction([]FnArg{&BasicFnArg{TypeVal: TypeInt, NameVal: "index"}}, lp.base.ItemType,
 		func(o []Object) (Object, error) {
 			lp.mu.RLock()
 			defer lp.mu.RUnlock()
@@ -36,7 +36,7 @@ func NewListPrototype(base *List) *ListPrototype {
 		}, base.Debug()))
 
 	// set(index int, value any)
-	lp.SetObject("set", NewTypedFunction([]FnArg{
+	lp.SetObject("__set__", NewTypedFunction([]FnArg{
 		&BasicFnArg{TypeVal: TypeInt, NameVal: "index"},
 		&BasicFnArg{TypeVal: lp.base.ItemType, NameVal: "value"},
 	}, TypeVoid, func(o []Object) (Object, error) {

@@ -45,8 +45,8 @@ let dictVal: dict[string, int] = {
 }
 // Dict is a type that represents a collection of key-value pairs.
 // It provides methods for adding, removing, and accessing elements.
-// Dict is based on Go's map type, which is a hash table implementation.
-// And therefore, the keys are not ordered.
+// User defined Dict keys are ordered, but the built-in features may include dicts that are
+// not ordered because they are converted to Nubo's Dict type from Go's map, which is a hash map.
 // The dict type can be used with {} or it can start with dict keyword, for example: dict{} is a valid value.
 // It also infers the type if not explicitly defined.
 

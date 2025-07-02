@@ -1,0 +1,23 @@
+// THIS EXAMPLE IS NOT RECOMMENDED
+// FOR PRODUCTION USE, DUE TO THE LACK OF
+// TYPE SAFETY
+
+struct Demo {}
+
+impl Demo {
+    fn __get__(self: Demo, key: string) {
+        if key == "x-Y-z" || key == "xyz" {
+            return fn() {
+                println("Called with key:", key)
+            }
+        }
+    }
+}
+
+let demo = Demo()
+let func = demo["x-Y-z"]
+
+func()
+
+let func2 = demo.xyz
+func2()
