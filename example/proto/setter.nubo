@@ -23,4 +23,5 @@ impl MyStruct {
 
 let ms = MyStruct()
 ms.id = 15
-println(ms.id)
+ms["id"] = 16
+println(ms["id"])

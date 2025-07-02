@@ -11,7 +11,7 @@ func (i *Interpreter) handleReturn(node *astnode.Node) (language.Object, error) 
 	}
 
 	if node.Flags.Contains("VOID") {
-		return nil, nil
+		return language.NewSignal("return", node.Debug), nil
 	}
 
 	value, err := i.evaluateExpression(node)

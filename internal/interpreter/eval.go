@@ -11,6 +11,17 @@ import (
 	"github.com/nubolang/nubo/language"
 )
 
+func (i *Interpreter) eval(node *astnode.Node) (language.Object, error) {
+	switch node.Type {
+	default:
+		return i.evaluateExpression(node)
+	case astnode.NodeTypeElement:
+		return i.evaluateElement(node)
+	case astnode.NodeTypeDict:
+		return i.evalDict(node, nil, nil)
+	}
+}
+
 func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, error) {
 	if node.Type == astnode.NodeTypeElement {
 		return i.evaluateElement(node)
@@ -51,7 +62,7 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 				}
 
 				if len(node.Body) == 1 {
-					if len(node.Body[0].Children) > 0 {
+					if len(node.Body[0].ArrayAccess) > 0 {
 						if ob, err := i.checkGetter(obj, child); err != nil {
 							return nil, err
 						} else {
@@ -80,7 +91,7 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 					return nil, newErr(ErrUnsupported, fmt.Sprintf("cannot operate on type %s", obj.Type()), obj.Debug())
 				}
 
-				if len(child.Children) > 0 {
+				if len(child.ArrayAccess) > 0 {
 					if ob, err := i.checkGetter(obj, child); err != nil {
 						return nil, err
 					} else {
@@ -293,7 +304,7 @@ func (i *Interpreter) evalDict(node *astnode.Node, keyType, valueType *language.
 }
 
 func (i *Interpreter) checkGetter(obj language.Object, node *astnode.Node) (language.Object, error) {
-	for _, child := range node.Children {
+	for _, child := range node.ArrayAccess {
 		val, err := i.evaluateExpression(child)
 		if err != nil {
 			return nil, err

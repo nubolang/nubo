@@ -301,7 +301,7 @@ loop:
 				return nil, err
 			}
 
-			node.Children = append(node.Children, valueNode)
+			node.ArrayAccess = append(node.ArrayAccess, valueNode)
 
 		case lexer.TokenDot:
 			*inx++
@@ -316,10 +316,19 @@ loop:
 				Value: prop,
 				Debug: tokens[*inx-1].Debug,
 			}
-			node.Children = append(node.Children, propNode)
+			node.ArrayAccess = append(node.ArrayAccess, propNode)
 
 		default:
 			break loop
+		}
+	}
+
+	if *inx < len(tokens) {
+		tok := tokens[*inx]
+		if tok.Type == lexer.TokenWhiteSpace {
+			if err := inxPP(tokens, inx); err != nil {
+				return nil, err
+			}
 		}
 	}
 

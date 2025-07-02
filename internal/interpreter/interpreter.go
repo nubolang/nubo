@@ -85,6 +85,9 @@ func (i *Interpreter) Run(nodes []*astnode.Node) (language.Object, error) {
 			return nil, err
 		}
 		if obj != nil {
+			if i.parent == nil && obj.Type().Base() == language.ObjectTypeSignal {
+				return nil, nil
+			}
 			return obj, nil
 		}
 	}

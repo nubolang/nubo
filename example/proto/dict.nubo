@@ -1,0 +1,8 @@
+let x: dict[string, string] = {
+    "key": "value",
+    "another_key": "another_value"
+}
+
+x["key"] = "new_value"
+
+println(x.key)

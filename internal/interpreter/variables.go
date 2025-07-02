@@ -79,27 +79,28 @@ func (i *Interpreter) handleVariableDecl(parent *astnode.Node) error {
 func (i *Interpreter) handleAssignment(node *astnode.Node) error {
 	var (
 		variableName string = node.Content
-		value        language.Object
-		err          error
+		arrayAccess         = node.ArrayAccess
 	)
 
 	if node.Flags.Contains("NODEVALUE") {
 		node = node.Value.(*astnode.Node)
 	}
 
-	if node.Type == astnode.NodeTypeExpression {
-		value, err = i.evaluateExpression(node)
-	} else if node.Type == astnode.NodeTypeElement {
-		value, err = i.evaluateElement(node)
-	} else if node.Type == astnode.NodeTypeDict {
-		value, err = i.evalDict(node, nil, nil)
-	}
-
+	value, err := i.eval(node)
 	if err != nil {
 		return err
 	}
 
 	zap.L().Info("Variable Assignment", zap.String("variableName", variableName), zap.Any("value", value))
+
+	if len(arrayAccess) > 0 {
+		lookUp, ok := i.GetObject(variableName)
+		if !ok {
+			return newErr(ErrUndefinedVariable, fmt.Sprintf("Undefined variable %s", variableName), nil)
+		}
+
+		return i.setAccess(lookUp, arrayAccess, value)
+	}
 
 	return i.Assign(variableName, value)
 }
@@ -141,5 +142,60 @@ func (i *Interpreter) handleDecrement(node *astnode.Node) error {
 	}
 
 	_, err := decr.(*language.Function).Data(nil)
+	return err
+}
+
+func (i *Interpreter) setAccess(current language.Object, access []*astnode.Node, value language.Object) error {
+	for _, part := range access[:len(access)-1] {
+		obj, err := i.eval(part)
+		if err != nil {
+			return err
+		}
+
+		proto := current.GetPrototype()
+		if proto == nil {
+			return newErr(ErrUndefinedVariable, fmt.Sprintf("Undefined property %s", obj.String()), nil)
+		}
+
+		getter, ok := current.GetPrototype().GetObject("__get__")
+		if !ok {
+			return newErr(ErrUnsupported, fmt.Sprintf("cannot operate on type %s", obj.Type()), obj.Debug())
+		}
+
+		getterFn, ok := getter.(*language.Function)
+		if !ok {
+			return newErr(ErrUnsupported, fmt.Sprintf("cannot operate on type %s", obj.Type()), obj.Debug())
+		}
+
+		value, err := getterFn.Data([]language.Object{obj})
+		if err != nil {
+			return err
+		}
+
+		current = value
+	}
+
+	last := access[len(access)-1]
+	obj, err := i.eval(last)
+	if err != nil {
+		return err
+	}
+
+	proto := current.GetPrototype()
+	if proto == nil {
+		return newErr(ErrUndefinedVariable, fmt.Sprintf("Undefined property %s", obj.String()), nil)
+	}
+
+	setter, ok := proto.GetObject("__set__")
+	if !ok {
+		return newErr(ErrUnsupported, fmt.Sprintf("cannot operate on type %s", obj.Type()), obj.Debug())
+	}
+
+	setterFn, ok := setter.(*language.Function)
+	if !ok {
+		return newErr(ErrUnsupported, fmt.Sprintf("cannot operate on type %s", obj.Type()), obj.Debug())
+	}
+
+	_, err = setterFn.Data([]language.Object{obj, value})
 	return err
 }

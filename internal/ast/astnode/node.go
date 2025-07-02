@@ -22,9 +22,10 @@ type Node struct {
 
 	IsReference bool `yaml:"is_reference,omitempty"`
 
-	Children []*Node `yaml:"children,omitempty"`
-	Args     []*Node `yaml:"args,omitempty"`
-	Body     []*Node `yaml:"body,omitempty"`
+	Children    []*Node `yaml:"children,omitempty"`
+	Args        []*Node `yaml:"args,omitempty"`
+	Body        []*Node `yaml:"body,omitempty"`
+	ArrayAccess []*Node `yaml:"array_access,omitempty"`
 
 	Attrs map[string]any `yaml:"attrs,omitempty"`
 	Flags AppendFlags    `yaml:"flags,omitempty"`
