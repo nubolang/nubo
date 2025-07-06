@@ -2,6 +2,7 @@ package interpreter
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -144,12 +145,12 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 
 	program, err := expr.Compile(code, expr.Env(env))
 	if err != nil {
-		return nil, i.exprEvalHumanError(node.Body, node.Debug)
+		return nil, i.exprEvalHumanError(node.Body, node.Debug, err)
 	}
 
 	output, err := expr.Run(program, env)
 	if err != nil {
-		return nil, i.exprEvalHumanError(node.Body, node.Debug)
+		return nil, i.exprEvalHumanError(node.Body, node.Debug, err)
 	}
 
 	return language.FromValue(output, false, node.Debug)
@@ -159,7 +160,7 @@ func isNotEvaluable(typ language.ObjectType) bool {
 	return typ == language.ObjectTypeDict || typ == language.ObjectTypeFunction || typ == language.ObjectTypeStructInstance || typ == language.ObjectTypeList
 }
 
-func (i *Interpreter) exprEvalHumanError(children []*astnode.Node, debug *debug.Debug) error {
+func (i *Interpreter) exprEvalHumanError(children []*astnode.Node, debug *debug.Debug, isErr ...error) error {
 	var humanExpr strings.Builder
 
 	for i, child := range children {
@@ -170,11 +171,51 @@ func (i *Interpreter) exprEvalHumanError(children []*astnode.Node, debug *debug.
 		}
 	}
 
-	if debug != nil {
-		return newErr(ErrExpression, fmt.Sprintf("Failed to evaluate expression: %s", humanExpr.String()), debug)
+	var msgCtx string
+	if len(isErr) > 0 {
+		msgCtx = i.getEvalErr(isErr[0])
 	}
 
-	return newErr(ErrExpression, fmt.Sprintf("Failed to evaluate expression: %s", humanExpr.String()))
+	if msgCtx != "" {
+		msgCtx = fmt.Sprintf(" (%s)", msgCtx)
+	}
+
+	if debug != nil {
+		return newErr(ErrExpression, fmt.Sprintf("Failed to evaluate expression: %s%s", humanExpr.String(), msgCtx), debug)
+	}
+
+	return newErr(ErrExpression, fmt.Sprintf("Failed to evaluate expression: %s%s", humanExpr.String(), msgCtx))
+}
+
+func (i *Interpreter) getEvalErr(err error) string {
+	if err == nil {
+		return ""
+	}
+
+	msg := err.Error()
+	re := regexp.MustCompile(`mismatched types ([a-z0-9]+) and ([a-z0-9]+)`)
+	if m := re.FindStringSubmatch(msg); len(m) == 3 {
+		from, to := m[1], m[2]
+		typeMap := map[string]string{
+			"int64":   "int",
+			"int":     "int",
+			"float64": "float",
+		}
+
+		a, b := typeMap[from], typeMap[to]
+
+		if a == "" {
+			a = from
+		}
+
+		if b == "" {
+			b = to
+		}
+
+		return fmt.Sprintf("type mismatch: %s and %s", a, b)
+	}
+
+	return fmt.Sprint(err)
 }
 
 func humanNode(node *astnode.Node) string {
