@@ -97,6 +97,10 @@ func NewTypedFunction(argTypes []FnArg, returnType *Type, data func([]Object) (O
 				return nil, fmt.Errorf("expected return type %s, got %s", returnType.String(), TypeVoid.String())
 			}
 		} else if !returnType.Compare(value.Type()) {
+			if returnType.BaseType == ObjectTypeVoid && value.Type().BaseType == ObjectTypeSignal && value.Value() == "return" {
+				return value, nil
+			}
+
 			return nil, fmt.Errorf("expected return type %s, got %s", returnType.String(), value.Type().String())
 		}
 

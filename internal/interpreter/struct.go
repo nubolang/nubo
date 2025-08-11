@@ -36,7 +36,7 @@ func (i *Interpreter) handleStructCreation(obj language.Object, node *astnode.No
 
 	var args = make([]language.Object, len(node.Args))
 	for j, arg := range node.Args {
-		value, err := i.evaluateExpression(arg)
+		value, err := i.eval(arg)
 		if err != nil {
 			return nil, err
 		}
@@ -56,7 +56,7 @@ func (i *Interpreter) handleStructCreation(obj language.Object, node *astnode.No
 
 		var args = make([]language.Object, len(node.Args))
 		for j, arg := range node.Args {
-			value, err := i.evaluateExpression(arg)
+			value, err := i.eval(arg)
 			if err != nil {
 				return nil, err
 			}

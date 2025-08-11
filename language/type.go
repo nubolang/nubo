@@ -31,7 +31,7 @@ var (
 	TypeNil              = &Type{BaseType: ObjectTypeNil, Content: "nil"}
 	TypeAny              = &Type{BaseType: ObjectTypeAny, Content: "any"}
 	TypeVoid             = &Type{BaseType: ObjectTypeVoid, Content: "void"}
-	TypeHtml             = &Type{BaseType: ObjectTypeString, Content: "html"}
+	TypeHtml             = &Type{BaseType: ObjectTypeHtml, Content: "html"}
 )
 
 func NewFunctionType(returnType *Type, argsType ...*Type) *Type {
@@ -71,6 +71,8 @@ func DefaultValue(typ *Type) Object {
 		return dict
 	case ObjectTypeVoid:
 		return nil
+	case ObjectTypeHtml:
+		return NewElement(nil, nil)
 	default:
 		return Nil
 	}

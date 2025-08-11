@@ -2,6 +2,7 @@ package lexer
 
 import (
 	"io"
+	"path/filepath"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -28,7 +29,7 @@ func New(r io.Reader, file string) (*Lexer, error) {
 
 	return &Lexer{
 		input: []rune(strings.ReplaceAll(string(data), "\r", "")),
-		file:  file,
+		file:  filepath.Clean(file),
 		line:  1,
 		col:   1,
 	}, nil

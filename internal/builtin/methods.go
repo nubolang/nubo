@@ -41,6 +41,9 @@ func GetBuiltins() map[string]language.Object {
 		"bool":   native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeBool, boolFn),
 		"byte":   native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeByte, byteFn),
 		"char":   native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeChar, charFn),
+
+		// Debug
+		"xdbg": native.NewFunction(xdbgFn),
 	}
 }
 
@@ -410,4 +413,13 @@ func concatFn(args []language.Object) (language.Object, error) {
 		out = append(out, arg.String())
 	}
 	return n.String(strings.Join(out, ""), dg), nil
+}
+
+func xdbgFn(args []language.Object) (language.Object, error) {
+	var out []string
+	for _, arg := range args {
+		out = append(out, arg.String())
+	}
+	fmt.Print(strings.Join(out, " "))
+	return nil, nil
 }

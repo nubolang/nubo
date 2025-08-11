@@ -59,14 +59,18 @@ func (ir *Interpreter) handleImport(node *astnode.Node) error {
 		path += ".nubo"
 	}
 
-	nodes, err := native.NodesFromFile(path)
+	nodes, err := native.NodesFromFile(path, path)
 	if err != nil {
-		return newErr(ErrImportError, err.Error(), node.Debug)
+		return newErr(err, ErrImportError.Error(), node.Debug)
 	}
 
 	imported := New(path, ir.runtime, true)
 	if _, err := imported.Run(nodes); err != nil {
-		return newErr(ErrImportError, err.Error(), node.Debug)
+		return newErr(err, ErrImportError.Error(), node.Debug)
+	}
+
+	if node.Kind == "NONE" {
+		return nil
 	}
 
 	ir.mu.Lock()

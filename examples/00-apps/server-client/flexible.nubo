@@ -1,0 +1,26 @@
+struct ServerClient {}
+
+struct Html via (import "@std/html").Html {
+    fn __get__(self: Html, method: string) {
+        tryreturn self[method]
+        return self.__via__.Html.__get__(method)
+    }
+}
+
+impl ServerClient {
+    fn render(self: ServerClient) -> client.Component {
+        return client.Component(<form :submit="create">
+            <input name="title" ref="title" />
+        </form>)
+        let div = <div></div>
+    }
+
+    fn create(self: ServerClient, ctx: client.Ctx) -> client.Response {
+        const res = ctx.response()
+        res.ref("title").setAttribute("value", "New Note")
+        res.ref("title").value("New Note")
+        return res
+    }
+}
+
+response.write(client.render(ServerClient()))

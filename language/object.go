@@ -20,6 +20,7 @@ const (
 	ObjectTypeAny
 	ObjectTypeVoid
 	ObjectTypeSignal // TypeSignal is not really a type, it is used for break, continue statements
+	ObjectTypeHtml
 )
 
 func (ot ObjectType) String() string {
@@ -54,6 +55,8 @@ func (ot ObjectType) String() string {
 		return "structdef"
 	case ObjectTypeSignal:
 		return "@lang.signal"
+	case ObjectTypeHtml:
+		return "html"
 	default:
 		return "unknown"
 	}

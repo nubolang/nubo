@@ -1,0 +1,17 @@
+import module from "@std/module"
+
+const window = module.load("nubo-window")
+const sizer = window.createAutoSizer()
+
+const app = window.create({
+    size: window.sizer,
+})
+
+app.route("/", fn(ctx: window.Context): window.View {
+    const View = ctx.View()
+    const Text = ctx.TextElement()
+
+    return <View>
+        <Text>Hello, World!</Text>
+    </View>
+})

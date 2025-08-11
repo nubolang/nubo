@@ -1,0 +1,5 @@
+import from "other/other"
+
+let debug = xdbg()
+
+println(debug)

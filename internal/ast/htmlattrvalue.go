@@ -1,6 +1,7 @@
 package ast
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/nubolang/nubo/internal/ast/astnode"
@@ -9,8 +10,13 @@ import (
 	"github.com/nubolang/nubo/internal/lexer"
 )
 
-func (a *Ast) ParseHTMLAttrValue(s string) (*astnode.Node, error) {
-	lx, err := lexer.New(strings.NewReader(s+"\n"), "<html>")
+func (a *Ast) ParseHTMLAttrValue(dg *debug.Debug, s string) (*astnode.Node, error) {
+	var dS string
+	if dg != nil {
+		dS = fmt.Sprintf("%s:%d:%d->", dg.File, dg.Line, dg.Column)
+	}
+
+	lx, err := lexer.New(strings.NewReader(s+"\n"), dS+"<html>")
 	if err != nil {
 		return nil, err
 	}

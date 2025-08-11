@@ -8,6 +8,7 @@ import (
 
 type Signal struct {
 	Data  string
+	Carry Object
 	debug *debug.Debug
 }
 
@@ -16,6 +17,15 @@ func NewSignal(signal string, debug *debug.Debug) *Signal {
 		Data:  signal,
 		debug: debug,
 	}
+}
+
+func (i *Signal) SetCarry(carry Object) *Signal {
+	i.Carry = carry
+	return i
+}
+
+func (i *Signal) GetCarry() Object {
+	return i.Carry
 }
 
 func (i *Signal) ID() string {

@@ -8,11 +8,12 @@ import (
 
 	"github.com/nubolang/nubo/internal/ast/astnode"
 	"github.com/nubolang/nubo/internal/debug"
+	"github.com/nubolang/nubo/internal/html"
 	"github.com/nubolang/nubo/internal/lexer"
 )
 
 type HTMLAttrValueParser interface {
-	ParseHTMLAttrValue(s string) (*astnode.Node, error)
+	ParseHTMLAttrValue(dg *debug.Debug, s string) (*astnode.Node, error)
 	ParseHTML(s string, dg *debug.Debug) ([]*lexer.Token, error)
 }
 
@@ -54,6 +55,10 @@ func HTMLParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer.Tok
 		return nil, err
 	}
 	node.Args = attrs
+
+	if html.VoidTags[tag] {
+		selfClosing = true
+	}
 
 	if selfClosing {
 		node.Flags.Append("SELFCLOSING")
@@ -190,7 +195,7 @@ func parseDynamicText(ctx context.Context, sn HTMLAttrValueParser, tokens []*lex
 					if strings.TrimSpace(text) == "" {
 						return nil, nil
 					}
-					value, err := sn.ParseHTMLAttrValue(text)
+					value, err := sn.ParseHTMLAttrValue(debug, text)
 					if err != nil {
 						return nil, err
 					}

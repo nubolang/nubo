@@ -1,0 +1,18 @@
+struct Component {
+    data: html
+}
+
+impl Component {
+    fn init(self: Component, data: html) -> Component {
+        self.data = data
+        return self
+    }
+}
+
+let myForm = Component(<form submit="submitApp">
+    <input type="text" name="name" placeholder="Name">
+    <input type="email" name="email" placeholder="Email">
+    <button type="submit">Submit</button>
+</form>)
+
+println(myForm)

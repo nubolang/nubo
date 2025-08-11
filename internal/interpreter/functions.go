@@ -82,6 +82,10 @@ func (i *Interpreter) handleFunctionDecl(node *astnode.Node, ret ...bool) (langu
 }
 
 func (i *Interpreter) handleFunctionCall(node *astnode.Node) (language.Object, error) {
+	if node.Content == "xdbg" {
+		return xdbg(node)
+	}
+
 	fn, ok := i.GetObject(node.Content)
 	if !ok {
 		return nil, newErr(ErrUndefinedFunction, node.Content+"(...)", node.Debug)
@@ -97,7 +101,7 @@ func (i *Interpreter) handleFunctionCall(node *astnode.Node) (language.Object, e
 
 	var args = make([]language.Object, len(node.Args))
 	for j, arg := range node.Args {
-		value, err := i.evaluateExpression(arg)
+		value, err := i.eval(arg)
 		if err != nil {
 			return nil, err
 		}

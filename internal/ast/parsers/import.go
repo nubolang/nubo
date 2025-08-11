@@ -19,17 +19,19 @@ func ImportParser(_ context.Context, tokens []*lexer.Token, inx *int) (*astnode.
 	}
 
 	token := tokens[*inx]
-	if token.Type != lexer.TokenOpenBrace && token.Type != lexer.TokenIdentifier {
-		return nil, newErr(ErrSyntaxError, fmt.Sprintf("expected identifier or open brace, got %s", token.Type), token.Debug)
+	if token.Type != lexer.TokenOpenBrace && token.Type != lexer.TokenIdentifier && token.Type != lexer.TokenFrom {
+		return nil, newErr(ErrSyntaxError, fmt.Sprintf("expected identifier, `from` or open brace, got %s", token.Type), token.Debug)
 	}
 
 	if token.Type == lexer.TokenIdentifier {
 		node.Kind = "SINGLE"
 		node.Content = token.Value
-	}
 
-	if err := inxPP(tokens, inx); err != nil {
-		return nil, err
+		if err := inxPP(tokens, inx); err != nil {
+			return nil, err
+		}
+	} else {
+		node.Kind = "NONE"
 	}
 
 	token = tokens[*inx]

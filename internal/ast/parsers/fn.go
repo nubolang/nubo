@@ -69,11 +69,7 @@ loop:
 
 	token = tokens[*inx]
 
-	if token.Type == lexer.TokenFnReturnArrow {
-		if err := inxPP(tokens, inx); err != nil {
-			return nil, err
-		}
-
+	if token.Type != lexer.TokenArrow && token.Type != lexer.TokenOpenBrace {
 		retType, err := TypeParser(ctx, tokens, inx)
 		if err != nil {
 			return nil, err

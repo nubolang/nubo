@@ -1,0 +1,18 @@
+struct ServerClient {}
+
+impl ServerClient {
+    fn render(self: ServerClient) -> client.Component {
+        return client.Component(<form submit="create">
+            <input name="title" ref="title" />
+        </form>)
+    }
+
+    fn create(self: ServerClient, ctx: client.Ctx) -> client.Response {
+        const res = ctx.response()
+        const title = res.refs.title
+
+        return res
+    }
+}
+
+response.write(client.render(ServerClient()))

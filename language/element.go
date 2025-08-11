@@ -61,17 +61,10 @@ func (e *Element) TypeString() string {
 }
 
 func (e *Element) String() string {
-	return e.Value().(string)
-}
-
-func (e *Element) GetPrototype() Prototype {
-	if e.proto == nil {
-		e.proto = NewElementPrototype(e)
+	if e.Data == nil {
+		return ""
 	}
-	return e.proto
-}
 
-func (e *Element) Value() any {
 	var sb strings.Builder
 
 	sb.WriteRune('<')
@@ -109,15 +102,11 @@ func (e *Element) Value() any {
 		sb.WriteString(strconv.Quote(valueStr))
 	}
 
+	sb.WriteRune('>')
+
 	if e.Data.SelfClose {
-		if len(e.Data.Args) > 0 {
-			sb.WriteRune(' ')
-		}
-		sb.WriteString("/>")
 		return sb.String()
 	}
-
-	sb.WriteRune('>')
 
 	for _, child := range e.Data.Children {
 		switch child.Type {
@@ -139,6 +128,17 @@ func (e *Element) Value() any {
 	sb.WriteString(">")
 
 	return sb.String()
+}
+
+func (e *Element) GetPrototype() Prototype {
+	if e.proto == nil {
+		e.proto = NewElementPrototype(e)
+	}
+	return e.proto
+}
+
+func (e *Element) Value() any {
+	return e
 }
 
 func (e *Element) Debug() *debug.Debug {

@@ -1,6 +1,7 @@
 package interpreter
 
 import (
+	"path/filepath"
 	"sync"
 
 	"github.com/nubolang/nubo/events"
@@ -48,7 +49,7 @@ type Interpreter struct {
 func New(currentFile string, runtime Runtime, dependent bool) *Interpreter {
 	return &Interpreter{
 		ID:          runtime.NewID(),
-		currentFile: currentFile,
+		currentFile: filepath.Clean(currentFile),
 		scope:       ScopeGlobal,
 		dependent:   dependent,
 		runtime:     runtime,
@@ -85,6 +86,9 @@ func (i *Interpreter) Run(nodes []*astnode.Node) (language.Object, error) {
 			return nil, err
 		}
 		if obj != nil {
+			if i.parent != nil && node.Type == astnode.NodeTypeFunctionCall && i.scope == ScopeFunction {
+				continue
+			}
 			if i.parent == nil && obj.Type().Base() == language.ObjectTypeSignal {
 				return nil, nil
 			}

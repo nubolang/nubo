@@ -1,0 +1,28 @@
+import io from "@std/io"
+
+struct Person {
+    name: string
+    age: int
+}
+
+impl Person {
+    fn init(self: Person, name: string, age: int) -> Person {
+        self.name = name
+        self.age = age
+        return self
+    }
+}
+
+fn readAge() -> int {
+    try err {
+        return int(io.read("How old are you? "))
+    }
+    return readAge()
+}
+
+const name = io.read("What is your name? ")
+const age = readAge()
+
+const johi = Person(name, age)
+
+println(johi)

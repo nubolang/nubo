@@ -1,0 +1,2 @@
+import io from "@std/io"
+println("Hello,", io.read("Enter your name: "))

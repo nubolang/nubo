@@ -63,3 +63,16 @@ Run:
 ```bash
 nubo hello.nubo
 ```
+
+## Updates:
+
+We removed the need for the `->`  symbol, to describe function return types.
+This symbol is now only for function type declarations, not for actual use.
+
+```
+fn helloer(getName: fn() -> string) string {
+  return "Hello, " + getName() + "!"
+}
+```
+
+This way, we can write more readable code, faster.

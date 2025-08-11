@@ -3,7 +3,6 @@ package native
 import (
 	"context"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/nubolang/nubo/internal/ast"
@@ -11,14 +10,14 @@ import (
 	"github.com/nubolang/nubo/internal/lexer"
 )
 
-func NodesFromFile(path string) ([]*astnode.Node, error) {
+func NodesFromFile(path, lxPath string) ([]*astnode.Node, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
 	defer file.Close()
 
-	lx, err := lexer.New(file, filepath.Base(path))
+	lx, err := lexer.New(file, lxPath)
 	if err != nil {
 		return nil, err
 	}

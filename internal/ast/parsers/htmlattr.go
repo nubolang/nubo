@@ -173,7 +173,7 @@ loop:
 			}
 
 			if node.Kind == "DYNAMIC" {
-				val, err := sn.ParseHTMLAttrValue(token.Value)
+				val, err := sn.ParseHTMLAttrValue(token.Debug, token.Value)
 				if err != nil {
 					return nil, err
 				}

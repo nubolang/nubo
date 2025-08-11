@@ -92,3 +92,25 @@ func tokensPrint(tokens []*lexer.Token) {
 	}
 	fmt.Println()
 }
+
+func inxPPeak(tokens []*lexer.Token, inx *int) (*lexer.Token, error) {
+	i := *inx
+
+	if i >= len(tokens) {
+		msg := fmt.Sprintf("unexpected end of input")
+		return nil, debug.NewError(ErrSyntaxError, msg, tokens[*inx-1].Debug)
+	}
+
+	i++
+
+	for i < len(tokens) && slices.Contains(white, tokens[i].Type) {
+		i++
+	}
+
+	if *inx >= len(tokens) {
+		msg := fmt.Sprintf("unexpected end of input")
+		return nil, debug.NewError(ErrSyntaxError, msg, tokens[*inx-1].Debug)
+	}
+
+	return tokens[i], nil
+}

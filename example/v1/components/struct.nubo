@@ -1,0 +1,16 @@
+struct Document {
+    attributes: []string
+    children: []any
+}
+
+impl Document {
+    fn init(self: Document, attributes: []string, children: []any) -> Document {
+        self.attributes = attributes
+        self.children = children
+        return self
+    }
+
+    fn render() -> string {
+        return "<DOCTYPE html>" + self.children.join("")
+    }
+}
