@@ -63,7 +63,20 @@ func (i *Interpreter) handleStructCreation(obj language.Object, node *astnode.No
 			args[j] = value.Clone()
 		}
 
-		return fn.Data(args)
+		inst, err := fn.Data(args)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(node.Children) == 1 {
+			return i.getValueFromObjByNode(instance, node.Children[0])
+		}
+
+		return inst, nil
+	}
+
+	if len(node.Children) == 1 {
+		return i.getValueFromObjByNode(instance, node.Children[0])
 	}
 
 	return instance, nil

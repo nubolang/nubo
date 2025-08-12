@@ -140,5 +140,5 @@ func (a *Ast) handleToken(tokens []*lexer.Token, inx *int) (*astnode.Node, error
 		return nil, nil
 	}
 
-	return nil, debug.NewError(errors.New("Ast error"), fmt.Sprintf("Unhandled node: %s", token.Type), token.Debug)
+	return nil, debug.NewError(errors.New("Ast error"), fmt.Sprintf("Unhandled node: \"%s\" - Type: %s", token.Value, token.Type), token.Debug)
 }

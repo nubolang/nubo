@@ -21,9 +21,9 @@ func Test_Default(t *testing.T) {
 func Test_Html(t *testing.T) {
 	inst := New()
 	obj, err := inst.ExecString(`
-		return (<div :id="4">
+		return <div :id="4">
 			Hello, World
-		</div>)
+		</div>
 	`)
 
 	assert.NoError(t, err, "Execute error should be nil")

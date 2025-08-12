@@ -1,0 +1,44 @@
+struct D {}
+
+struct C {
+    d: D
+}
+
+struct B {
+    c: C
+}
+
+struct A {
+    b: B
+}
+
+impl A {
+    fn init(self: A) A {
+        self.b = B()
+        return self
+    }
+}
+
+impl B {
+    fn init(self: B) B {
+        self.c = C()
+        return self
+    }
+}
+
+impl C {
+    fn init(self: C) C {
+        self.d = D()
+        return self
+    }
+}
+
+impl D {
+    fn e() {
+        println("Got to E!")
+    }
+}
+
+A().b.c.d.e()
+println(A())
+println(A().b.c)

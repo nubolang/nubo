@@ -1,9 +1,2 @@
-fn run() int {
-    return 4
-}
-
-fn x() void {
-    return run()
-}
-
-x()
+let debug = xdbg()
+println(debug)

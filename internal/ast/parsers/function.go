@@ -132,22 +132,13 @@ func fnChildParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, i
 		return nil, err
 	}
 
-	last := *inx
-	if err := inxPP(tokens, inx); err != nil {
-		*inx = last
-		return &astnode.Node{
-			Type:    astnode.NodeTypeValue,
-			Content: id,
-			Kind:    "IDENTIFIER",
-			Debug:   debug,
-		}, nil
-	}
-
-	token := tokens[*inx]
-
-	switch token.Type {
-	case lexer.TokenOpenParen:
-		return fnCallParser(ctx, sn, id, tokens, inx)
+	if next, err := inxPPeak(tokens, inx); err == nil {
+		if err := inxPP(tokens, inx); err != nil {
+			return nil, err
+		}
+		if next.Type == lexer.TokenOpenParen {
+			return fnCallParser(ctx, sn, id, tokens, inx)
+		}
 	}
 
 	return &astnode.Node{
@@ -155,5 +146,5 @@ func fnChildParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, i
 		Content: id,
 		Kind:    "IDENTIFIER",
 		Debug:   debug,
-	}, newErr(ErrUnexpectedToken, fmt.Sprintf("unexpected token %s", token.Value), token.Debug)
+	}, nil
 }

@@ -2,6 +2,7 @@ package interpreter
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/nubolang/nubo/internal/ast/astnode"
 	"github.com/nubolang/nubo/internal/debug"
@@ -135,6 +136,20 @@ func (i *Interpreter) handleFunctionCall(node *astnode.Node) (language.Object, e
 }
 
 func (i *Interpreter) getValueFromObjByNode(value language.Object, node *astnode.Node) (language.Object, error) {
+	objID := node.Content
+	if strings.Contains(objID, ".") {
+		parts := strings.Split(objID, ".")
+		last := parts[len(parts)-1]
+		parts = parts[:len(parts)-1]
+
+		nextValue, err := i.getFieldFromObjByNode(value, parts)
+		if err != nil {
+			return nil, err
+		}
+		value = nextValue
+		objID = last
+	}
+
 	proto := value.GetPrototype()
 	if proto == nil {
 		return nil, newErr(ErrUnsupported, fmt.Sprintf("cannot get prototype for type %s", value.Type()), value.Debug())
@@ -143,17 +158,21 @@ func (i *Interpreter) getValueFromObjByNode(value language.Object, node *astnode
 	switch node.Type {
 	case astnode.NodeTypeValue:
 		if node.Kind == "IDENTIFIER" {
-			obj, ok := proto.GetObject(node.Content)
+			obj, ok := proto.GetObject(objID)
 			if !ok {
 				return nil, newErr(ErrUnknownNode, fmt.Sprintf("Cannot find property %s on %s", node.Content, value.Type()), node.Debug)
 			}
 			if len(node.Children) == 1 {
 				return i.getValueFromObjByNode(obj, node.Children[0])
 			}
-			return value, nil
+			return obj, nil
 		}
 	case astnode.NodeTypeFunctionCall:
-		fn, ok := proto.GetObject(node.Content)
+		fn, ok := proto.GetObject(objID)
+		if !ok {
+			return nil, newErr(ErrUnknownNode, fmt.Sprintf("Cannot find function %s", node.Content), node.Debug)
+		}
+
 		if fn.Type().Base() != language.ObjectTypeFunction {
 			return nil, newErr(ErrExpectedFunction, fmt.Sprintf("got %s", node.Type), node.Debug)
 		}
@@ -185,6 +204,23 @@ func (i *Interpreter) getValueFromObjByNode(value language.Object, node *astnode
 	}
 
 	return nil, newErr(ErrUnsupported, fmt.Sprintf("cannot get prototype for type %s with node %s", value.Type(), node.Type), value.Debug())
+}
+
+func (i *Interpreter) getFieldFromObjByNode(value language.Object, fields []string) (language.Object, error) {
+	for _, field := range fields {
+		proto := value.GetPrototype()
+		if proto == nil {
+			return nil, newErr(ErrUndefinedFunction, fmt.Sprintf("prototype not found"), value.Debug())
+		}
+
+		fieldValue, ok := proto.GetObject(field)
+		if !ok {
+			return nil, newErr(ErrPrototype, fmt.Sprintf("field %s not found", field), value.Debug())
+		}
+		value = fieldValue
+	}
+
+	return value, nil
 }
 
 func (i *Interpreter) createInlineFunction(node *astnode.Node) (language.Object, error) {
