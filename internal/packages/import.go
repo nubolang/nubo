@@ -13,6 +13,7 @@ import (
 	"github.com/nubolang/nubo/internal/packages/process"
 	"github.com/nubolang/nubo/internal/packages/random"
 	"github.com/nubolang/nubo/internal/packages/sql"
+	"github.com/nubolang/nubo/internal/packages/system"
 	"github.com/nubolang/nubo/internal/packages/thread"
 	"github.com/nubolang/nubo/internal/packages/time"
 	"github.com/nubolang/nubo/language"
@@ -23,7 +24,7 @@ const (
 	BuiltInModulePrefix = "@std/"
 )
 
-var packageList = []string{"io", "math", "json", "log", "thread", "random", "process", "layoutjs", "sql", "time", "http"}
+var packageList = []string{"io", "math", "json", "log", "thread", "random", "process", "layoutjs", "sql", "time", "http", "system"}
 
 func ImportPackage(name string, dg *debug.Debug) (language.Object, bool) {
 	if name == "@std" {
@@ -72,6 +73,8 @@ func ImportPackage(name string, dg *debug.Debug) (language.Object, bool) {
 		return time.NewTime(dg), true
 	case "http":
 		return http.NewHttp(dg), true
+	case "system":
+		return system.NewSystem(dg), true
 	}
 
 	return nil, false
