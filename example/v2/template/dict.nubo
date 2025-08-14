@@ -1,0 +1,7 @@
+fn nubo(x: dict[string, dict[string, string]], y: dict[string, string]) dict[string, any] {
+    return x
+}
+
+let x = nubo({ value: { key: "x" } }, { key: "value", value: "key" })
+
+println(x)

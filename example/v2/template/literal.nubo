@@ -1,0 +1,8 @@
+let firstName = "John"
+let lastName = "Doe"
+
+println(`Hello, {firstName + " " + lastName}!`)
+
+import system from "@std/system"
+
+println(system.uptime())

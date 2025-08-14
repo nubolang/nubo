@@ -41,7 +41,10 @@ loop:
 
 			token := tokens[*inx]
 			if token.Type == lexer.TokenNewLine {
-				continue loop
+				if err := nl(tokens, inx); err != nil {
+					return nil, err
+				}
+				token = tokens[*inx]
 			}
 
 			if token.Type == lexer.TokenCloseBrace {
@@ -98,13 +101,6 @@ loop:
 			}
 
 			token = tokens[*inx]
-			if token.Type == lexer.TokenComma {
-				if err := inxPP(tokens, inx); err != nil {
-					return nil, err
-				}
-
-				continue loop
-			}
 
 			if token.Type == lexer.TokenNewLine {
 				if err := inxPP(tokens, inx); err != nil {
@@ -114,6 +110,10 @@ loop:
 				if tokens[*inx].Type == lexer.TokenCloseBrace {
 					break loop
 				}
+			}
+
+			if token.Type == lexer.TokenComma {
+				continue loop
 			}
 
 			if token.Type == lexer.TokenCloseBrace {

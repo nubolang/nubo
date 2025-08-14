@@ -46,4 +46,8 @@ const (
 	NodeTypeFor    NodeType = "for"
 	NodeTypeSignal NodeType = "signal"
 	NodeTypeTry    NodeType = "try"
+
+	NodeTypeTemplateLiteral NodeType = "template_literal"
+	NodeTypeRawText         NodeType = "raw_text"
+	NodeTypeDynamicText     NodeType = "dynamic_text"
 )

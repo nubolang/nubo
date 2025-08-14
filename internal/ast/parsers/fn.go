@@ -75,6 +75,9 @@ loop:
 			return nil, err
 		}
 		node.ValueType = retType
+		if err := inxPP(tokens, inx); err != nil {
+			return nil, err
+		}
 	}
 
 	token = tokens[*inx]

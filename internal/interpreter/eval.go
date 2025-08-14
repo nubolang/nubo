@@ -135,6 +135,23 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 				return nil, newErr(ErrUnsupported, fmt.Sprintf("cannot operate on element"), child.Debug)
 			}
 			return i.evaluateElement(child)
+		} else if child.Type == astnode.NodeTypeTemplateLiteral {
+			var st strings.Builder
+			for _, ch := range child.Children {
+				if ch.Type == astnode.NodeTypeRawText {
+					st.WriteString(ch.Content)
+				} else {
+					val, err := i.evaluateExpression(ch.Value.(*astnode.Node))
+					if err != nil {
+						return nil, err
+					}
+					st.WriteString(val.String())
+				}
+			}
+			id := "var_" + fmt.Sprintf("%d", inx)
+			inx++
+			sb.WriteString(id)
+			env[id] = st.String()
 		} else {
 			sb.WriteString(child.Value.(string))
 		}

@@ -127,6 +127,7 @@ func singleValueParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Toke
 
 		if token.Map["quote"] == "`" {
 			s.Flags.Append("TEMPLATE")
+			return parseTemplateLiteral(ctx, sn, s)
 		}
 
 		return s, nil
