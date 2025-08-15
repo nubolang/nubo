@@ -1,0 +1,5 @@
+fn doSomething(x: dict[string, string]|string) any {
+    return 0
+}
+
+println(doSomething("hello"))

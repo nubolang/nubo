@@ -36,6 +36,7 @@ type Function struct {
 	ReturnType *Type
 	typ        *Type
 	debug      *debug.Debug
+	proto      *FunctionPrototype
 }
 
 func NewFunction(data func([]Object) (Object, error), debug *debug.Debug) *Function {
@@ -149,7 +150,10 @@ func (i *Function) String() string {
 }
 
 func (i *Function) GetPrototype() Prototype {
-	return nil
+	if i.proto == nil {
+		i.proto = NewFunctionPrototype(i)
+	}
+	return i.proto
 }
 
 func (i *Function) Value() any {

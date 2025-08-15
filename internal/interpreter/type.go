@@ -57,7 +57,7 @@ func (i *Interpreter) parseTypeNode(n *astnode.Node) (*language.Type, error) {
 		}
 		t.Element = elem
 		t.BaseType = language.ObjectTypeList
-		return t, nil
+		return i.checkAddUnionType(t, n)
 	case "DICT":
 		if len(n.Body) != 2 {
 			return nil, fmt.Errorf("DICT must have exactly two body elements")
@@ -73,7 +73,7 @@ func (i *Interpreter) parseTypeNode(n *astnode.Node) (*language.Type, error) {
 		t.Key = key
 		t.Value = val
 		t.BaseType = language.ObjectTypeDict
-		return t, nil
+		return i.checkAddUnionType(t, n)
 	case "FUNCTION":
 		if n.ValueType == nil {
 			return nil, fmt.Errorf("FUNCTION must have a return value_type")
@@ -93,7 +93,7 @@ func (i *Interpreter) parseTypeNode(n *astnode.Node) (*language.Type, error) {
 		}
 
 		t.BaseType = language.ObjectTypeFunction
-		return t, nil
+		return i.checkAddUnionType(t, n)
 	}
 
 	baseType, err := i.stringToType(n.Content, n.Debug)
@@ -106,13 +106,18 @@ func (i *Interpreter) parseTypeNode(n *astnode.Node) (*language.Type, error) {
 	}
 
 	t.BaseType = baseType.Base()
+	return i.checkAddUnionType(t, n)
+}
 
+func (i *Interpreter) checkAddUnionType(t *language.Type, n *astnode.Node) (*language.Type, error) {
 	if len(n.Children) > 0 {
 		next, err := i.parseTypeNode(n.Children[0])
 		if err != nil {
 			return nil, err
 		}
-		t = language.NewUnionType(t, next)
+
+		union := language.NewUnionType(t, next)
+		return union, nil
 	}
 
 	return t, nil

@@ -189,17 +189,16 @@ func NewUnionType(types ...*Type) *Type {
 	if len(types) == 0 {
 		return nil
 	}
-
 	if len(types) == 1 {
-		return types[0]
+		return types[0].DeepClone()
 	}
 
-	head := types[0]
-	current := head.DeepClone()
+	head := types[0].DeepClone()
+	current := head
 
 	for _, t := range types[1:] {
 		current.Next = t.DeepClone()
-		current = t.DeepClone()
+		current = current.Next
 	}
 
 	return head
@@ -219,15 +218,12 @@ func (t *Type) DeepClone() *Type {
 	if t.Key != nil {
 		clone.Key = t.Key.DeepClone()
 	}
-
 	if t.Value != nil {
 		clone.Value = t.Value.DeepClone()
 	}
-
 	if t.Element != nil {
 		clone.Element = t.Element.DeepClone()
 	}
-
 	if t.Next != nil {
 		clone.Next = t.Next.DeepClone()
 	}
@@ -235,7 +231,9 @@ func (t *Type) DeepClone() *Type {
 	if len(t.Args) > 0 {
 		clone.Args = make([]*Type, len(t.Args))
 		for i, arg := range t.Args {
-			clone.Args[i] = arg.DeepClone()
+			if arg != nil {
+				clone.Args[i] = arg.DeepClone()
+			}
 		}
 	}
 
