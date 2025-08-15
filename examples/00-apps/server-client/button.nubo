@@ -1,5 +1,5 @@
 fn Button(attr: string[], children: html[]) -> html {
-    return <button class="xyz xyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyz">
+    return <button class="xyz">
         {children}
     </button>
 }

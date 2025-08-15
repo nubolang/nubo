@@ -1,0 +1,9 @@
+#!/usr/bin/env nubo
+
+fn x() any {
+    return 5
+}
+
+let z = x()
+
+println("Hello, World!", z)

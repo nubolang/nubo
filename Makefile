@@ -6,6 +6,9 @@ build:
 run: build
 	@./bin/nubo ./example/v2/$(FILE).nubo --dev --loglevel=WARN
 
+runex: build
+	@./bin/nubo ./examples/$(FILE).nubo --dev --loglevel=INFO
+
 prepare: build
 	@./bin/nubo prepare ./example/v2 --dev
 

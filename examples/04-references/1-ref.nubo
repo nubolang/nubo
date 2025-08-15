@@ -1,0 +1,23 @@
+// Ref
+// Reference is a tool that keeps the original value
+// and prevents it from being copied. (NOTE: it been copied once passed to the ref function)
+
+// We created a variable five, which is a reference to the number 5.
+let five = ref(5) // Since we used the ref() method, the actual value 5 is being copied only once.
+                  // Because in Nubo, every time you pass a variable to a function, it is copied.
+
+// Now, ref is not exactly a variable type, but something like it.
+// It's an overlay type that keeps the original value and prevents it from being copied.
+
+// For example:
+fn increment_five(x: int) int {
+    x++ // this macro does the same as x.increment()
+    return x
+}
+
+// Since we know, every time we pass a value to a function, it gets copied,
+// we can try out our variable.
+
+increment_five(five) // There is nothing more we need to add here, since any ref acts like a normal variable.
+
+println(five) // If we print out five, we should receive the value 5, right?

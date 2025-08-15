@@ -81,6 +81,12 @@ func (lx *Lexer) newErr(base error, err string) error {
 
 // Parse performs lexical analysis and returns collected tokens.
 func (lx *Lexer) Parse() ([]*Token, error) {
+	if lx.curr() != 0 && lx.curr() == '#' && lx.peek(1) == '!' {
+		if err := lx.lexSingleLineComment(); err != nil {
+			return nil, err
+		}
+	}
+
 	for lx.curr() != 0 {
 		switch lx.curr() {
 		case '\n':

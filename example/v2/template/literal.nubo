@@ -6,3 +6,7 @@ println(`Hello, {firstName + " " + lastName}!`)
 import system from "@std/system"
 
 println(system.uptime())
+
+fn view() {
+
+}

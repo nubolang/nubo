@@ -1,0 +1,9 @@
+let x = ref(5)
+let z = x
+let y = unwrap(z)
+
+x = 7
+x++
+z++
+
+println(x, z, y)

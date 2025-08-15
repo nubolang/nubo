@@ -75,8 +75,10 @@ loop:
 			return nil, err
 		}
 		node.ValueType = retType
-		if err := inxPP(tokens, inx); err != nil {
-			return nil, err
+		if tokens[*inx].Type == lexer.TokenWhiteSpace {
+			if err := inxPP(tokens, inx); err != nil {
+				return nil, err
+			}
 		}
 	}
 

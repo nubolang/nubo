@@ -16,7 +16,8 @@ func (i *Interpreter) handleNode(node *astnode.Node) (language.Object, error) {
 	case astnode.NodeTypeAssign:
 		return nil, i.handleAssignment(node)
 	case astnode.NodeTypeFunctionCall:
-		return i.handleFunctionCall(node)
+		_, err := i.handleFunctionCall(node)
+		return nil, err
 	case astnode.NodeTypeEvent:
 		return i.handleEventDecl(node)
 	case astnode.NodeTypeSubscribe:
