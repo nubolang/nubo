@@ -1,0 +1,7 @@
+let x = 5
+
+fn hello(name: string) {
+    println("Hello,", name + "!")
+}
+
+struct X {}

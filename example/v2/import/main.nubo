@@ -1,0 +1,5 @@
+import { hello, X: otherX } from "./other.nubo"
+
+hello("World")
+
+println(otherX)

@@ -73,9 +73,28 @@ func (ir *Interpreter) handleImport(node *astnode.Node) error {
 		return nil
 	}
 
-	ir.mu.Lock()
-	defer ir.mu.Unlock()
-	ir.imports[node.Content] = imported
+	if node.Kind == "SINGLE" {
+		ir.mu.Lock()
+		defer ir.mu.Unlock()
+		ir.imports[node.Content] = imported
+	}
+
+	if node.Kind == "MULTIPLE" {
+		for _, child := range node.Children {
+			name := child.Value.(string)
+			if _, ok := ir.GetObject(name); ok {
+				return newErr(ErrImportError, fmt.Sprintf("variable %s already exists, cannot redeclare", name), node.Debug)
+			}
+
+			value, ok := imported.GetObject(child.Content)
+			if !ok {
+				return newErr(ErrImportError, fmt.Sprintf("failed to import object from package: %s", child.Value.(string)), node.Debug)
+			}
+			if err := ir.Declare(name, value, value.Type(), false); err != nil {
+				return err
+			}
+		}
+	}
 
 	return nil
 }
