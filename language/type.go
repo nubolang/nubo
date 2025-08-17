@@ -108,7 +108,7 @@ func (t *Type) String() string {
 	case ObjectTypeDict:
 		return fmt.Sprintf("dict[%s, %s]%s", t.Key.String(), t.Value.String(), next)
 	case ObjectTypeStructInstance, ObjectTypeStructDefinition:
-		return fmt.Sprintf("%s{}%s", t.Content, t.ID, next)
+		return fmt.Sprintf("%s{}%s", t.Content, next)
 	}
 }
 

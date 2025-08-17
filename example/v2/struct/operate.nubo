@@ -1,0 +1,3 @@
+struct App {}
+
+println(App, App())

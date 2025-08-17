@@ -52,7 +52,7 @@ func (i *StructInstance) TypeString() string {
 
 func (i *StructInstance) String() string {
 	if len(i.base.Data) == 0 {
-		return fmt.Sprintf("%s[%s]{}", i.Name, i.base.structType.ID)
+		return fmt.Sprintf("%s{}", i.Name)
 	}
 
 	var items = make([]string, len(i.base.Data))
@@ -66,9 +66,8 @@ func (i *StructInstance) String() string {
 	}
 
 	return fmt.Sprintf(
-		"%s[%s]{\n\t%s\n}",
+		"%s{\n\t%s\n}",
 		i.Name,
-		i.base.structType.ID,
 		strings.Join(items, ",\n\t"),
 	)
 }

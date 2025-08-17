@@ -59,6 +59,9 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 				}
 
 				if obj.Type().Base() == language.ObjectTypeStructDefinition {
+					if len(node.Body) == 1 {
+						return obj, nil
+					}
 					return nil, newErr(ErrUnsupported, fmt.Sprintf("cannot operate on struct %s", obj.Type()), obj.Debug())
 				}
 

@@ -82,6 +82,18 @@ func FromValue(data any, voidNil bool, dg ...*debug.Debug) (Object, error) {
 		return NewFloat(float64(value), dbg), nil
 	case float64:
 		return NewFloat(value, dbg), nil
+	case uint:
+		return NewInt(int64(value), dbg), nil
+	case uint8:
+		return NewInt(int64(value), dbg), nil
+	case uint16:
+		return NewInt(int64(value), dbg), nil
+	case uint32:
+		return NewInt(int64(value), dbg), nil
+	case uint64:
+		return NewInt(int64(value), dbg), nil
+	case uintptr:
+		return NewInt(int64(value), dbg), nil
 	case string:
 		return NewString(value, dbg), nil
 	case bool:
