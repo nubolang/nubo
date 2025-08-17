@@ -41,7 +41,37 @@ func (ir *Interpreter) handleImport(node *astnode.Node) error {
 	if strings.HasPrefix(fileName, "@std") || strings.HasPrefix(fileName, "@server") {
 		obj, ok := ir.runtime.ImportPackage(fileName, node.Debug)
 		if ok {
-			return ir.Declare(node.Content, obj, obj.Type(), false)
+			if node.Kind == "NONE" {
+				return nil
+			}
+
+			if node.Kind == "SINGLE" {
+				return ir.Declare(node.Content, obj, obj.Type(), false)
+			}
+
+			if node.Kind == "MULTIPLE" {
+				for _, child := range node.Children {
+					name := child.Value.(string)
+					if _, ok := ir.GetObject(name); ok {
+						return newErr(ErrImportError, fmt.Sprintf("variable %s already exists, cannot redeclare", name), node.Debug)
+					}
+
+					if obj.GetPrototype() == nil {
+						return newErr(ErrImportError, fmt.Sprintf("failed to import object from package: %s", child.Value.(string)), node.Debug)
+					}
+
+					value, ok := obj.GetPrototype().GetObject(child.Content)
+					if !ok {
+						return newErr(ErrImportError, fmt.Sprintf("failed to import object from package: %s", child.Value.(string)), node.Debug)
+					}
+
+					if err := ir.Declare(name, value, value.Type(), false); err != nil {
+						return err
+					}
+
+					return nil
+				}
+			}
 		}
 		return newErr(ErrImportError, fmt.Sprintf("failed to import package from standard library: %s", strings.TrimPrefix(fileName, "@std/")), node.Debug)
 	}
