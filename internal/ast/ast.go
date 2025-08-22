@@ -64,6 +64,12 @@ func (a *Ast) handleToken(tokens []*lexer.Token, inx *int) (*astnode.Node, error
 			return nil, err
 		}
 		return node, nil
+	case lexer.TokenInclude:
+		node, err := parsers.IncludeParser(a.ctx, a, tokens, inx)
+		if err != nil {
+			return nil, err
+		}
+		return node, nil
 	case lexer.TokenEvent:
 		node, err := parsers.EventParser(a.ctx, tokens, inx)
 		if err != nil {

@@ -1,0 +1,5 @@
+fn hello() {
+    println("Hello, world!");
+}
+
+include 'other.nubo'

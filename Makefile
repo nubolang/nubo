@@ -2,6 +2,7 @@
 
 build:
 	@go build -o bin/nubo ./cmd/nubo
+	@echo "🚀 Build complete"
 
 run: build
 	@./bin/nubo ./example/v2/$(FILE).nubo --dev --loglevel=WARN

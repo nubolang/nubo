@@ -3,7 +3,8 @@ package astnode
 type NodeType string
 
 const (
-	NodeTypeImport NodeType = "import"
+	NodeTypeImport  NodeType = "import"
+	NodeTypeInclude NodeType = "include"
 
 	NodeTypeFunction         NodeType = "function"
 	NodeTypeInlineFunction   NodeType = "inline_function"
