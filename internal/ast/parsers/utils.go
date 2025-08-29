@@ -12,6 +12,10 @@ import (
 
 var white = []lexer.TokenType{lexer.TokenWhiteSpace, lexer.TokenSingleLineComment, lexer.TokenMultiLineComment}
 
+func isWhite(token *lexer.Token) bool {
+	return slices.Contains(white, token.Type)
+}
+
 func inxPPIf(tokens []*lexer.Token, inx *int) error {
 	if *inx >= len(tokens) {
 		return debug.NewError(ErrSyntaxError, "unexpected end of input", tokens[*inx-1].Debug)

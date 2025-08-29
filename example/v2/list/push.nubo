@@ -1,0 +1,40 @@
+let x = [1, 2, 3, 4]
+
+// base state
+println("Type:", type(x), "Value:", x)
+
+// push
+x.push(5)
+println("After push:", x)
+
+// insert
+x.insert(2, 99)
+println("After insert at 2:", x)
+
+// del
+x.del(1)
+println("After del index 1:", x)
+
+// pop
+let last = x.pop()
+println("Popped:", last, "List now:", x)
+
+// shift
+let first = x.shift()
+println("Shifted:", first, "List now:", x)
+
+// unshift
+x.unshift(100)
+println("After unshift 100:", x)
+
+// slice
+let subli = x.slice(1, 3)
+println("Slice 1-3:", subli)
+
+// reverse
+x.reverse()
+println("After reverse:", x)
+
+// clear
+x.clear()
+println("After clear:", x)

@@ -1,6 +1,6 @@
 #!/usr/bin/env nubo
 
-fn x(const x: string) any {
+fn x(x: string) any {
     return 5
 }
 

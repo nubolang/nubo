@@ -57,6 +57,11 @@ loop:
 				break loop
 			}
 
+			if isWhite(token) {
+				*inx++
+				continue
+			}
+
 			var (
 				err   error
 				value *astnode.Node

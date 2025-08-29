@@ -46,8 +46,15 @@ func StructParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnod
 		*inx--
 	}
 
-	if err := nl(tokens, inx); err != nil {
+	var compact = true
+
+	if token, err := inxPPeak(tokens, inx); err != nil {
 		return nil, err
+	} else if token.Type == lexer.TokenNewLine {
+		compact = false
+		if err := nl(tokens, inx); err != nil {
+			return nil, err
+		}
 	}
 
 	var body []*astnode.Node
@@ -104,8 +111,13 @@ loop:
 			body = append(body, child)
 
 			token = tokens[*inx]
-			if token.Type == lexer.TokenNewLine {
+			if !compact && token.Type == lexer.TokenNewLine || compact && token.Type == lexer.TokenSemicolon {
 				continue
+			}
+
+			if token.Type == lexer.TokenCloseBrace {
+				*inx++
+				break loop
 			}
 
 			if err := inxPP(tokens, inx); err != nil {

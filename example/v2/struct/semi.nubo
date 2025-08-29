@@ -1,0 +1,18 @@
+type Greeter iface {
+    iface Reader
+    greet: fn() string
+}
+
+struct z { x: int; y: string; }
+
+impl z {
+    fn greet() string {
+        return "Hello, world!"
+    }
+}
+
+fn main(greeter: iface { greet() string }) {
+    println(greeter.greet())
+}
+
+main(z())

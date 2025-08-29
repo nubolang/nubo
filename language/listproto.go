@@ -2,6 +2,7 @@ package language
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"sync"
 )
@@ -111,6 +112,132 @@ func NewListPrototype(base *List) *ListPrototype {
 
 			return NewBool(false, lp.base.Debug()), nil
 		}, base.Debug()))
+
+	lp.SetObject("push", NewTypedFunction([]FnArg{&BasicFnArg{TypeVal: lp.base.ItemType, NameVal: "value"}}, TypeVoid,
+		func(o []Object) (Object, error) {
+			lp.mu.RLock()
+			defer lp.mu.RUnlock()
+
+			base.Data = append(base.Data, o[0])
+			return nil, nil
+		}, base.Debug()))
+
+	lp.SetObject("insert", NewTypedFunction(
+		[]FnArg{
+			&BasicFnArg{TypeVal: TypeInt, NameVal: "index"},
+			&BasicFnArg{TypeVal: lp.base.ItemType, NameVal: "value"},
+		}, TypeVoid,
+		func(o []Object) (Object, error) {
+			lp.mu.RLock()
+			defer lp.mu.RUnlock()
+
+			idx := int(o[0].Value().(int64))
+			val := o[1]
+			if idx < 0 || idx > len(base.Data) {
+				return nil, ErrIndexOutOfBounds
+			}
+			base.Data = append(base.Data[:idx], append([]Object{val}, base.Data[idx:]...)...)
+			return nil, nil
+		}, base.Debug(),
+	))
+
+	lp.SetObject("del", NewTypedFunction(
+		[]FnArg{
+			&BasicFnArg{TypeVal: TypeInt, NameVal: "index"},
+		}, TypeVoid,
+		func(o []Object) (Object, error) {
+			lp.mu.RLock()
+			defer lp.mu.RUnlock()
+
+			idx := int(o[0].Value().(int64))
+			if idx < 0 || idx >= len(base.Data) {
+				return nil, ErrIndexOutOfBounds
+			}
+			base.Data = append(base.Data[:idx], base.Data[idx+1:]...)
+			return nil, nil
+		}, base.Debug(),
+	))
+
+	lp.SetObject("pop", NewTypedFunction(nil, lp.base.ItemType,
+		func(o []Object) (Object, error) {
+			lp.mu.RLock()
+			defer lp.mu.RUnlock()
+
+			if len(base.Data) == 0 {
+				return nil, fmt.Errorf("list is empty")
+			}
+			val := base.Data[len(base.Data)-1]
+			base.Data = base.Data[:len(base.Data)-1]
+			return val, nil
+		}, base.Debug(),
+	))
+
+	lp.SetObject("shift", NewTypedFunction(nil, lp.base.ItemType,
+		func(o []Object) (Object, error) {
+			lp.mu.RLock()
+			defer lp.mu.RUnlock()
+
+			if len(base.Data) == 0 {
+				return nil, fmt.Errorf("list is empty")
+			}
+			val := base.Data[0]
+			base.Data = base.Data[1:]
+			return val, nil
+		}, base.Debug(),
+	))
+
+	lp.SetObject("unshift", NewTypedFunction(
+		[]FnArg{&BasicFnArg{TypeVal: lp.base.ItemType, NameVal: "value"}},
+		TypeVoid,
+		func(o []Object) (Object, error) {
+			lp.mu.RLock()
+			defer lp.mu.RUnlock()
+
+			base.Data = append([]Object{o[0]}, base.Data...)
+			return nil, nil
+		}, base.Debug(),
+	))
+
+	lp.SetObject("slice", NewTypedFunction(
+		[]FnArg{
+			&BasicFnArg{TypeVal: TypeInt, NameVal: "start"},
+			&BasicFnArg{TypeVal: TypeInt, NameVal: "end"},
+		}, lp.base.Type(),
+		func(o []Object) (Object, error) {
+			lp.mu.RLock()
+			defer lp.mu.RUnlock()
+
+			start := int(o[0].Value().(int64))
+			end := int(o[1].Value().(int64))
+			if start < 0 || end > len(base.Data) || start > end {
+				return nil, fmt.Errorf("invalid slice range")
+			}
+			sublist := base.Data[start:end]
+			return NewList(sublist, lp.base.ItemType, lp.base.Debug()), nil
+		}, base.Debug(),
+	))
+
+	lp.SetObject("clear", NewTypedFunction(nil, TypeVoid,
+		func(o []Object) (Object, error) {
+			lp.mu.RLock()
+			defer lp.mu.RUnlock()
+
+			base.Data = []Object{}
+			return nil, nil
+		}, base.Debug(),
+	))
+
+	lp.SetObject("reverse", NewTypedFunction(nil, TypeVoid,
+		func(o []Object) (Object, error) {
+			lp.mu.RLock()
+			defer lp.mu.RUnlock()
+
+			for i, j := 0, len(base.Data)-1; i < j; i, j = i+1, j-1 {
+				base.Data[i], base.Data[j] = base.Data[j], base.Data[i]
+			}
+			return nil, nil
+		}, base.Debug(),
+	))
 
 	return lp
 }
