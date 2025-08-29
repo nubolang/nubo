@@ -2,6 +2,7 @@ package io
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/nubolang/nubo/internal/debug"
 	"github.com/nubolang/nubo/language"
@@ -25,6 +26,7 @@ func NewIO(dg *debug.Debug) language.Object {
 		&language.BasicFnArg{TypeVal: language.TypeString, NameVal: "file"},
 		&language.BasicFnArg{TypeVal: language.TypeString, NameVal: "encoding", DefaultVal: language.NewString("utf-8", nil)},
 	}, streamStruct.Type(), openFn))
+	proto.SetObject("writeFile", n.Function(n.Describe(n.Arg("file", n.TString), n.Arg("data", n.TAny), n.Arg("perm", n.TInt, n.Int(int(os.ModePerm), nil))), writeFile))
 
 	return instance
 }

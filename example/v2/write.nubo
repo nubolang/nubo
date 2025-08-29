@@ -1,0 +1,8 @@
+println(__id__)
+println(__entry__)
+println(__dir__)
+println(__file__)
+
+import io from "@std/io"
+
+io.writeFile(__dir__ + "/output.txt", "Hello, World!")

@@ -47,7 +47,7 @@ type Interpreter struct {
 }
 
 func New(currentFile string, runtime Runtime, dependent bool) *Interpreter {
-	return &Interpreter{
+	ir := &Interpreter{
 		ID:          runtime.NewID(),
 		currentFile: filepath.Clean(currentFile),
 		scope:       ScopeGlobal,
@@ -57,6 +57,13 @@ func New(currentFile string, runtime Runtime, dependent bool) *Interpreter {
 		imports:     make(map[string]*Interpreter),
 		unsub:       make([]events.UnsubscribeFunc, 0),
 	}
+
+	ir.Declare("__id__", language.NewInt(int64(ir.ID), nil), language.TypeInt, false)
+	ir.Declare("__entry__", language.NewBool(ir.ID == 1, nil), language.TypeBool, false)
+	ir.Declare("__dir__", language.NewString(filepath.Dir(ir.currentFile), nil), language.TypeString, false)
+	ir.Declare("__file__", language.NewString(ir.currentFile, nil), language.TypeString, false)
+
+	return ir
 }
 
 func NewWithParent(parent *Interpreter, scope Scope, name ...string) *Interpreter {
