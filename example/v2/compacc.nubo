@@ -1,0 +1,5 @@
+let li: []int = [1, 2, 3, 4]
+
+if li[3] > li[2] {
+    println("li[3] is greater than li[2]")
+}

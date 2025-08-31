@@ -91,16 +91,16 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 					}
 				}
 
-				if isNotEvaluable(obj.Type().Base()) {
-					return nil, newErr(ErrUnsupported, fmt.Sprintf("cannot operate on type %s", obj.Type()), obj.Debug())
-				}
-
 				if len(child.ArrayAccess) > 0 {
 					if ob, err := i.checkGetter(obj, child); err != nil {
 						return nil, err
 					} else {
 						obj = ob
 					}
+				}
+
+				if isNotEvaluable(obj.Type().Base()) {
+					return nil, newErr(ErrUnsupported, fmt.Sprintf("cannot operate on type %s", obj.Type()), obj.Debug())
 				}
 
 				env[id] = obj.Value()
