@@ -336,7 +336,7 @@ func (lx *Lexer) lexNumber() error {
 	startPos := lx.pos
 	isFloat := false
 
-	if lx.curr() == '0' {
+	if lx.curr() == '0' && slices.Contains([]rune{'b', 'B', 'o', 'O', 'x', 'X'}, lx.peek(1)) {
 		return lx.lexPrefixedNumber()
 	}
 
@@ -358,9 +358,7 @@ func (lx *Lexer) lexPrefixedNumber() error {
 	startPos := lx.pos
 
 	lx.advance()
-	if !slices.Contains([]rune{'b', 'B', 'o', 'O', 'x', 'X'}, lx.curr()) {
-		return newErr(ErrSyntaxError, "invalid number prefix format", &debug.Debug{Line: lx.line, Column: lx.col, File: lx.file})
-	}
+	lx.advance()
 
 	prefix := lx.curr()
 	lx.advance()
