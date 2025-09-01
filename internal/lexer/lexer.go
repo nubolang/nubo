@@ -340,7 +340,11 @@ func (lx *Lexer) lexNumber() error {
 		return lx.lexPrefixedNumber()
 	}
 
-	for unicode.IsDigit(lx.curr()) || lx.curr() == '.' {
+	for unicode.IsDigit(lx.curr()) || lx.curr() == '.' || lx.curr() == '_' {
+		if lx.curr() == '_' {
+			lx.advance()
+			continue
+		}
 		if lx.curr() == '.' {
 			if isFloat {
 				return newErr(ErrSyntaxError, "invalid number format", &debug.Debug{Line: lx.line, Column: lx.col, File: lx.file})
@@ -349,7 +353,7 @@ func (lx *Lexer) lexNumber() error {
 		}
 		lx.advance()
 	}
-	value := string(lx.input[startPos:lx.pos])
+	value := strings.ReplaceAll(string(lx.input[startPos:lx.pos]), "_", "")
 	lx.add(TokenNumber, value, map[string]any{"isFloat": isFloat, "base": 10})
 	return nil
 }
@@ -373,11 +377,15 @@ func (lx *Lexer) lexPrefixedNumber() error {
 		base = 16
 	}
 
-	for unicode.IsDigit(lx.curr()) {
+	for unicode.IsDigit(lx.curr()) || lx.curr() == '_' {
+		if lx.curr() == '_' {
+			lx.advance()
+			continue
+		}
 		lx.advance()
 	}
 
-	value := string(lx.input[startPos+2 : lx.pos])
+	value := strings.ReplaceAll(string(lx.input[startPos+2:lx.pos]), "_", "")
 	lx.add(TokenNumber, value, map[string]any{"isFloat": false, "base": base})
 	return nil
 }

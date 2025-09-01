@@ -1,8 +1,8 @@
 let bin = 0b1010
 let oct = 0o123
 let hex = 0x1A
-let dec = 10
-let flo = 10.5
+let dec = 1000
+let flo = 1000.5
 
 println(bin)
 println(oct)
