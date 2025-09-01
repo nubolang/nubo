@@ -14,7 +14,7 @@ func NewRandom(dg *debug.Debug) language.Object {
 	instance := n.NewPackage("random", dg)
 	proto := instance.GetPrototype()
 
-	random := rand.New(rand.NewSource(time.Now().Unix()))
+	random := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	proto.SetObject("between", native.NewTypedFunction(
 		[]language.FnArg{

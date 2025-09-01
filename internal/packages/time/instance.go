@@ -18,8 +18,8 @@ func NewInstance(t time.Time) (language.Object, error) {
 	reCalc := func() {
 		ob, _ := inst.GetPrototype().GetObject("unix")
 		unix := ob.Value().(int64)
-		if unix != t.Unix() {
-			t = time.Unix(unix, 0)
+		if unix != t.UnixNano() {
+			t = time.Unix(0, unix)
 		}
 	}
 
@@ -29,9 +29,9 @@ func NewInstance(t time.Time) (language.Object, error) {
 
 	proto.SetObject("__value__", n.Function(n.Describe().Returns(n.TInt), func(a *n.Args) (any, error) {
 		reCalc()
-		return n.Int64(t.Unix(), inst.Debug()), nil
+		return n.Int64(t.UnixNano(), inst.Debug()), nil
 	}))
-	proto.SetObject("unix", n.Int64(t.Unix(), inst.Debug()))
+	proto.SetObject("unix", n.Int64(t.UnixNano(), inst.Debug()))
 	proto.SetObject("string", n.Function(n.Describe().Returns(n.TString), func(a *n.Args) (any, error) {
 		reCalc()
 		return n.String(t.Format(FormatTime(defaultTimeFormat)), inst.Debug()), nil
