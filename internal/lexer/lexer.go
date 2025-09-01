@@ -3,6 +3,7 @@ package lexer
 import (
 	"io"
 	"path/filepath"
+	"slices"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -334,6 +335,11 @@ func (lx *Lexer) lexIdentifierOrKeyword() {
 func (lx *Lexer) lexNumber() error {
 	startPos := lx.pos
 	isFloat := false
+
+	if lx.curr() == '0' {
+		return lx.lexPrefixedNumber()
+	}
+
 	for unicode.IsDigit(lx.curr()) || lx.curr() == '.' {
 		if lx.curr() == '.' {
 			if isFloat {
@@ -344,7 +350,37 @@ func (lx *Lexer) lexNumber() error {
 		lx.advance()
 	}
 	value := string(lx.input[startPos:lx.pos])
-	lx.add(TokenNumber, value, map[string]any{"isFloat": isFloat})
+	lx.add(TokenNumber, value, map[string]any{"isFloat": isFloat, "base": 10})
+	return nil
+}
+
+func (lx *Lexer) lexPrefixedNumber() error {
+	startPos := lx.pos
+
+	lx.advance()
+	if !slices.Contains([]rune{'b', 'B', 'o', 'O', 'x', 'X'}, lx.curr()) {
+		return newErr(ErrSyntaxError, "invalid number prefix format", &debug.Debug{Line: lx.line, Column: lx.col, File: lx.file})
+	}
+
+	prefix := lx.curr()
+	lx.advance()
+
+	var base int
+	switch prefix {
+	case 'b', 'B':
+		base = 2
+	case 'o', 'O':
+		base = 8
+	case 'x', 'X':
+		base = 16
+	}
+
+	for unicode.IsDigit(lx.curr()) {
+		lx.advance()
+	}
+
+	value := string(lx.input[startPos+2 : lx.pos])
+	lx.add(TokenNumber, value, map[string]any{"isFloat": false, "base": base})
 	return nil
 }
 

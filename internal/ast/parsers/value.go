@@ -168,7 +168,7 @@ func singleValueParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Toke
 			}, nil
 		}
 
-		value, err := strconv.Atoi(token.Value)
+		value, err := strconv.ParseInt(token.Value, token.Map["base"].(int), 64)
 		if err != nil {
 			return nil, newErr(ErrValueError, fmt.Sprintf("value '%s' is not a integer", token.Value), token.Debug)
 		}
