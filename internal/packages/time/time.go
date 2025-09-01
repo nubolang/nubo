@@ -21,7 +21,7 @@ func NewTime(dg *debug.Debug) language.Object {
 	t := n.NewPackage("time", dg)
 	proto := t.GetPrototype()
 
-	proto.SetObject("time", timeStruct)
+	proto.SetObject("Time", timeStruct)
 	proto.SetObject("now", n.Function(n.Describe().Returns(timeStruct.Type()), fnNow))
 	proto.SetObject("parse", n.Function(n.Describe(n.Arg("format", n.TString), n.Arg("value", n.TString)).Returns(timeStruct.Type()), fnParse))
 	proto.SetObject("parseAny", n.Function(n.Describe(n.Arg("time", n.TUnion(n.TString, n.TInt))).Returns(timeStruct.Type()), fnFrom))

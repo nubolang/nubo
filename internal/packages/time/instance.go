@@ -57,7 +57,7 @@ func NewInstance(t time.Time) (language.Object, error) {
 		return NewInstance(t.Add(time.Duration(unix) * time.Second))
 	}))
 
-	proto.SetObject("sub", n.Function(n.Describe(n.Arg("time", n.TUnion(inst.Type(), n.TInt))).Returns(inst.Type()), func(a *n.Args) (any, error) {
+	proto.SetObject("substract", n.Function(n.Describe(n.Arg("time", n.TUnion(inst.Type(), n.TInt))).Returns(inst.Type()), func(a *n.Args) (any, error) {
 		reCalc()
 		var unix int64
 
