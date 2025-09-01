@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"os"
 	"sync"
 
 	"github.com/nubolang/nubo/events"
@@ -78,7 +79,12 @@ func (r *Runtime) ImportPackage(name string, dg *debug.Debug) (language.Object, 
 }
 
 func (r *Runtime) Interpret(file string, nodes []*astnode.Node) (language.Object, error) {
-	interpreter := interpreter.New(file, r, false)
+	wd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+
+	interpreter := interpreter.New(file, r, false, wd)
 
 	r.mu.Lock()
 	r.interpreters[interpreter.ID] = interpreter

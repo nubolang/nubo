@@ -1,0 +1,5 @@
+import sys from "@std/system"
+
+fn main(args: []string) {
+
+}

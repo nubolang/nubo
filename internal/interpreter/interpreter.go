@@ -32,6 +32,7 @@ type Interpreter struct {
 	ID          uint
 	currentFile string
 	dependent   bool
+	workdir     string
 
 	scope  Scope
 	name   string
@@ -48,12 +49,13 @@ type Interpreter struct {
 	mu sync.RWMutex
 }
 
-func New(currentFile string, runtime Runtime, dependent bool) *Interpreter {
+func New(currentFile string, runtime Runtime, dependent bool, wd string) *Interpreter {
 	ir := &Interpreter{
 		ID:          runtime.NewID(),
 		currentFile: filepath.Clean(currentFile),
 		scope:       ScopeGlobal,
 		dependent:   dependent,
+		workdir:     wd,
 		runtime:     runtime,
 		objects:     make(map[uint32]*entry),
 		imports:     make(map[string]*Interpreter),
@@ -63,8 +65,8 @@ func New(currentFile string, runtime Runtime, dependent bool) *Interpreter {
 
 	ir.Declare("__id__", language.NewInt(int64(ir.ID), nil), language.TypeInt, false)
 	ir.Declare("__entry__", language.NewBool(ir.ID == 1, nil), language.TypeBool, false)
-	ir.Declare("__dir__", language.NewString(filepath.Dir(ir.currentFile), nil), language.TypeString, false)
-	ir.Declare("__file__", language.NewString(ir.currentFile, nil), language.TypeString, false)
+	ir.Declare("__dir__", language.NewString(filepath.Join(wd, filepath.Dir(ir.currentFile)), nil), language.TypeString, false)
+	ir.Declare("__file__", language.NewString(filepath.Join(wd, ir.currentFile), nil), language.TypeString, false)
 
 	return ir
 }

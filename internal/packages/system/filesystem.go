@@ -6,7 +6,7 @@ import (
 	"github.com/nubolang/nubo/native/n"
 )
 
-var cwd = n.Function(n.Describe().Returns(n.TTList(n.TString)), func(a *n.Args) (any, error) {
+var cwd = n.Function(n.Describe().Returns(n.TString), func(a *n.Args) (any, error) {
 	return os.Getwd()
 })
 

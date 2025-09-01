@@ -29,7 +29,7 @@ var rootCmd = &cobra.Command{
 		zap.ReplaceGlobals(logger)
 	},
 	Run:  execRun,
-	Args: cobra.MaximumNArgs(1),
+	Args: cobra.MinimumNArgs(1),
 }
 
 func init() {

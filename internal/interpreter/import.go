@@ -94,7 +94,7 @@ func (ir *Interpreter) handleImport(node *astnode.Node) error {
 		return newErr(err, ErrImportError.Error(), node.Debug)
 	}
 
-	imported := New(path, ir.runtime, true)
+	imported := New(path, ir.runtime, true, ir.workdir)
 	if _, err := imported.Run(nodes); err != nil {
 		return newErr(err, ErrImportError.Error(), node.Debug)
 	}

@@ -5,11 +5,16 @@ import (
 	"os"
 	"syscall"
 
+	"github.com/nubolang/nubo/language"
 	"github.com/nubolang/nubo/native/n"
 )
 
 var args = n.Function(n.Describe().Returns(n.TTList(n.TString)), func(a *n.Args) (any, error) {
-	return os.Args, nil
+	var args = make([]any, len(os.Args))
+	for i, arg := range os.Args {
+		args[i] = language.NewString(arg, nil)
+	}
+	return n.List(args, nil)
 })
 
 var exit = n.Function(n.Describe(n.Arg("code", n.TInt)), func(a *n.Args) (any, error) {
