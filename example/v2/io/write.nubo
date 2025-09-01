@@ -5,4 +5,4 @@ println(__file__)
 
 import io from "@std/io"
 
-io.writeFile(__dir__ + "/output.txt", "Hello, World!")
+io.writeFile(__dir__ + "/output.txt", "Hello, World!\nHello, World!")

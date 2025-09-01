@@ -8,6 +8,7 @@ import (
 
 	"github.com/nubolang/nubo/language"
 	"github.com/nubolang/nubo/native"
+	"github.com/nubolang/nubo/native/n"
 )
 
 func NewIOStream(r io.Reader) language.Object {
@@ -24,6 +25,7 @@ func NewIOStream(r io.Reader) language.Object {
 	proto.SetObject("readAll", native.NewTypedFunction(nil, language.TypeString, streamReadAllFn(r)))
 	proto.SetObject("readByte", native.NewTypedFunction(nil, language.TypeInt, streamReadByteFn(r)))
 	proto.SetObject("readLine", native.NewTypedFunction(nil, language.TypeString, streamReadLineFn(r)))
+	proto.SetObject("readLines", native.NewTypedFunction(nil, n.TTList(n.TString), streamReadLinesFn(r)))
 	if rc, ok := r.(io.Closer); ok {
 		proto.SetObject("close", native.NewTypedFunction(nil, language.TypeVoid, streamCloseFn(rc)))
 	}
@@ -71,6 +73,30 @@ func streamReadLineFn(r io.Reader) native.FunctionWrapper {
 			return nil, err
 		}
 		return language.NewString(strings.TrimRight(line, "\r\n"), nil), nil
+	}
+}
+
+func streamReadLinesFn(r io.Reader) native.FunctionWrapper {
+	return func(ctx native.FnCtx) (language.Object, error) {
+		reader := bufio.NewReader(r)
+
+		var lines []language.Object
+
+		for {
+			line, err := reader.ReadString('\n')
+			if err == io.EOF {
+				if len(line) > 0 {
+					lines = append(lines, language.NewString(line, nil))
+				}
+				break
+			}
+			if err != nil {
+				return nil, err
+			}
+			lines = append(lines, language.NewString(line, nil))
+		}
+
+		return language.NewList(lines, n.TString, nil), nil
 	}
 }
 

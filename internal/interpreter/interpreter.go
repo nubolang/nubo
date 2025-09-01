@@ -43,6 +43,8 @@ type Interpreter struct {
 	imports map[string]*Interpreter
 	objects map[uint32]*entry
 
+	deferred [][]*astnode.Node
+
 	mu sync.RWMutex
 }
 
@@ -56,6 +58,7 @@ func New(currentFile string, runtime Runtime, dependent bool) *Interpreter {
 		objects:     make(map[uint32]*entry),
 		imports:     make(map[string]*Interpreter),
 		unsub:       make([]events.UnsubscribeFunc, 0),
+		deferred:    make([][]*astnode.Node, 0),
 	}
 
 	ir.Declare("__id__", language.NewInt(int64(ir.ID), nil), language.TypeInt, false)
@@ -85,6 +88,7 @@ func NewWithParent(parent *Interpreter, scope Scope, name ...string) *Interprete
 }
 
 func (i *Interpreter) Run(nodes []*astnode.Node) (language.Object, error) {
+	defer i.runDeferred()
 	defer i.Detach()
 
 	for _, node := range nodes {
@@ -104,6 +108,14 @@ func (i *Interpreter) Run(nodes []*astnode.Node) (language.Object, error) {
 	}
 
 	return nil, nil
+}
+
+func (i *Interpreter) runDeferred() {
+	for _, deferred := range i.deferred {
+		for _, node := range deferred {
+			_, _ = i.eval(node)
+		}
+	}
 }
 
 func (i *Interpreter) Detach() {

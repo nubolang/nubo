@@ -51,4 +51,6 @@ const (
 	NodeTypeTemplateLiteral NodeType = "template_literal"
 	NodeTypeRawText         NodeType = "raw_text"
 	NodeTypeDynamicText     NodeType = "dynamic_text"
+
+	NodeTypeDefer NodeType = "defer"
 )

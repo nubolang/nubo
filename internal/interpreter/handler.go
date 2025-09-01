@@ -46,6 +46,9 @@ func (i *Interpreter) handleNode(node *astnode.Node) (language.Object, error) {
 		return nil, i.handleImpl(node)
 	case astnode.NodeTypeTry:
 		return i.handleTry(node)
+	case astnode.NodeTypeDefer:
+		i.deferred = append(i.deferred, node.Children)
+		return nil, nil
 	default:
 		if node.Type == astnode.NodeTypeSignal {
 			if i.isChildOf(ScopeBlock, "for") || i.isChildOf(ScopeBlock, "while") {

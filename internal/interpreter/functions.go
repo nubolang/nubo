@@ -267,5 +267,23 @@ func (i *Interpreter) createInlineFunction(node *astnode.Node) (language.Object,
 		return ir.Run(node.Body)
 	}, node.Debug)
 
+	if node.Flags.Contains("SELFCALL") {
+		var args = make([]language.Object, len(node.Children))
+		for j, arg := range node.Children {
+			value, err := i.eval(arg)
+			if err != nil {
+				return nil, err
+			}
+
+			if value == nil {
+				return nil, newErr(ErrVoidAsValue, fmt.Sprintf("argument %d is void, expected to be a value", j+1), node.Debug)
+			}
+
+			args[j] = value.Clone()
+		}
+
+		return fn.Data(args)
+	}
+
 	return fn, nil
 }

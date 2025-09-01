@@ -1,0 +1,8 @@
+import { open } from "@std/io"
+
+let file = open("output.txt")
+defer file.close()
+
+for line in file.readLines() {
+    println(line.trim())
+}

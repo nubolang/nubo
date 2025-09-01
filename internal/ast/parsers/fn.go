@@ -151,6 +151,29 @@ bodyloop:
 
 	node.Body = bodyNodes
 
+	if inline {
+		if *inx <= len(tokens) {
+			token := tokens[*inx]
+			if token.Type != lexer.TokenOpenParen {
+				if tkn, err := inxPPeak(tokens, inx); err == nil && tkn.Type == lexer.TokenOpenParen {
+					if err := inxPP(tokens, inx); err != nil {
+						return nil, err
+					}
+					token = tokens[*inx]
+				}
+			}
+
+			if token.Type == lexer.TokenOpenParen {
+				fnCall, err := fnCallParser(ctx, sn, "<inline>", tokens, inx)
+				if err != nil {
+					return nil, err
+				}
+				node.Children = append(node.Children, fnCall.Args...)
+				node.Flags.Append("SELFCALL")
+			}
+		}
+	}
+
 	return node, nil
 }
 
