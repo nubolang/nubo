@@ -1,0 +1,14 @@
+import time from "@std/time"
+
+const start = time.now()
+
+let sum = 0;
+for i in 100_00 {
+    let z = 0
+    sum = sum + i
+}
+
+const end = time.now()
+
+println("Finished in", (end - start) / 1_000_000_000, "seconds")
+println("Sum:", sum)

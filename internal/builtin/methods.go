@@ -41,6 +41,7 @@ func GetBuiltins() map[string]language.Object {
 		"bool":   native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeBool, boolFn),
 		"byte":   native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeByte, byteFn),
 		"char":   native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeChar, charFn),
+		"bytes":  native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.NewListType(language.TypeByte), bytesFn),
 
 		// Debug
 		"xdbg": native.NewFunction(xdbgFn),
@@ -117,7 +118,17 @@ func stringFn(ctx native.FnCtx) (language.Object, error) {
 	if err != nil {
 		return nil, err
 	}
-	return language.NewString(obj.String(), nil), nil
+
+	if obj.Type().Compare(language.NewListType(language.TypeByte)) {
+		li := obj.Value().([]language.Object)
+		var values = make([]byte, len(li))
+		for i, item := range li {
+			values[i] = item.Value().(byte)
+		}
+		return language.NewString(string(values), obj.Debug()), nil
+	}
+
+	return language.NewString(obj.String(), obj.Debug()), nil
 }
 
 func intFn(ctx native.FnCtx) (language.Object, error) {
@@ -288,6 +299,73 @@ func byteFn(ctx native.FnCtx) (language.Object, error) {
 	}
 
 	return language.NewByte(value, obj.Debug()), nil
+}
+
+func bytesFn(ctx native.FnCtx) (language.Object, error) {
+	obj, err := ctx.Get("obj")
+	if err != nil {
+		return nil, err
+	}
+
+	var values []language.Object
+	convertErr := debug.NewError(fmt.Errorf("Type error"), fmt.Sprintf("Cannot convert %s to byte list", obj.Type()), obj.Debug())
+
+	switch obj.Type().BaseType {
+	case language.TypeByte.BaseType:
+		values = append(values, language.NewByte(obj.Value().(byte), obj.Debug()))
+	case language.TypeString.BaseType:
+		bytes := []byte(obj.String())
+		for _, b := range bytes {
+			values = append(values, language.NewByte(b, obj.Debug()))
+		}
+	case language.TypeList.BaseType:
+		list := obj.Value().([]language.Object)
+		for _, item := range list {
+			var val byte
+			itemConvertErr := debug.NewError(fmt.Errorf("Type error"), fmt.Sprintf("Cannot convert %s to byte", item.Type()), item.Debug())
+			switch item.Type() {
+			case language.TypeByte:
+				val = item.Value().(byte)
+			case language.TypeChar:
+				r := item.Value().(rune)
+				if r > 255 {
+					return nil, itemConvertErr
+				}
+				val = byte(r)
+			case language.TypeInt:
+				i := item.Value().(int64)
+				if i < 0 || i > 255 {
+					return nil, itemConvertErr
+				}
+				val = byte(i)
+			case language.TypeFloat:
+				f := item.Value().(float64)
+				if f < 0 || f > 255 {
+					return nil, itemConvertErr
+				}
+				val = byte(int64(f))
+			case language.TypeBool:
+				if item.Value().(bool) {
+					val = 1
+				} else {
+					val = 0
+				}
+			case language.TypeString:
+				str := item.Value().(string)
+				if len(str) != 1 {
+					return nil, itemConvertErr
+				}
+				val = str[0]
+			default:
+				return nil, itemConvertErr
+			}
+			values = append(values, language.NewByte(val, item.Debug()))
+		}
+	default:
+		return nil, convertErr
+	}
+
+	return language.NewList(values, language.TypeByte, obj.Debug()), nil
 }
 
 func charFn(ctx native.FnCtx) (language.Object, error) {

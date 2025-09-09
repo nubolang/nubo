@@ -84,7 +84,7 @@ func (t *Type) Base() ObjectType {
 
 func (t *Type) String() string {
 	if t == nil {
-		return "<invalid>"
+		return "void"
 	}
 
 	var next = ""

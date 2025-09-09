@@ -36,7 +36,7 @@ func (i *Byte) TypeString() string {
 }
 
 func (i *Byte) String() string {
-	return hex.Dump([]byte{i.Data})
+	return hex.EncodeToString([]byte{i.Data})
 }
 
 func (i *Byte) GetPrototype() Prototype {

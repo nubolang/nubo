@@ -5,6 +5,7 @@ import (
 
 	"github.com/nubolang/nubo/internal/ast/astnode"
 	"github.com/nubolang/nubo/language"
+	"github.com/nubolang/nubo/native/n"
 )
 
 type Iterator interface {
@@ -16,7 +17,7 @@ type Iterator interface {
 func (i *Interpreter) handleFor(node *astnode.Node) (language.Object, error) {
 	kv, ok := node.Value.(*astnode.ForValue)
 	if !ok {
-		return nil, newErr(ErrValueError, fmt.Sprintf("expected a valid for cycle"), node.Debug)
+		return nil, newErr(ErrValueError, "expected a valid for cycle", node.Debug)
 	}
 
 	expr, err := i.evaluateExpression(node.Args[0])
@@ -31,22 +32,39 @@ func (i *Interpreter) handleFor(node *astnode.Node) (language.Object, error) {
 
 	iterate := iterator.Iterator()
 
+	// Create loop scope only once
+	ir := NewWithParent(i, ScopeBlock, "for")
+
+	var keyName, valName string
+	if kv.Iterator != nil {
+		keyName = kv.Iterator.Value.(string)
+		// declare once
+		if err := ir.Declare(keyName, language.Nil, n.TAny, true); err != nil {
+			return nil, err
+		}
+	}
+	if kv.Value != nil {
+		valName = kv.Value.Value.(string)
+		// declare once
+		if err := ir.Declare(valName, language.Nil, n.TAny, true); err != nil {
+			return nil, err
+		}
+	}
+
 	for {
 		key, value, ok := iterate()
 		if !ok {
 			break
 		}
 
-		ir := NewWithParent(i, ScopeBlock, "for")
-		if kv.Iterator != nil {
-			err := ir.Declare(kv.Iterator.Value.(string), key, key.Type(), true)
-			if err != nil {
+		// only assign instead of redeclare
+		if keyName != "" {
+			if err := ir.Assign(keyName, key); err != nil {
 				return nil, err
 			}
 		}
-		if kv.Value != nil {
-			err := ir.Declare(kv.Value.Value.(string), value, value.Type(), true)
-			if err != nil {
+		if valName != "" {
+			if err := ir.Assign(valName, value); err != nil {
 				return nil, err
 			}
 		}
@@ -57,13 +75,15 @@ func (i *Interpreter) handleFor(node *astnode.Node) (language.Object, error) {
 		}
 		if ob != nil {
 			if ob.Type().Base() == language.ObjectTypeSignal {
-				if ob.String() == "break" {
+				switch ob.String() {
+				case "break":
 					break
-				}
-				if ob.String() == "continue" {
+				case "continue":
 					continue
+				default:
+					return nil, newErr(ErrInvalid,
+						fmt.Sprintf("invalid language signal: %s", ob.String()), ob.Debug())
 				}
-				return nil, newErr(ErrInvalid, fmt.Sprintf("invalid language singnal: %s", ob.String()), ob.Debug())
 			}
 			return ob, nil
 		}

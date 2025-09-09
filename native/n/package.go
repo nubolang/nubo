@@ -2,6 +2,7 @@ package n
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/nubolang/nubo/internal/debug"
@@ -38,7 +39,20 @@ func (i *Package) TypeString() string {
 }
 
 func (i *Package) String() string {
-	return fmt.Sprintf("@std/%s", i.Name)
+	data := i.GetPrototype().Objects()
+	if len(data) == 0 {
+		return fmt.Sprintf("(standard) %s {}", i.Name)
+	}
+
+	var items = make([]string, len(data))
+
+	inx := 0
+	for name, obj := range data {
+		items[inx] = fmt.Sprintf("%s: %s", name, obj.Type().String())
+		inx++
+	}
+
+	return fmt.Sprintf("(standard) %s {\n\t%s\n}", i.Name, strings.Join(items, ",\n\t"))
 }
 
 func (i *Package) GetPrototype() language.Prototype {

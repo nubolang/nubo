@@ -1,0 +1,5 @@
+const mapper = fn(ch: string) any {
+    return ch
+}
+let li = string("Hello, World!").split("").map(mapper)
+println(string(bytes(li)))

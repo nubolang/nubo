@@ -1,0 +1,3 @@
+import hash from "@std/hash"
+
+println(hash.bcrypt.compare("hello", "$2a$10$G/8xMZREXciyuQC6yHs4W.lOYhOTmO/EvFokXi1A/WKOz1PaBWkmG"))

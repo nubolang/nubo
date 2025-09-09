@@ -16,6 +16,7 @@ func ListParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, inx 
 	}
 
 	token := tokens[*inx]
+	node.Debug = token.Debug
 	if token.Type == lexer.TokenCloseBracket {
 		return node, nil
 	}
@@ -31,6 +32,10 @@ loop:
 				return nil, err
 			}
 			node.Children = append(node.Children, value)
+
+			if *inx >= len(tokens) {
+				return nil, newErr(ErrUnexpectedEOF, "unexpected end of file", node.Debug)
+			}
 
 			token := tokens[*inx]
 			if token.Type == lexer.TokenComma {
