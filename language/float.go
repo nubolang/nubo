@@ -28,7 +28,7 @@ func (i *Float) Type() *Type {
 }
 
 func (i *Float) Inspect() string {
-	return fmt.Sprintf("<Object(float @ %s)>", i.String())
+	return fmt.Sprintf("(float) %s", i.String())
 }
 
 func (i *Float) TypeString() string {

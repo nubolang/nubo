@@ -23,12 +23,12 @@ func (i *Bool) ID() string {
 	return fmt.Sprintf("%p", i)
 }
 
-func (i *Bool) Type()*Type {
+func (i *Bool) Type() *Type {
 	return TypeBool
 }
 
 func (i *Bool) Inspect() string {
-	return fmt.Sprintf("<Object(bool @ %s)>", i.String())
+	return fmt.Sprintf("(bool) %s", i.String())
 }
 
 func (i *Bool) TypeString() string {

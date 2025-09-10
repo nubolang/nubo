@@ -34,7 +34,21 @@ func (i *List) Type() *Type {
 }
 
 func (i *List) Inspect() string {
-	return fmt.Sprintf("<Object(list[%s] @ %s)>", i.ItemType.String(), i.String())
+	objs := i.GetPrototype().Objects()
+	if len(objs) == 0 {
+		return fmt.Sprintf("(list[%s]) {}", i.ItemType.String())
+	}
+
+	var items []string = make([]string, 0, len(objs))
+	for name, item := range objs {
+		items = append(items, fmt.Sprintf("%s: %s", name, indentString(item.Type().String(), "\t")))
+	}
+
+	return fmt.Sprintf(
+		"(list[%s]) {\n\t%s\n}",
+		i.ItemType.String(),
+		strings.Join(items, ",\n\t"),
+	)
 }
 
 func (i *List) TypeString() string {

@@ -23,12 +23,12 @@ func (i *Char) ID() string {
 	return fmt.Sprintf("%p", i)
 }
 
-func (i *Char) Type()*Type {
+func (i *Char) Type() *Type {
 	return TypeChar
 }
 
 func (i *Char) Inspect() string {
-	return fmt.Sprintf("<Object(char @ %s)>", strconv.Quote(i.String()))
+	return fmt.Sprintf("(char) %s", strconv.Quote(i.String()))
 }
 
 func (i *Char) TypeString() string {

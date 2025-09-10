@@ -7,6 +7,7 @@ import (
 	"unicode"
 
 	"github.com/nubolang/nubo/internal/ast/astnode"
+	"github.com/nubolang/nubo/internal/packages/component"
 	"github.com/nubolang/nubo/language"
 	"github.com/stoewer/go-strcase"
 )
@@ -94,11 +95,9 @@ func (i *Interpreter) evaluateElement(node *astnode.Node) (language.Object, erro
 		return language.NewElement(elem, node.Debug), nil
 	}
 
-	fnType := language.NewFunctionType(
-		language.NewUnionType(language.TypeString, language.TypeHtml),
-		language.NewDictType(language.TypeString, language.TypeAny),
-		language.NewListType(language.NewUnionType(language.TypeString, language.TypeHtml)),
-	)
+	cctxRaw, _ := component.NewComponent(node.Debug).GetPrototype().GetObject("Context")
+	cctx := cctxRaw.(*language.Struct)
+	fnType := language.NewFunctionType(language.TypeHtml, cctx.Type())
 
 	if !fnType.Compare(fn.Type()) {
 		return nil, newErr(ErrInvalid, fmt.Sprintf("Invalid element, expected type: %s, got %s", fnType, fn.Type()), node.Debug)
@@ -134,5 +133,13 @@ func (i *Interpreter) evaluateElement(node *astnode.Node) (language.Object, erro
 
 	c := language.NewList(children, language.NewUnionType(language.TypeString, language.TypeHtml), node.Debug)
 
-	return fn.Data([]language.Object{d, c})
+	inst, _ := cctx.NewInstance()
+	initFunc, _ := inst.GetPrototype().GetObject("init")
+	init := initFunc.(*language.Function)
+	cctxInstance, err := init.Data([]language.Object{d, c})
+	if err != nil {
+		return nil, newErr(ErrTypeMismatch, err.Error(), node.Debug)
+	}
+
+	return fn.Data([]language.Object{cctxInstance})
 }

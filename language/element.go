@@ -53,7 +53,20 @@ func (e *Element) Type() *Type {
 }
 
 func (e *Element) Inspect() string {
-	return fmt.Sprintf("<Object(html @ %s)>", e.String())
+	objs := e.GetPrototype().Objects()
+	if len(objs) == 0 {
+		return "(html) {}"
+	}
+
+	var items []string = make([]string, 0, len(objs))
+	for name, item := range objs {
+		items = append(items, fmt.Sprintf("%s: %s", name, indentString(item.Type().String(), "\t")))
+	}
+
+	return fmt.Sprintf(
+		"(html) {\n\t%s\n}",
+		strings.Join(items, ",\n\t"),
+	)
 }
 
 func (e *Element) TypeString() string {

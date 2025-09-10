@@ -7,6 +7,7 @@ var (
 	TFloat  = language.TypeFloat
 	TBool   = language.TypeBool
 	TString = language.TypeString
+	THtml   = language.TypeHtml
 	TChar   = language.TypeChar
 	TByte   = language.TypeByte
 	TList   = language.TypeList

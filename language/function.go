@@ -2,6 +2,7 @@ package language
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/nubolang/nubo/internal/debug"
 )
@@ -126,7 +127,21 @@ func (i *Function) Type() *Type {
 }
 
 func (i *Function) Inspect() string {
-	return fmt.Sprintf("<Object(fn @ %s)>", i.String())
+	objs := i.GetPrototype().Objects()
+	if len(objs) == 0 {
+		return fmt.Sprintf("(fn) %s {}", i.Type().String())
+	}
+
+	var items []string = make([]string, 0, len(objs))
+	for name, item := range objs {
+		items = append(items, fmt.Sprintf("%s: %s", name, indentString(item.Type().String(), "\t")))
+	}
+
+	return fmt.Sprintf(
+		"(fn) %s {\n\t%s\n}",
+		i.Type().String(),
+		strings.Join(items, ",\n\t"),
+	)
 }
 
 func (i *Function) TypeString() string {

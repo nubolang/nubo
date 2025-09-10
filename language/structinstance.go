@@ -43,7 +43,22 @@ func (i *StructInstance) Type() *Type {
 }
 
 func (i *StructInstance) Inspect() string {
-	return fmt.Sprintf("<Object(struct @ %s)>", i.String())
+	objs := i.GetPrototype().Objects()
+	if len(objs) == 0 {
+		return fmt.Sprintf("(struct %s) %s{}", i.Type().ID, i.Name)
+	}
+
+	var items []string = make([]string, 0, len(objs))
+	for name, item := range objs {
+		items = append(items, fmt.Sprintf("%s: %s", name, indentString(item.Type().String(), "\t")))
+	}
+
+	return fmt.Sprintf(
+		"(struct %s) %s{\n\t%s\n}",
+		i.Type().ID,
+		i.Name,
+		strings.Join(items, ",\n\t"),
+	)
 }
 
 func (i *StructInstance) TypeString() string {
@@ -52,7 +67,7 @@ func (i *StructInstance) TypeString() string {
 
 func (i *StructInstance) String() string {
 	if len(i.base.Data) == 0 {
-		return fmt.Sprintf("%s{}", i.Name)
+		return fmt.Sprintf("(struct) %s{}", i.Name)
 	}
 
 	var items = make([]string, len(i.base.Data))
@@ -66,7 +81,7 @@ func (i *StructInstance) String() string {
 	}
 
 	return fmt.Sprintf(
-		"%s{\n\t%s\n}",
+		"(struct) %s{\n\t%s\n}",
 		i.Name,
 		strings.Join(items, ",\n\t"),
 	)

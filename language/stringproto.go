@@ -185,7 +185,7 @@ func NewStringPrototype(base *String) *StringPrototype {
 			return NewString(base.Data[start:end], base.debug), nil
 		}, nil))
 
-	sp.SetObject("charAt", NewTypedFunction(
+	charAt := NewTypedFunction(
 		[]FnArg{&BasicFnArg{TypeVal: TypeInt, NameVal: "index"}},
 		TypeChar,
 		func(o []Object) (Object, error) {
@@ -198,7 +198,9 @@ func NewStringPrototype(base *String) *StringPrototype {
 				return nil, fmt.Errorf("index out of range")
 			}
 			return NewChar(runes[idx], base.debug), nil
-		}, nil))
+		}, nil)
+	sp.SetObject("charAt", charAt)
+	sp.SetObject("__get__", charAt)
 
 	sp.SetObject("codePointAt", NewTypedFunction(
 		[]FnArg{&BasicFnArg{TypeVal: TypeInt, NameVal: "index"}},

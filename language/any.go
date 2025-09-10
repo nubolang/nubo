@@ -27,7 +27,7 @@ func (i *Any) Type() *Type {
 }
 
 func (i *Any) Inspect() string {
-	return fmt.Sprintf("<Object(any => %s)>", i.Data.Inspect())
+	return fmt.Sprintf("(any) %s", i.Data.Inspect())
 }
 
 func (i *Any) TypeString() string {

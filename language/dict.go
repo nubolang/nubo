@@ -52,7 +52,21 @@ func (i *Dict) Type() *Type {
 }
 
 func (i *Dict) Inspect() string {
-	return fmt.Sprintf("<Object(dict[%s, %s] @ %s)>", i.KeyType.String(), i.ValueType.String(), i.String())
+	objs := i.GetPrototype().Objects()
+	if len(objs) == 0 {
+		return fmt.Sprintf("(dict[%s, %s]) {}", i.KeyType.String(), i.ValueType.String())
+	}
+
+	var items []string = make([]string, 0, len(objs))
+	for name, item := range objs {
+		items = append(items, fmt.Sprintf("%s: %s", name, indentString(item.Type().String(), "\t")))
+	}
+
+	return fmt.Sprintf(
+		"(dict[%s, %s]) {\n\t%s\n}",
+		i.KeyType.String(), i.ValueType.String(),
+		strings.Join(items, ",\n\t"),
+	)
 }
 
 func (i *Dict) TypeString() string {

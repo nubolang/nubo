@@ -19,15 +19,22 @@ func NewElementPrototype(base *Element) *ElementPrototype {
 		data: make(map[string]Object),
 	}
 
-	ep.SetObject("setAttribute", NewTypedFunction(
+	setAttr := NewTypedFunction(
 		[]FnArg{&BasicFnArg{TypeVal: TypeString, NameVal: "name"}, &BasicFnArg{TypeVal: TypeAny, NameVal: "value"}},
 		TypeVoid,
 		func(o []Object) (Object, error) {
+			val := o[1]
 
 			attr := Attribute{
-				Name:  strcase.KebabCase(o[0].(*String).Data),
-				Kind:  "TEXT",
-				Value: NewString(o[1].String(), o[1].Debug()),
+				Name: strcase.KebabCase(o[0].String()),
+			}
+
+			if val.Type() == TypeString {
+				attr.Kind = "TEXT"
+				attr.Value = NewString(val.String(), val.Debug())
+			} else {
+				attr.Kind = "DYNAMIC"
+				attr.Value = val.Clone()
 			}
 
 			// overwrite if exists
@@ -44,7 +51,9 @@ func NewElementPrototype(base *Element) *ElementPrototype {
 			}
 
 			return nil, nil
-		}, nil))
+		}, nil)
+	ep.SetObject("setAttribute", setAttr)
+	ep.SetObject("__set__", setAttr)
 
 	ep.SetObject("removeAttribute", NewTypedFunction(
 		[]FnArg{
@@ -66,7 +75,7 @@ func NewElementPrototype(base *Element) *ElementPrototype {
 		nil,
 	))
 
-	ep.SetObject("getAttribute", NewTypedFunction(
+	getAttr := NewTypedFunction(
 		[]FnArg{
 			&BasicFnArg{TypeVal: TypeString, NameVal: "name"},
 		},
@@ -81,7 +90,27 @@ func NewElementPrototype(base *Element) *ElementPrototype {
 			return Nil, nil
 		},
 		nil,
+	)
+	ep.SetObject("getAttribute", getAttr)
+	ep.SetObject("__get__", getAttr)
+
+	ep.SetObject("hasAttribute", NewTypedFunction(
+		[]FnArg{
+			&BasicFnArg{TypeVal: TypeString, NameVal: "name"},
+		},
+		TypeBool,
+		func(o []Object) (Object, error) {
+			name := strcase.KebabCase(o[0].(*String).Data)
+			for _, a := range base.Data.Args {
+				if a.Name == name {
+					return NewBool(true, o[0].Debug()), nil
+				}
+			}
+			return NewBool(false, o[0].Debug()), nil
+		},
+		nil,
 	))
+
 	return ep
 }
 

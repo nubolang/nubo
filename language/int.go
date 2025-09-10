@@ -3,6 +3,7 @@ package language
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/nubolang/nubo/internal/debug"
 )
@@ -31,7 +32,21 @@ func (i *Int) Type() *Type {
 }
 
 func (i *Int) Inspect() string {
-	return fmt.Sprintf("<Object(int @ %s)>", i.String())
+	objs := i.GetPrototype().Objects()
+	if len(objs) == 0 {
+		return fmt.Sprintf("(int) %s {}", i.String())
+	}
+
+	var items []string = make([]string, 0, len(objs))
+	for name, item := range objs {
+		items = append(items, fmt.Sprintf("%s: %s", name, indentString(item.Type().String(), "\t")))
+	}
+
+	return fmt.Sprintf(
+		"(int) %s {\n\t%s\n}",
+		i.String(),
+		strings.Join(items, ",\n\t"),
+	)
 }
 
 func (i *Int) TypeString() string {

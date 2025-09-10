@@ -28,7 +28,7 @@ func (i *Byte) Type() *Type {
 }
 
 func (i *Byte) Inspect() string {
-	return fmt.Sprintf("<Object(byte @ %s)>", hex.Dump([]byte{i.Data}))
+	return fmt.Sprintf("(byte) %s", hex.Dump([]byte{i.Data}))
 }
 
 func (i *Byte) TypeString() string {

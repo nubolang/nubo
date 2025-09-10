@@ -23,11 +23,11 @@ func (i *Ref) Type() *Type {
 }
 
 func (i *Ref) Inspect() string {
-	return fmt.Sprintf("[REF<%s>]", i.Data.Inspect())
+	return fmt.Sprintf("(ref) %s", i.Data.Inspect())
 }
 
 func (i *Ref) TypeString() string {
-	return fmt.Sprintf("[REF<%s>]", i.Data.TypeString())
+	return fmt.Sprintf("ref(%s)", i.Data.TypeString())
 }
 
 func (i *Ref) String() string {
