@@ -25,19 +25,6 @@ func (ir *Interpreter) handleImport(node *astnode.Node) error {
 
 	fileName := node.Value.(string)
 
-	if strings.HasPrefix(fileName, "pkg:") {
-		fileName = strings.TrimPrefix(fileName, "pkg:")
-		p, err := ir.runtime.GetPacker()
-		if err != nil {
-			return newErr(ErrImportError, fmt.Sprintf("failed to load packer registry"), node.Debug)
-		}
-		name, err := p.ImportFile(fileName)
-		if err != nil {
-			return newErr(ErrImportError, fmt.Sprintf("failed to import file from packer registry: %s", fileName), node.Debug)
-		}
-		fileName = name
-	}
-
 	if strings.HasPrefix(fileName, "@std") || strings.HasPrefix(fileName, "@server") {
 		obj, ok := ir.runtime.ImportPackage(fileName, node.Debug)
 		if ok {
@@ -74,6 +61,19 @@ func (ir *Interpreter) handleImport(node *astnode.Node) error {
 			}
 		}
 		return newErr(ErrImportError, fmt.Sprintf("failed to import package from standard library: %s", strings.TrimPrefix(fileName, "@std/")), node.Debug)
+	}
+
+	if strings.HasPrefix(fileName, "@") {
+		fileName = strings.TrimPrefix(fileName, "@")
+		p, err := ir.runtime.GetPacker()
+		if err != nil {
+			return newErr(ErrImportError, fmt.Sprintf("failed to load packer registry"), node.Debug)
+		}
+		name, err := p.ImportFile(fileName)
+		if err != nil {
+			return newErr(ErrImportError, fmt.Sprintf("failed to import file from packer registry: %s", fileName), node.Debug)
+		}
+		fileName = name
 	}
 
 	var path string
