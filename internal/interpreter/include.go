@@ -40,7 +40,7 @@ func (ir *Interpreter) includeValue(node *astnode.Node) (language.Object, error)
 		return nil, newErr(err, ErrImportError.Error(), node.Debug)
 	}
 
-	inc := newInclude(ir, path, ir.runtime, ir.dependent, ir.workdir)
+	inc := newInclude(ir, resolveIncludePath(ir.currentFile, fileName, ir.workdir), ir.runtime, ir.dependent, ir.workdir)
 
 	ir.mu.Lock()
 	ir.includes = append(ir.includes, inc)
@@ -68,8 +68,16 @@ func newInclude(parent *Interpreter, file string, runtime Runtime, dependent boo
 
 	ir.Declare("__id__", language.NewInt(int64(ir.ID), nil), language.TypeInt, false)
 	ir.Declare("__entry__", language.NewBool(ir.ID == 1, nil), language.TypeBool, false)
-	ir.Declare("__dir__", language.NewString(filepath.Join(wd, filepath.Dir(ir.currentFile)), nil), language.TypeString, false)
-	ir.Declare("__file__", language.NewString(filepath.Join(wd, ir.currentFile), nil), language.TypeString, false)
+	ir.Declare("__dir__", language.NewString(filepath.Dir(ir.currentFile), nil), language.TypeString, false)
+	ir.Declare("__file__", language.NewString(ir.currentFile, nil), language.TypeString, false)
 
 	return ir
+}
+
+func resolveIncludePath(currentFile, includePath, workdir string) string {
+	if filepath.IsAbs(includePath) {
+		return filepath.Clean(includePath)
+	}
+	baseDir := filepath.Dir(currentFile)
+	return filepath.Clean(filepath.Join(workdir, baseDir, includePath))
 }

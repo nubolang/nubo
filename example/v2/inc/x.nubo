@@ -1,4 +1,6 @@
-include 'y'
+include __dir__+'/inc/y'
+
+println("x", __dir__)
 
 if true {
     println(y())

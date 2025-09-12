@@ -1,0 +1,6 @@
+
+println("y", __dir__)
+
+fn y() string {
+    return "Hello, World!"
+}
