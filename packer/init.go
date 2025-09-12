@@ -1,7 +1,7 @@
 package packer
 
-func (p *Packer) Init(author string) error {
-	p.Package.Author = author
+func (p *Packer) Init(name string) error {
+	p.Package.Name = name
 
 	if err := p.Package.Save(p.root); err != nil {
 		return err

@@ -1,6 +1,7 @@
 package packer
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -18,7 +19,7 @@ type Package struct {
 
 // PackageFile (package.yaml)
 type PackageFile struct {
-	Author   string     `yaml:"author"`
+	Name     string     `yaml:"name"`
 	Packages []*Package `yaml:"packages"`
 }
 
@@ -28,7 +29,11 @@ func LoadPackageFile(root string) (*PackageFile, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return &PackageFile{Author: "Unknown"}, nil
+			var name string
+			if _, err := fmt.Scanln("Init: Information required: <author/project>: ", &name); err != nil {
+				return nil, err
+			}
+			return &PackageFile{Name: name}, nil
 		}
 		return nil, err
 	}

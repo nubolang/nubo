@@ -203,7 +203,7 @@ func (p *Packer) updatePackageFiles(user, repo, subpath, repoURL, hash, shortHas
 			Name:       pkgName,
 			Source:     repoURL,
 			CommitHash: hash,
-			Hash:       "sha256" + folderHash,
+			Hash:       "sha256:" + folderHash,
 		})
 	}
 

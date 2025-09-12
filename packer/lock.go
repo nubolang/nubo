@@ -24,10 +24,13 @@ type LockEntry struct {
 	Meta       map[string]string `yaml:"meta,omitempty"`        // metadata
 }
 
+const LockVersion = "1"
+
 // LockFile (lock.yaml)
 type LockFile struct {
-	Version string       `yaml:"version"`
-	Entries []*LockEntry `yaml:"entries"`
+	Version     string       `yaml:"version"`
+	NuboVersion string       `yaml:"nubo_version"`
+	Entries     []*LockEntry `yaml:"entries"`
 }
 
 func LoadLockFile(root string) (*LockFile, error) {
@@ -37,7 +40,8 @@ func LoadLockFile(root string) (*LockFile, error) {
 	if err != nil {
 		if os.IsNotExist(err) {
 			return &LockFile{
-				Version: version.Version,
+				Version:     LockVersion,
+				NuboVersion: version.Version,
 			}, nil
 		}
 		return nil, err
