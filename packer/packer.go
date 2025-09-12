@@ -36,7 +36,7 @@ func New(root string) (*Packer, error) {
 }
 
 func (p *Packer) Download() error {
-	baseDir, err := BaseDir()
+	baseDir, err := PackageDir()
 	if err != nil {
 		return err
 	}
@@ -52,7 +52,7 @@ func (p *Packer) Download() error {
 }
 
 func (p *Packer) downloadEntry(entry *LockEntry, baseDir string) (string, error) {
-	spin := pin.New(fmt.Sprintf("Installing %s", entry.Name),
+	spin := pin.New(fmt.Sprintf("Installing %s\n", entry.Name),
 		pin.WithSpinnerColor(pin.ColorCyan),
 		pin.WithTextColor(pin.ColorYellow),
 		pin.WithWriter(os.Stderr),
@@ -72,7 +72,10 @@ func (p *Packer) downloadEntry(entry *LockEntry, baseDir string) (string, error)
 	}
 
 	if entry.Hash != "sha256:"+hash {
-		spin.Stop(fmt.Sprintf("Failed to validate %s 🐛", entry.Name))
+		spin.Fail(fmt.Sprintf("Failed to validate %s 🐛", entry.Name))
+		fmt.Println(entry.Hash)
+		fmt.Println("sha256:" + hash)
+		fmt.Println(dir)
 		return "", fmt.Errorf("invalid hash for %s", entry.Name)
 	}
 

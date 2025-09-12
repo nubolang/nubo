@@ -34,6 +34,8 @@ func (p *Packer) Add(uri string) error {
 }
 
 func (p *Packer) realAdd(uri string) error {
+	uri = strings.TrimPrefix(uri, "https://")
+	uri = strings.TrimPrefix(uri, "http://")
 	atIdx := strings.LastIndex(uri, "@")
 
 	var source, version string
@@ -64,7 +66,12 @@ func (p *Packer) realAdd(uri string) error {
 		return err
 	}
 
-	cloneBasePath := filepath.Join(cachePath, "__tmp__", domain, user, repo)
+	tmpDir := filepath.Join(cachePath, "__tmp__")
+	cloneBasePath := filepath.Join(tmpDir, domain, user, repo)
+	defer func() {
+		os.RemoveAll(cloneBasePath)
+		os.RemoveAll(tmpDir)
+	}()
 
 	// Open or clone repo
 	var r *git.Repository

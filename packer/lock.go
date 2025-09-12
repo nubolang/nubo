@@ -74,11 +74,11 @@ func (le *LockEntry) Download(baseCacheDir string) (string, error) {
 	}
 	user, repo := parts[0], parts[1]
 
-	if le.Hash == "" {
+	if le.CommitHash == "" {
 		return "", fmt.Errorf("missing hash for package %s", le.Name)
 	}
 
-	dest := filepath.Join(baseCacheDir, le.Domain(), user, repo+"@"+le.Hash)
+	dest := filepath.Join(baseCacheDir, le.Domain(), user, repo+"@"+le.CommitHash)
 	if _, err := os.Stat(dest); err == nil {
 		// Already exists
 		return dest, nil
