@@ -1,3 +1,4 @@
+import os from '@std/os'
 
 println("y", __dir__)
 

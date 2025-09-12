@@ -40,7 +40,7 @@ func (ir *Interpreter) includeValue(node *astnode.Node) (language.Object, error)
 		return nil, newErr(err, ErrImportError.Error(), node.Debug)
 	}
 
-	inc := newInclude(ir, resolveIncludePath(ir.currentFile, fileName, ir.workdir), ir.runtime, ir.dependent, ir.workdir)
+	inc := newInclude(resolveIncludePath(ir.currentFile, fileName, ir.workdir), ir.runtime, ir.dependent, ir.workdir)
 
 	ir.mu.Lock()
 	ir.includes = append(ir.includes, inc)
@@ -49,10 +49,9 @@ func (ir *Interpreter) includeValue(node *astnode.Node) (language.Object, error)
 	return inc.Run(nodes)
 }
 
-func newInclude(parent *Interpreter, file string, runtime Runtime, dependent bool, wd string) *Interpreter {
+func newInclude(file string, runtime Runtime, dependent bool, wd string) *Interpreter {
 	ir := &Interpreter{
 		name:        "include",
-		parent:      parent,
 		ID:          runtime.NewID(),
 		currentFile: filepath.Clean(file),
 		scope:       ScopeGlobal,
