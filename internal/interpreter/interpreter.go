@@ -41,8 +41,9 @@ type Interpreter struct {
 	runtime Runtime
 	unsub   []events.UnsubscribeFunc
 
-	imports map[string]*Interpreter
-	objects map[uint32]*entry
+	imports  map[string]*Interpreter
+	includes []*Interpreter
+	objects  map[uint32]*entry
 
 	deferred [][]*astnode.Node
 
@@ -59,6 +60,7 @@ func New(currentFile string, runtime Runtime, dependent bool, wd string) *Interp
 		runtime:     runtime,
 		objects:     make(map[uint32]*entry),
 		imports:     make(map[string]*Interpreter),
+		includes:    make([]*Interpreter, 0),
 		unsub:       make([]events.UnsubscribeFunc, 0),
 		deferred:    make([][]*astnode.Node, 0),
 	}

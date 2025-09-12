@@ -1,1 +1,3 @@
-return "Hello"
+fn y() string {
+    return "Hello, World!"
+}

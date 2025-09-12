@@ -47,6 +47,7 @@ func (i *Interpreter) Assign(name string, value language.Object) error {
 		if i.isConstInParent(name) {
 			return newErr(ErrImmutableVariable, fmt.Sprintf("Cannot reassign to constant %s", name), value.Debug())
 		}
+
 		return i.parent.Assign(name, value)
 	}
 
@@ -229,8 +230,15 @@ func (i *Interpreter) GetObject(name string) (language.Object, bool) {
 
 func (i *Interpreter) parentGetObject(name string) (language.Object, bool) {
 	if i.parent == nil {
+		for _, inc := range i.includes {
+			if obj, ok := inc.GetObject(name); ok {
+				return obj, true
+			}
+		}
+
 		return nil, false
 	}
+
 	return i.parent.GetObject(name)
 }
 

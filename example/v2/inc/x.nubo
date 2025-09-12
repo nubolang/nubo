@@ -1,1 +1,5 @@
-println(include 'y.nubo')
+include 'y'
+
+if true {
+    println(y())
+}
