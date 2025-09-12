@@ -20,14 +20,12 @@ func (i *Interpreter) eval(node *astnode.Node) (language.Object, error) {
 		return i.evaluateElement(node)
 	case astnode.NodeTypeDict:
 		return i.evalDict(node, nil, nil)
+	case astnode.NodeTypeInclude:
+		return i.includeValue(node)
 	}
 }
 
 func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, error) {
-	if node.Type == astnode.NodeTypeElement {
-		return i.evaluateElement(node)
-	}
-
 	var (
 		sb  strings.Builder
 		env = make(map[string]any)
@@ -144,7 +142,7 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 				if ch.Type == astnode.NodeTypeRawText {
 					st.WriteString(ch.Content)
 				} else {
-					val, err := i.evaluateExpression(ch.Value.(*astnode.Node))
+					val, err := i.eval(ch.Value.(*astnode.Node))
 					if err != nil {
 						return nil, err
 					}
@@ -276,7 +274,7 @@ func (i *Interpreter) evalList(node *astnode.Node, typ *language.Type) (language
 	)
 
 	for j, child := range node.Children {
-		obj, err := i.evaluateExpression(child)
+		obj, err := i.eval(child)
 		if err != nil {
 			return nil, err
 		}
@@ -314,12 +312,12 @@ func (i *Interpreter) evalDict(node *astnode.Node, keyType, valueType *language.
 			return nil, newErr(ErrInvalid, "Invalid dict entry", pair.Debug)
 		}
 
-		keyObj, err := i.evaluateExpression(keyNode)
+		keyObj, err := i.eval(keyNode)
 		if err != nil {
 			return nil, err
 		}
 
-		valueObj, err := i.evaluateExpression(pair.Children[0])
+		valueObj, err := i.eval(pair.Children[0])
 		if err != nil {
 			return nil, err
 		}
@@ -366,7 +364,7 @@ func (i *Interpreter) evalDict(node *astnode.Node, keyType, valueType *language.
 
 func (i *Interpreter) checkGetter(obj language.Object, node *astnode.Node) (language.Object, error) {
 	for _, child := range node.ArrayAccess {
-		val, err := i.evaluateExpression(child)
+		val, err := i.eval(child)
 		if err != nil {
 			return nil, err
 		}

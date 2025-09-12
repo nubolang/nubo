@@ -12,6 +12,7 @@ import (
 	"github.com/nubolang/nubo/internal/packages/layoutjs"
 	"github.com/nubolang/nubo/internal/packages/log"
 	"github.com/nubolang/nubo/internal/packages/math"
+	"github.com/nubolang/nubo/internal/packages/os"
 	"github.com/nubolang/nubo/internal/packages/process"
 	"github.com/nubolang/nubo/internal/packages/random"
 	"github.com/nubolang/nubo/internal/packages/sql"
@@ -29,7 +30,7 @@ const (
 var packageList = []string{
 	"io", "math", "json", "log", "thread", "random",
 	"process", "layoutjs", "sql", "time", "http", "system",
-	"hash", "component",
+	"hash", "component", "os",
 }
 
 func ImportPackage(name string, dg *debug.Debug) (language.Object, bool) {
@@ -85,6 +86,8 @@ func ImportPackage(name string, dg *debug.Debug) (language.Object, bool) {
 		return hash.NewHash(dg), true
 	case "component":
 		return component.NewComponent(dg), true
+	case "os":
+		return os.NewOS(dg), true
 	}
 
 	return nil, false

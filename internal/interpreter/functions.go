@@ -32,7 +32,7 @@ func (i *Interpreter) handleFunctionDecl(node *astnode.Node, ret ...bool) (langu
 		}
 
 		if arg.FallbackValue != nil {
-			val, err := i.evaluateExpression(arg.FallbackValue)
+			val, err := i.eval(arg.FallbackValue)
 			if err != nil {
 				return nil, err
 			}
@@ -179,7 +179,7 @@ func (i *Interpreter) getValueFromObjByNode(value language.Object, node *astnode
 
 		var args = make([]language.Object, len(node.Args))
 		for j, arg := range node.Args {
-			value, err := i.evaluateExpression(arg)
+			value, err := i.eval(arg)
 			if err != nil {
 				return nil, err
 			}

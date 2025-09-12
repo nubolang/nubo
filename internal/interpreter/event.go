@@ -87,7 +87,7 @@ func (i *Interpreter) handlePublish(node *astnode.Node) (language.Object, error)
 
 	args := make(events.TransportData, len(node.Args))
 	for j, arg := range node.Args {
-		value, err := i.evaluateExpression(arg)
+		value, err := i.eval(arg)
 		if err != nil {
 			return nil, err
 		}

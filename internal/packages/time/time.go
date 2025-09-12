@@ -11,6 +11,16 @@ import (
 
 var timeStruct *language.Struct
 
+func GetInstance() *language.Struct {
+	if timeStruct == nil {
+		timeStruct = language.NewStruct("time", []language.StructField{
+			{Name: "unix", Type: language.TypeInt},
+		}, nil)
+	}
+
+	return timeStruct
+}
+
 func NewTime(dg *debug.Debug) language.Object {
 	if timeStruct == nil {
 		timeStruct = language.NewStruct("time", []language.StructField{

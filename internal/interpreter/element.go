@@ -35,7 +35,7 @@ func (i *Interpreter) evaluateElement(node *astnode.Node) (language.Object, erro
 
 		if arg.Kind == "DYNAMIC" && arg.Value != nil {
 			valNode := arg.Value.(*astnode.Node)
-			val, err := i.evaluateExpression(valNode)
+			val, err := i.eval(valNode)
 			if err != nil {
 				return nil, err
 			}
@@ -67,7 +67,7 @@ func (i *Interpreter) evaluateElement(node *astnode.Node) (language.Object, erro
 				IsEscaped: !child.Flags.Contains("UNESCAPED"),
 			})
 		case astnode.NodeTypeElementDynamicText:
-			val, err := i.evaluateExpression(child.Value.(*astnode.Node))
+			val, err := i.eval(child.Value.(*astnode.Node))
 			if err != nil {
 				return nil, err
 			}

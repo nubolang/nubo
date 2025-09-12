@@ -161,7 +161,7 @@ func (i *Function) String() string {
 		rt = i.Type().Value.String()
 	}
 
-	return fmt.Sprintf("Closure(%p args=%v returns=%s)", i, argTypes, rt)
+	return fmt.Sprintf("(closure) (%v -> %s)", argTypes, rt)
 }
 
 func (i *Function) GetPrototype() Prototype {

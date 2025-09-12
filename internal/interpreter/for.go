@@ -20,7 +20,7 @@ func (i *Interpreter) handleFor(node *astnode.Node) (language.Object, error) {
 		return nil, newErr(ErrValueError, "expected a valid for cycle", node.Debug)
 	}
 
-	expr, err := i.evaluateExpression(node.Args[0])
+	expr, err := i.eval(node.Args[0])
 	if err != nil {
 		return nil, err
 	}

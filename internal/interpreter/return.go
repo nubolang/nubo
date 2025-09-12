@@ -14,7 +14,7 @@ func (i *Interpreter) handleReturn(node *astnode.Node) (language.Object, error) 
 		return language.NewSignal("return", node.Debug), nil
 	}
 
-	value, err := i.evaluateExpression(node)
+	value, err := i.eval(node)
 	if err != nil {
 		return nil, err
 	}

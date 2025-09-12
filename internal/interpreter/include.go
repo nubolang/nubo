@@ -4,13 +4,19 @@ import (
 	"path/filepath"
 
 	"github.com/nubolang/nubo/internal/ast/astnode"
+	"github.com/nubolang/nubo/language"
 	"github.com/nubolang/nubo/native"
 )
 
 func (ir *Interpreter) handleInclude(node *astnode.Node) error {
+	_, err := ir.includeValue(node)
+	return err
+}
+
+func (ir *Interpreter) includeValue(node *astnode.Node) (language.Object, error) {
 	value, err := ir.eval(node.Value.(*astnode.Node))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	fileName := value.String()
@@ -30,9 +36,8 @@ func (ir *Interpreter) handleInclude(node *astnode.Node) error {
 
 	nodes, err := native.NodesFromFile(path, path)
 	if err != nil {
-		return newErr(err, ErrImportError.Error(), node.Debug)
+		return nil, newErr(err, ErrImportError.Error(), node.Debug)
 	}
 
-	_, err = ir.Run(nodes)
-	return err
+	return ir.Run(nodes)
 }

@@ -23,6 +23,10 @@ func ValueParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, inx
 		return ListParser(ctx, sn, tokens, inx)
 	}
 
+	if token.Type == lexer.TokenInclude {
+		return IncludeParser(ctx, sn, tokens, inx)
+	}
+
 	if token.Type == lexer.TokenIdentifier && token.Value == "dict" {
 		return DictParser(ctx, sn, tokens, inx)
 	}

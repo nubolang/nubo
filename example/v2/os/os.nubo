@@ -1,0 +1,6 @@
+import os from '@std/os'
+
+const dir = os.readDir(__dir__ + "/dir")
+
+const first = dir[0]
+println(first.info())

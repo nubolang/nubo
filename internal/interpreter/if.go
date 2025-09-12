@@ -13,7 +13,7 @@ func (i *Interpreter) handleIf(node *astnode.Node) (language.Object, error) {
 	}
 
 	condition := func() (bool, error) {
-		ok, err := i.evaluateExpression(node.Args[0])
+		ok, err := i.eval(node.Args[0])
 		if err != nil {
 			return false, err
 		}

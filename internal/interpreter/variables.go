@@ -52,7 +52,7 @@ func (i *Interpreter) handleVariableDecl(parent *astnode.Node) error {
 
 		value, err = i.evalDict(node, keyType, valueType)
 	} else {
-		value, err = i.evaluateExpression(node)
+		value, err = i.eval(node)
 	}
 
 	if err != nil {
