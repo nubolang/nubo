@@ -30,7 +30,8 @@ func LoadPackageFile(root string) (*PackageFile, error) {
 	if err != nil {
 		if os.IsNotExist(err) {
 			var name string
-			if _, err := fmt.Scanln("Init: Information required: <author/project>: ", &name); err != nil {
+			fmt.Print("Init: Information required: <author/project>: ")
+			if _, err := fmt.Scanln(&name); err != nil {
 				return nil, err
 			}
 			return &PackageFile{Name: name}, nil

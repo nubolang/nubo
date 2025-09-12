@@ -59,7 +59,23 @@ func (p *Packer) downloadEntry(entry *LockEntry, baseDir string) (string, error)
 	)
 	cancel := spin.Start(context.Background())
 	defer cancel()
-	defer spin.Stop(fmt.Sprintf("Done %s ✅", entry.Name))
 
-	return entry.Download(baseDir)
+	dir, err := entry.Download(baseDir)
+	if err != nil {
+		return "", err
+	}
+
+	spin.UpdateMessage("Validating package 🕷️")
+	hash, err := hashDir(dir)
+	if err != nil {
+		return "", err
+	}
+
+	if entry.Hash != "sha256:"+hash {
+		spin.Stop(fmt.Sprintf("Failed to validate %s 🐛", entry.Name))
+		return "", fmt.Errorf("invalid hash for %s", entry.Name)
+	}
+
+	spin.Stop(fmt.Sprintf("Done %s ✅", entry.Name))
+	return dir, nil
 }
