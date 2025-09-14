@@ -33,6 +33,14 @@ var pid = n.Function(n.Describe().Returns(n.TInt), func(a *n.Args) (any, error) 
 	return pid, nil
 })
 
-var kill = n.Function(n.Describe(n.Arg("pid", n.TInt)), func(a *n.Args) (any, error) {
-	return nil, syscall.Kill(int(a.Name("pid").Value().(int64)), syscall.SIGABRT)
-})
+var kill = n.Function(
+    n.Describe(n.Arg("pid", n.TInt)),
+    func(a *n.Args) (any, error) {
+        pid := int(a.Name("pid").Value().(int64))
+        p, err := os.FindProcess(pid)
+        if err != nil {
+            return nil, err
+        }
+        return nil, p.Kill()
+    },
+)
