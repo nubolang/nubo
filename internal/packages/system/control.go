@@ -3,7 +3,6 @@ package system
 import (
 	"fmt"
 	"os"
-	"syscall"
 
 	"github.com/nubolang/nubo/language"
 	"github.com/nubolang/nubo/native/n"
