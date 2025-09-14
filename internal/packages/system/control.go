@@ -22,11 +22,18 @@ var exit = n.Function(n.Describe(n.Arg("code", n.TInt)), func(a *n.Args) (any, e
 	return nil, nil
 })
 
-var abort = n.Function(n.Describe(n.Arg("message", n.TString)), func(a *n.Args) (any, error) {
-	fmt.Fprintln(os.Stderr, "Fatal error:", a.Name("message").String())
-	pid := os.Getpid()
-	return nil, syscall.Kill(pid, syscall.SIGABRT)
-})
+var abort = n.Function(
+    n.Describe(n.Arg("message", n.TString)),
+    func(a *n.Args) (any, error) {
+        fmt.Fprintln(os.Stderr, "Fatal error:", a.Name("message").String())
+        pid := os.Getpid()
+        p, err := os.FindProcess(pid)
+        if err != nil {
+            return nil, err
+        }
+        return nil, p.Kill()
+    },
+)
 
 var pid = n.Function(n.Describe().Returns(n.TInt), func(a *n.Args) (any, error) {
 	pid := os.Getpid()
