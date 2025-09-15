@@ -1,0 +1,2 @@
+println("Config loaded")
+const config = { appName: 'My App', id: __id__ };

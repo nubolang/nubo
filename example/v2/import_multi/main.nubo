@@ -1,0 +1,4 @@
+import { config } from './config.nubo';
+import from './other.nubo';
+
+println("Main", config.id);

@@ -18,6 +18,8 @@ type Runtime interface {
 	RemoveInterpreter(id uint)
 	ImportPackage(name string, dg *debug.Debug) (language.Object, bool)
 	GetPacker() (*packer.Packer, error)
+	FindInterpreter(file string) (*Interpreter, bool)
+	AddInterpreter(file string, interpreter *Interpreter)
 }
 
 type Scope int

@@ -14,12 +14,18 @@ import (
 	"github.com/nubolang/nubo/packer"
 )
 
+// Runtime represents the runtime environment for executing Nubo code.
 type Runtime struct {
 	pubsubProvider events.Provider
 
-	mu           sync.RWMutex
+	mu sync.RWMutex
+
+	// iid is the next unique identifier for an interpreter instance.
+	iid uint
+	// interpreters is a map of interpreter instances.
 	interpreters map[uint]*interpreter.Interpreter
-	iid          uint
+	// filemap is a map of file paths to unique interpreter identifiers.
+	filemap map[string]uint
 
 	builtins map[string]language.Object
 	packages map[string]language.Object
@@ -29,7 +35,9 @@ type Runtime struct {
 func New(pubsubProvider events.Provider) *Runtime {
 	return &Runtime{
 		pubsubProvider: pubsubProvider,
+		iid:            0,
 		interpreters:   make(map[uint]*interpreter.Interpreter),
+		filemap:        make(map[string]uint),
 		builtins:       builtin.GetBuiltins(),
 		packages:       make(map[string]language.Object),
 	}
@@ -88,6 +96,7 @@ func (r *Runtime) Interpret(file string, nodes []*astnode.Node) (language.Object
 
 	r.mu.Lock()
 	r.interpreters[interpreter.ID] = interpreter
+	r.filemap[file] = interpreter.ID
 	r.mu.Unlock()
 
 	return interpreter.Run(nodes)
@@ -100,8 +109,29 @@ func (r *Runtime) NewID() uint {
 	return r.iid
 }
 
+func (r *Runtime) AddInterpreter(file string, interpreter *interpreter.Interpreter) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	r.interpreters[interpreter.ID] = interpreter
+	r.filemap[file] = interpreter.ID
+}
+
 func (r *Runtime) RemoveInterpreter(id uint) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	delete(r.interpreters, id)
+}
+
+func (r *Runtime) FindInterpreter(file string) (*interpreter.Interpreter, bool) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	iid, ok := r.filemap[file]
+	if !ok {
+		return nil, false
+	}
+
+	interpreter, ok := r.interpreters[iid]
+	return interpreter, ok
 }
