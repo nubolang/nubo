@@ -1,8 +1,6 @@
 package interpreter
 
 import (
-	"fmt"
-
 	"github.com/nubolang/nubo/internal/ast/astnode"
 	"github.com/nubolang/nubo/language"
 	"github.com/nubolang/nubo/native/n"
@@ -17,7 +15,7 @@ type Iterator interface {
 func (i *Interpreter) handleFor(node *astnode.Node) (language.Object, error) {
 	kv, ok := node.Value.(*astnode.ForValue)
 	if !ok {
-		return nil, newErr(ErrValueError, "expected a valid for cycle", node.Debug)
+		return nil, runExc("expected a valid for cycle body").WithDebug(node.Debug)
 	}
 
 	expr, err := i.eval(node.Args[0])
@@ -27,7 +25,7 @@ func (i *Interpreter) handleFor(node *astnode.Node) (language.Object, error) {
 
 	iterator, ok := expr.(Iterator)
 	if !ok {
-		return nil, newErr(ErrValueError, fmt.Sprintf("expected iterator, got %s(%v)", expr.Type(), expr.Value()), expr.Debug())
+		return nil, runExc("expected iterator, got %s(%v)", expr.Type(), expr.Value()).WithDebug(expr.Debug())
 	}
 
 	iterate := iterator.Iterator()
@@ -40,14 +38,14 @@ func (i *Interpreter) handleFor(node *astnode.Node) (language.Object, error) {
 		keyName = kv.Iterator.Value.(string)
 		// declare once
 		if err := ir.Declare(keyName, language.Nil, n.TAny, true); err != nil {
-			return nil, err
+			return nil, wrapRunExc(err, expr.Debug())
 		}
 	}
 	if kv.Value != nil {
 		valName = kv.Value.Value.(string)
 		// declare once
 		if err := ir.Declare(valName, language.Nil, n.TAny, true); err != nil {
-			return nil, err
+			return nil, wrapRunExc(err, expr.Debug())
 		}
 	}
 
@@ -60,18 +58,18 @@ func (i *Interpreter) handleFor(node *astnode.Node) (language.Object, error) {
 		// only assign instead of redeclare
 		if keyName != "" {
 			if err := ir.Assign(keyName, key); err != nil {
-				return nil, err
+				return nil, wrapRunExc(err, key.Debug())
 			}
 		}
 		if valName != "" {
 			if err := ir.Assign(valName, value); err != nil {
-				return nil, err
+				return nil, wrapRunExc(err, value.Debug())
 			}
 		}
 
 		ob, err := ir.Run(node.Body)
 		if err != nil {
-			return nil, err
+			return nil, wrapRunExc(err, node.Debug)
 		}
 		if ob != nil {
 			if ob.Type().Base() == language.ObjectTypeSignal {
@@ -81,8 +79,7 @@ func (i *Interpreter) handleFor(node *astnode.Node) (language.Object, error) {
 				case "continue":
 					continue
 				default:
-					return nil, newErr(ErrInvalid,
-						fmt.Sprintf("invalid language signal: %s", ob.String()), ob.Debug())
+					return nil, runExc("invalid language signal: %s", ob.String()).WithDebug(ob.Debug())
 				}
 			}
 			return ob, nil

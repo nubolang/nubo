@@ -2,13 +2,11 @@ package ast
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"time"
 
 	"github.com/nubolang/nubo/internal/ast/astnode"
 	"github.com/nubolang/nubo/internal/ast/parsers"
-	"github.com/nubolang/nubo/internal/debug"
+	"github.com/nubolang/nubo/internal/exception"
 	"github.com/nubolang/nubo/internal/lexer"
 )
 
@@ -148,5 +146,5 @@ func (a *Ast) handleToken(tokens []*lexer.Token, inx *int) (*astnode.Node, error
 		return nil, nil
 	}
 
-	return nil, debug.NewError(errors.New("Ast error"), fmt.Sprintf("Unhandled node: \"%s\" - Type: %s", token.Value, token.Type), token.Debug)
+	return nil, exception.Create("unhandled node: %s: '%s'", token.Type, token.Value).WithDebug(token.Debug).WithLevel(exception.LevelSemantic)
 }

@@ -104,6 +104,9 @@ func (t *Type) String() string {
 		}
 		return fmt.Sprintf("%s(%s) %s%s", t.BaseType.String(), strings.Join(args, ", "), t.Value.String(), next)
 	case ObjectTypeList:
+		if t.Element.Next != nil {
+			return fmt.Sprintf("[](%s)%s", t.Element.String(), next)
+		}
 		return fmt.Sprintf("[]%s%s", t.Element.String(), next)
 	case ObjectTypeDict:
 		return fmt.Sprintf("dict[%s, %s]%s", t.Key.String(), t.Value.String(), next)

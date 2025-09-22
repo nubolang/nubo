@@ -48,7 +48,7 @@ func (lx *HtmlLexer) Lex() ([]*Token, error) {
 		ch := lx.curr()
 		if ch == '<' {
 			lx.lexTag()
-		} else if ch == '@' && lx.peek(1) == '{' {
+		} else if ch == '!' && lx.peek(1) == '{' {
 			lx.lexUnescapedBrace()
 		} else if ch == '{' {
 			lx.lexBrace()

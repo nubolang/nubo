@@ -53,14 +53,7 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 			if child.IsReference {
 				obj, ok := i.GetObject(child.Value.(string))
 				if !ok {
-					return nil, newErr(ErrUndefinedVariable, child.Value.(string), node.Debug)
-				}
-
-				if obj.Type().Base() == language.ObjectTypeStructDefinition {
-					if len(node.Body) == 1 {
-						return obj, nil
-					}
-					return nil, newErr(ErrUnsupported, fmt.Sprintf("cannot operate on struct %s", obj.Type()), obj.Debug())
+					return nil, undefinedVariable(child.Value.(string)).WithDebug(node.Debug)
 				}
 
 				if len(node.Body) == 1 {
@@ -73,6 +66,13 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 					}
 
 					return obj, nil
+				}
+
+				if obj.Type().Base() == language.ObjectTypeStructDefinition {
+					if len(node.Body) == 1 {
+						return obj, nil
+					}
+					return nil, cannotOperateOn("(struct) " + obj.Type().Content).WithDebug(obj.Debug())
 				}
 
 				if obj.Type().Base() == language.ObjectTypeStructInstance {
@@ -98,7 +98,7 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 				}
 
 				if isNotEvaluable(obj.Type().Base()) {
-					return nil, newErr(ErrUnsupported, fmt.Sprintf("cannot operate on type %s", obj.Type()), obj.Debug())
+					return nil, cannotOperateOn(obj.Type()).WithDebug(obj.Debug())
 				}
 
 				env[id] = obj.Value()
@@ -118,7 +118,7 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 			}
 
 			if isNotEvaluable(value.Type().Base()) {
-				return nil, newErr(ErrUnsupported, fmt.Sprintf("cannot operate on type %s", value.Type()), value.Debug())
+				return nil, cannotOperateOn(value.Type()).WithDebug(value.Debug())
 			}
 
 			id := "var_" + fmt.Sprintf("%d", inx)
@@ -127,13 +127,13 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 			env[id] = value.Value()
 		} else if child.Type == astnode.NodeTypeInlineFunction {
 			if len(node.Body) != 1 {
-				return nil, newErr(ErrUnsupported, fmt.Sprintf("cannot operate on inline function"), child.Debug)
+				return nil, cannotOperateOn("<inline function>").WithDebug(node.Debug)
 			}
 
 			return i.createInlineFunction(child)
 		} else if child.Type == astnode.NodeTypeElement {
 			if len(node.Body) != 1 {
-				return nil, newErr(ErrUnsupported, fmt.Sprintf("cannot operate on element"), child.Debug)
+				return nil, cannotOperateOn("<element>").WithDebug(node.Debug)
 			}
 			return i.evaluateElement(child)
 		} else if child.Type == astnode.NodeTypeTemplateLiteral {
@@ -198,11 +198,12 @@ func (i *Interpreter) exprEvalHumanError(children []*astnode.Node, debug *debug.
 		msgCtx = fmt.Sprintf(" (%s)", msgCtx)
 	}
 
+	excp := expressionError(humanExpr.String() + msgCtx)
 	if debug != nil {
-		return newErr(ErrExpression, fmt.Sprintf("Failed to evaluate expression: %s%s", humanExpr.String(), msgCtx), debug)
+		return excp.WithDebug(debug)
 	}
 
-	return newErr(ErrExpression, fmt.Sprintf("Failed to evaluate expression: %s%s", humanExpr.String(), msgCtx))
+	return excp
 }
 
 func (i *Interpreter) getEvalErr(err error) string {
@@ -304,12 +305,12 @@ func (i *Interpreter) evalDict(node *astnode.Node, keyType, valueType *language.
 
 	for _, pair := range node.Children {
 		if len(pair.Children) != 1 {
-			return nil, newErr(ErrInvalid, "Invalid dict entry", pair.Debug)
+			return nil, runExc("invalid dict entry").WithDebug(pair.Debug)
 		}
 
 		keyNode, ok := pair.Value.(*astnode.Node)
 		if !ok {
-			return nil, newErr(ErrInvalid, "Invalid dict entry", pair.Debug)
+			return nil, runExc("invalid dict entry").WithDebug(pair.Debug)
 		}
 
 		keyObj, err := i.eval(keyNode)
@@ -356,7 +357,7 @@ func (i *Interpreter) evalDict(node *astnode.Node, keyType, valueType *language.
 
 	dict, err := language.NewDict(keys, values, keyType, valueType, node.Debug)
 	if err != nil {
-		return nil, newErr(ErrTypeMismatch, err.Error(), node.Debug)
+		return nil, typeError(err.Error()).WithDebug(node.Debug)
 	}
 
 	return dict, nil
@@ -370,17 +371,17 @@ func (i *Interpreter) checkGetter(obj language.Object, node *astnode.Node) (lang
 		}
 
 		if obj.GetPrototype() == nil {
-			return nil, newErr(ErrUnsupported, fmt.Sprintf("cannot operate on type %s", obj.Type()), obj.Debug())
+			return nil, cannotOperateOn(obj.Type()).WithDebug(obj.Debug())
 		}
 
 		getter, ok := obj.GetPrototype().GetObject("__get__")
 		if !ok {
-			return nil, newErr(ErrUnsupported, fmt.Sprintf("cannot operate on type %s", obj.Type()), obj.Debug())
+			return nil, cannotOperateOn(obj.Type()).WithDebug(obj.Debug())
 		}
 
 		getterFn, ok := getter.(*language.Function)
 		if !ok {
-			return nil, newErr(ErrUnsupported, fmt.Sprintf("cannot operate on type %s", obj.Type()), obj.Debug())
+			return nil, cannotOperateOn(obj.Type()).WithDebug(obj.Debug())
 		}
 
 		value, err := getterFn.Data([]language.Object{val})
@@ -392,7 +393,7 @@ func (i *Interpreter) checkGetter(obj language.Object, node *astnode.Node) (lang
 	}
 
 	if obj == nil {
-		return nil, newErr(ErrTypeMismatch, fmt.Sprintf("cannot operate on type %s", node.Type), node.Debug)
+		return nil, cannotOperateOn(obj.Type()).WithDebug(obj.Debug())
 	}
 
 	return obj, nil

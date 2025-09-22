@@ -82,7 +82,7 @@ func (i *Interpreter) handlePublish(node *astnode.Node) (language.Object, error)
 	event := eventProvider.GetEvent(eventID)
 
 	if len(event.Args) != len(node.Args) {
-		return nil, newErr(ErrTypeMismatch, fmt.Sprintf("argument count mismatch: expected %d, got %d", len(event.Args), len(node.Args)), node.Debug)
+		return nil, argError(len(event.Args), len(node.Args)).WithDebug(node.Debug)
 	}
 
 	args := make(events.TransportData, len(node.Args))
@@ -93,7 +93,7 @@ func (i *Interpreter) handlePublish(node *astnode.Node) (language.Object, error)
 		}
 
 		if !language.TypeCheck(event.Args[j].Type(), value.Type()) {
-			return nil, newErr(ErrTypeMismatch, fmt.Sprintf("expected %s, got %s", event.Args[j].Type(), value.Type()), node.Debug)
+			return nil, typeMismatch(event.Args[j].Type(), value.Type()).WithDebug(node.Debug)
 		}
 		args[j] = value.Clone()
 	}
@@ -109,7 +109,7 @@ func (i *Interpreter) getEventByName(name string, d *debug.Debug) (string, uint,
 	if strings.Contains(name, ".") {
 		parts := strings.Split(name, ".")
 		if len(parts) != 2 {
-			return "", 0, newErr(ErrUnsupported, fmt.Sprintf("invalid event name: %s", name), d)
+			return "", 0, runExc("invalid event '%s'", name).WithDebug(d)
 		}
 		imported := parts[0]
 		name = parts[1]
@@ -118,7 +118,7 @@ func (i *Interpreter) getEventByName(name string, d *debug.Debug) (string, uint,
 		ir, ok := i.imports[imported]
 		if !ok {
 			i.mu.RUnlock()
-			return "", 0, newErr(ErrUnsupported, fmt.Sprintf("import not found: %s", imported), d)
+			return "", 0, importError("not found '%s'", imported).WithDebug(d)
 		}
 		iid = ir.ID
 		i.mu.RUnlock()

@@ -80,15 +80,33 @@ func (e *Element) String() string {
 
 	var sb strings.Builder
 
-	sb.WriteRune('<')
-	sb.WriteString(e.Data.TagName)
+	if e.Data.TagName != "ghost" {
+		sb.WriteRune('<')
+		sb.WriteString(e.Data.TagName)
 
-	for _, arg := range e.Data.Args {
-		attrName := strcase.KebabCase(arg.Name)
+		for _, arg := range e.Data.Args {
+			attrName := strcase.KebabCase(arg.Name)
 
-		if e.Data.TagName == "a" && attrName == "to" {
+			if e.Data.TagName == "a" && attrName == "to" {
+				sb.WriteRune(' ')
+				sb.WriteString("href=")
+
+				var valueStr string
+				if arg.Value != nil {
+					valueStr = html.EscapeString(arg.Value.String())
+				}
+
+				sb.WriteString(strconv.Quote(valueStr))
+
+				sb.WriteRune(' ')
+				sb.WriteString("nubo-link")
+				continue
+			}
+
 			sb.WriteRune(' ')
-			sb.WriteString("href=")
+			sb.WriteString(attrName)
+
+			sb.WriteRune('=')
 
 			var valueStr string
 			if arg.Value != nil {
@@ -96,28 +114,12 @@ func (e *Element) String() string {
 			}
 
 			sb.WriteString(strconv.Quote(valueStr))
-
-			sb.WriteRune(' ')
-			sb.WriteString("nubo-link")
-			continue
 		}
 
-		sb.WriteRune(' ')
-		sb.WriteString(attrName)
-
-		sb.WriteRune('=')
-
-		var valueStr string
-		if arg.Value != nil {
-			valueStr = html.EscapeString(arg.Value.String())
-		}
-
-		sb.WriteString(strconv.Quote(valueStr))
+		sb.WriteRune('>')
 	}
 
-	sb.WriteRune('>')
-
-	if e.Data.SelfClose {
+	if e.Data.SelfClose && e.Data.TagName != "ghost" {
 		return sb.String()
 	}
 
@@ -136,9 +138,11 @@ func (e *Element) String() string {
 		}
 	}
 
-	sb.WriteString("</")
-	sb.WriteString(e.Data.TagName)
-	sb.WriteString(">")
+	if e.Data.TagName != "ghost" {
+		sb.WriteString("</")
+		sb.WriteString(e.Data.TagName)
+		sb.WriteString(">")
+	}
 
 	return sb.String()
 }

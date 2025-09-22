@@ -59,17 +59,17 @@ func NewError(base error, err string, debug ...*Debug) error {
 }
 
 // HtmlError returns the error message with debug information html
-func (de DebugErr) HtmlError() *HtmlError {
+func (de *DebugErr) HtmlError() *HtmlError {
 	if de.debug == nil {
 		return nil
 	}
 
-	htmlErr := NewHtmlError(&de)
+	htmlErr := NewHtmlError(de)
 	return htmlErr
 }
 
 // JSONError returns the error message with debug information json
-func (de DebugErr) JSONError() (string, bool) {
+func (de *DebugErr) JSONError() (string, bool) {
 	if de.debug == nil {
 		return de.Error(), false
 	}

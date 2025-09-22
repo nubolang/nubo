@@ -10,7 +10,8 @@ import (
 
 func StructParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
 	node := &astnode.Node{
-		Type: astnode.NodeTypeStruct,
+		Type:  astnode.NodeTypeStruct,
+		Debug: tokens[*inx].Debug,
 	}
 
 	if err := inxPP(tokens, inx); err != nil {

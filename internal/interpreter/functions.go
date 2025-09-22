@@ -41,7 +41,7 @@ func (i *Interpreter) handleFunctionDecl(node *astnode.Node, ret ...bool) (langu
 				typ = val.Type()
 			} else {
 				if !typ.Compare(val.Type()) {
-					return nil, newErr(ErrTypeMismatch, fmt.Sprintf("Expected %s but got %s", typ, val.Type()), arg.Debug)
+					return nil, typeError("expected %s but got %s", typ, val.Type()).WithDebug(arg.Debug)
 				}
 			}
 
@@ -64,7 +64,7 @@ func (i *Interpreter) handleFunctionDecl(node *astnode.Node, ret ...bool) (langu
 		for j, arg := range args {
 			providedArg := o[j]
 			if !language.TypeCheck(arg.Type(), providedArg.Type()) {
-				return nil, newErr(ErrTypeMismatch, fmt.Sprintf("Expected %s but got %s", arg.Type(), providedArg.Type()), providedArg.Debug())
+				return nil, typeError("expected %s but got %s", arg.Type(), providedArg.Type()).WithDebug(providedArg.Debug())
 			}
 
 			if err := ir.Declare(arg.Name(), providedArg, arg.Type(), true); err != nil {

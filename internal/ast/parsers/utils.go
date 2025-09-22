@@ -7,6 +7,7 @@ import (
 
 	"github.com/nubolang/nubo/internal/ast/astnode"
 	"github.com/nubolang/nubo/internal/debug"
+	"github.com/nubolang/nubo/internal/exception"
 	"github.com/nubolang/nubo/internal/lexer"
 )
 
@@ -18,7 +19,7 @@ func isWhite(token *lexer.Token) bool {
 
 func inxPPIf(tokens []*lexer.Token, inx *int) error {
 	if *inx >= len(tokens) {
-		return debug.NewError(ErrSyntaxError, "unexpected end of input", tokens[*inx-1].Debug)
+		return exception.Create("unexpected end of input").WithDebug(tokens[*inx-1].Debug).WithLevel(exception.LevelSemantic)
 	}
 
 	if slices.Contains(white, tokens[*inx].Type) {

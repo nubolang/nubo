@@ -11,11 +11,33 @@ import (
 
 func TypeParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
 	node := &astnode.Node{
-		Type: astnode.NodeTypeType,
+		Type:  astnode.NodeTypeType,
+		Debug: tokens[*inx].Debug,
 	}
 
 	if tokens[*inx].Type == lexer.TokenFn {
 		return TypeFnParser(ctx, node, tokens, inx)
+	}
+
+	if tokens[*inx].Type == lexer.TokenOpenParen {
+		if err := inxPP(tokens, inx); err != nil {
+			return nil, err
+		}
+
+		typ, err := TypeParser(ctx, tokens, inx)
+		if err != nil {
+			return nil, err
+		}
+
+		if tokens[*inx].Type != lexer.TokenCloseParen {
+			return nil, fmt.Errorf("expected close paren after type")
+		}
+
+		if err := inxPP(tokens, inx); err != nil {
+			return nil, err
+		}
+
+		return multiType(typ, ctx, tokens, inx)
 	}
 
 	if tokens[*inx].Type == lexer.TokenIdentifier {

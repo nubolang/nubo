@@ -4,6 +4,7 @@ import (
 	"slices"
 	"sync"
 
+	"github.com/nubolang/nubo/internal/ast/astnode"
 	"github.com/stoewer/go-strcase"
 )
 
@@ -23,6 +24,9 @@ func NewElementPrototype(base *Element) *ElementPrototype {
 		[]FnArg{&BasicFnArg{TypeVal: TypeString, NameVal: "name"}, &BasicFnArg{TypeVal: TypeAny, NameVal: "value"}},
 		TypeVoid,
 		func(o []Object) (Object, error) {
+			ep.mu.Lock()
+			defer ep.mu.Unlock()
+
 			val := o[1]
 
 			attr := Attribute{
@@ -51,7 +55,7 @@ func NewElementPrototype(base *Element) *ElementPrototype {
 			}
 
 			return nil, nil
-		}, nil)
+		}, base.debug)
 	ep.SetObject("setAttribute", setAttr)
 	ep.SetObject("__set__", setAttr)
 
@@ -61,6 +65,9 @@ func NewElementPrototype(base *Element) *ElementPrototype {
 		},
 		TypeVoid,
 		func(o []Object) (Object, error) {
+			ep.mu.Lock()
+			defer ep.mu.Unlock()
+
 			name := strcase.KebabCase(o[0].(*String).Data)
 
 			for i, a := range base.Data.Args {
@@ -72,7 +79,7 @@ func NewElementPrototype(base *Element) *ElementPrototype {
 
 			return nil, nil
 		},
-		nil,
+		base.debug,
 	))
 
 	getAttr := NewTypedFunction(
@@ -81,6 +88,9 @@ func NewElementPrototype(base *Element) *ElementPrototype {
 		},
 		TypeAny,
 		func(o []Object) (Object, error) {
+			ep.mu.RLock()
+			defer ep.mu.RUnlock()
+
 			name := strcase.KebabCase(o[0].(*String).Data)
 			for _, a := range base.Data.Args {
 				if a.Name == name {
@@ -89,7 +99,7 @@ func NewElementPrototype(base *Element) *ElementPrototype {
 			}
 			return Nil, nil
 		},
-		nil,
+		base.debug,
 	)
 	ep.SetObject("getAttribute", getAttr)
 	ep.SetObject("__get__", getAttr)
@@ -100,6 +110,9 @@ func NewElementPrototype(base *Element) *ElementPrototype {
 		},
 		TypeBool,
 		func(o []Object) (Object, error) {
+			ep.mu.RLock()
+			defer ep.mu.RUnlock()
+
 			name := strcase.KebabCase(o[0].(*String).Data)
 			for _, a := range base.Data.Args {
 				if a.Name == name {
@@ -108,8 +121,53 @@ func NewElementPrototype(base *Element) *ElementPrototype {
 			}
 			return NewBool(false, o[0].Debug()), nil
 		},
-		nil,
+		base.debug,
 	))
+
+	ep.SetObject("children", NewTypedFunction(nil, NewListType(NewUnionType(TypeHtml, TypeString)), func(o []Object) (Object, error) {
+		ep.mu.RLock()
+		defer ep.mu.RUnlock()
+
+		var objs = make([]Object, len(base.Data.Children))
+		for i, child := range base.Data.Children {
+			if child.Type == astnode.NodeTypeElementRawText {
+				objs[i] = NewString(child.Content, base.debug)
+			} else {
+				objs[i] = child.Value
+			}
+		}
+
+		return NewList(objs, NewUnionType(TypeHtml, TypeString), base.debug), nil
+	}, ep.base.debug))
+
+	ep.SetObject("setChildren", NewTypedFunction([]FnArg{
+		&BasicFnArg{
+			NameVal: "children",
+			TypeVal: NewListType(NewUnionType(TypeHtml, TypeString)),
+		},
+	}, TypeVoid, func(o []Object) (Object, error) {
+		ep.mu.Lock()
+		defer ep.mu.Unlock()
+
+		data := o[0].(*List).Data
+		base.Data.Children = make([]ElementChild, len(data))
+
+		for i, child := range data {
+			if child.Type().Compare(TypeString) {
+				base.Data.Children[i] = ElementChild{
+					Type:    astnode.NodeTypeElementRawText,
+					Content: child.String(),
+				}
+			} else {
+				base.Data.Children[i] = ElementChild{
+					Type:  astnode.NodeTypeElement,
+					Value: child.Value().(*Element),
+				}
+			}
+		}
+
+		return nil, nil
+	}, ep.base.debug))
 
 	return ep
 }

@@ -1,10 +1,18 @@
-import component from "@std/component"
+import { Context } from "@std/component"
 
-fn Button(ctx: component.Context) html {
+fn Button(ctx: Context) html {
     println(ctx)
-    return <button :idn="45">@{ ctx.children.join(" ") }</button>
+    return <button :idn="45">!{ ctx.children.join(" ") }</button>
 }
 
 let btn = <Button :bind-attrs="{a:'b'}"><span>Hello, World</span>!</Button>
 btn["ID"] = "new_id"
 println(btn["idn"])
+
+println(btn.children())
+
+const ch: [](html|string) = []
+ch.push("#")
+ch.push(<span>Hello, Other</span>)
+btn.setChildren(ch)
+println(btn.children())

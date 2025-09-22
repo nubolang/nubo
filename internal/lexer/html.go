@@ -125,8 +125,8 @@ scanAttrs:
 }
 
 func (lx *Lexer) skipBraces() {
-	if lx.curr() == '@' && lx.peek(1) == '{' {
-		lx.advance() // '@'
+	if lx.curr() == '!' && lx.peek(1) == '{' {
+		lx.advance() // '!'
 	}
 	if lx.curr() == '{' {
 		depth := 1

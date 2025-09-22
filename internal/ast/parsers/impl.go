@@ -2,11 +2,10 @@ package parsers
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/nubolang/nubo/internal/ast/astnode"
-	"github.com/nubolang/nubo/internal/debug"
+	"github.com/nubolang/nubo/internal/exception"
 	"github.com/nubolang/nubo/internal/lexer"
 )
 
@@ -126,5 +125,5 @@ func implBodyPartParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Tok
 		return nil, nil
 	}
 
-	return nil, debug.NewError(errors.New("Ast error"), fmt.Sprintf("Unhandled node: %s", token.Type), token.Debug)
+	return nil, exception.Create("unhandled node: %s: '%s'", token.Type, token.Value).WithDebug(token.Debug).WithLevel(exception.LevelSemantic)
 }

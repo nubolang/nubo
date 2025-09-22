@@ -175,6 +175,10 @@ func (lx *Lexer) Parse() ([]*Token, error) {
 				lx.add(TokenNotEqual, "!=", nil)
 				lx.advance()
 				lx.advance()
+			} else if lx.peek(1) == '{' {
+				lx.add(TokenUnescapedBrace, "!{", nil)
+				lx.advance()
+				lx.advance()
 			} else {
 				lx.add(TokenNot, "!", nil)
 				lx.advance()
@@ -225,15 +229,6 @@ func (lx *Lexer) Parse() ([]*Token, error) {
 				lx.advance()
 			} else {
 				lx.add(TokenGreaterThan, ">", nil)
-				lx.advance()
-			}
-		case '@':
-			if lx.peek(1) == '{' {
-				lx.add(TokenUnescapedBrace, "@{", nil)
-				lx.advance()
-				lx.advance()
-			} else {
-				lx.add(TokenUnknown, "@", nil)
 				lx.advance()
 			}
 		default:
