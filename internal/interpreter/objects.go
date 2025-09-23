@@ -64,6 +64,9 @@ func (i *Interpreter) assignNested(name string, value language.Object) error {
 	obj, ok := i.objects[hashKey(parts[0])]
 	i.mu.RUnlock()
 	if !ok || obj.value == nil {
+		if i.parent != nil {
+			return i.parent.assignNested(name, value)
+		}
 		return newErr(ErrUndefinedVariable, fmt.Sprintf("Undefined variable %s", parts[0]), value.Debug())
 	}
 
