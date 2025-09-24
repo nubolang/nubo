@@ -27,7 +27,7 @@ func (i *Interpreter) handleVariableDecl(parent *astnode.Node) error {
 		typ, err = i.parseTypeNode(parent.ValueType)
 
 		if err != nil {
-			return err
+			return wrapRunExc(err, parent.ValueType.Debug)
 		}
 	}
 
@@ -56,11 +56,11 @@ func (i *Interpreter) handleVariableDecl(parent *astnode.Node) error {
 	}
 
 	if err != nil {
-		return err
+		return wrapRunExc(err, node.Debug)
 	}
 
 	if value == nil {
-		return newErr(ErrValueError, fmt.Sprint("void is not assignable to a variable"), node.Debug)
+		return valueExc("void is not assignable to a variable").WithDebug(node.Debug)
 	}
 
 	if typ == nil {
@@ -68,12 +68,15 @@ func (i *Interpreter) handleVariableDecl(parent *astnode.Node) error {
 	}
 
 	if !typ.Compare(value.Type()) {
-		return newErr(ErrTypeMismatch, fmt.Sprintf("expected %s, got %s", typ.String(), value.Type().String()), parent.Debug)
+		return typeError("expected %s, got %s", typ.String(), value.Type().String()).WithDebug(parent.Debug)
 	}
 
 	zap.L().Info("Variable Declaration", zap.String("variableName", variableName), zap.Any("value", value), zap.Bool("mutable", mutable))
 
-	return i.Declare(variableName, value.Clone(), typ, mutable)
+	if err := i.Declare(variableName, value.Clone(), typ, mutable); err != nil {
+		return wrapRunExc(err, node.Debug)
+	}
+	return nil
 }
 
 func (i *Interpreter) handleAssignment(node *astnode.Node) error {
@@ -88,7 +91,7 @@ func (i *Interpreter) handleAssignment(node *astnode.Node) error {
 
 	value, err := i.eval(node)
 	if err != nil {
-		return err
+		return wrapRunExc(err, node.Debug)
 	}
 
 	zap.L().Info("Variable Assignment", zap.String("variableName", variableName), zap.Any("value", value))
@@ -96,49 +99,46 @@ func (i *Interpreter) handleAssignment(node *astnode.Node) error {
 	if len(arrayAccess) > 0 {
 		lookUp, ok := i.GetObject(variableName)
 		if !ok {
-			return newErr(ErrUndefinedVariable, fmt.Sprintf("Undefined variable %s", variableName), nil)
+			return runExc("undefined variable %s", variableName).WithDebug(node.Debug)
 		}
 
 		return i.setAccess(lookUp, arrayAccess, value)
 	}
 
-	return i.Assign(variableName, value)
+	if err := i.Assign(variableName, value); err != nil {
+		return wrapRunExc(err, node.Debug)
+	}
+	return nil
 }
 
 func (i *Interpreter) handleIncrement(node *astnode.Node) error {
 	value, ok := i.GetObject(node.Content)
 	if !ok {
-		return newErr(ErrUndefinedFunction, node.Content, node.Debug)
-	}
-
-	if value.Type() != language.TypeInt {
-		return newErr(ErrTypeMismatch, fmt.Sprintf("cannot increment variable with type %s", value.Type()), node.Debug)
+		return runExc("variable %q not declared", node.Content).WithDebug(node.Debug)
 	}
 
 	proto := value.GetPrototype()
 	incr, ok := proto.GetObject("increment")
 	if !ok {
-		return newErr(ErrUndefinedFunction, "cannot increment variable", node.Debug)
+		return runExc("cannot increment variable %q: no implementation for increment()", node.Content).WithDebug(node.Debug)
 	}
 
-	_, err := incr.(*language.Function).Data(nil)
-	return err
+	if _, err := incr.(*language.Function).Data(nil); err != nil {
+		return wrapRunExc(err, node.Debug, fmt.Sprintf("cannot increment %q: @err", node.Content))
+	}
+	return nil
 }
 
 func (i *Interpreter) handleDecrement(node *astnode.Node) error {
 	value, ok := i.GetObject(node.Content)
 	if !ok {
-		return newErr(ErrUndefinedFunction, node.Content, node.Debug)
-	}
-
-	if value.Type() != language.TypeInt {
-		return newErr(ErrTypeMismatch, fmt.Sprintf("cannot increment variable with type %s", value.Type()), node.Debug)
+		return runExc("variable %q not declared", node.Content).WithDebug(node.Debug)
 	}
 
 	proto := value.GetPrototype()
 	decr, ok := proto.GetObject("decrement")
 	if !ok {
-		return newErr(ErrUndefinedFunction, "cannot increment variable", node.Debug)
+		return runExc("cannot decrement variable %q: no implementation for decrement()", node.Content).WithDebug(node.Debug)
 	}
 
 	_, err := decr.(*language.Function).Data(nil)
@@ -149,27 +149,31 @@ func (i *Interpreter) setAccess(current language.Object, access []*astnode.Node,
 	for _, part := range access[:len(access)-1] {
 		obj, err := i.eval(part)
 		if err != nil {
-			return err
+			return wrapRunExc(err, current.Debug())
 		}
 
 		proto := current.GetPrototype()
 		if proto == nil {
-			return newErr(ErrUndefinedVariable, fmt.Sprintf("Undefined property %s", obj.String()), nil)
+			return runExc("undefined property %q", obj.String()).WithDebug(current.Debug())
+		}
+
+		if current.GetPrototype() == nil {
+			return runExc("cannot operate on variable: no implementation for __get__()").WithDebug(obj.Debug())
 		}
 
 		getter, ok := current.GetPrototype().GetObject("__get__")
 		if !ok {
-			return newErr(ErrUnsupported, fmt.Sprintf("cannot operate on type %s", obj.Type()), obj.Debug())
+			return runExc("cannot operate on variable: no implementation for __get__()").WithDebug(obj.Debug())
 		}
 
 		getterFn, ok := getter.(*language.Function)
 		if !ok {
-			return newErr(ErrUnsupported, fmt.Sprintf("cannot operate on type %s", obj.Type()), obj.Debug())
+			return runExc("cannot operate on variable: bad implementation for __get__()").WithDebug(obj.Debug())
 		}
 
 		value, err := getterFn.Data([]language.Object{obj})
 		if err != nil {
-			return err
+			return wrapRunExc(err, obj.Debug())
 		}
 
 		current = value
@@ -178,24 +182,27 @@ func (i *Interpreter) setAccess(current language.Object, access []*astnode.Node,
 	last := access[len(access)-1]
 	obj, err := i.eval(last)
 	if err != nil {
-		return err
+		return wrapRunExc(err, current.Debug())
 	}
 
 	proto := current.GetPrototype()
 	if proto == nil {
-		return newErr(ErrUndefinedVariable, fmt.Sprintf("Undefined property %s", obj.String()), nil)
+		return runExc("undefined property %s", obj.String()).WithDebug(current.Debug())
 	}
 
 	setter, ok := proto.GetObject("__set__")
 	if !ok {
-		return newErr(ErrUnsupported, fmt.Sprintf("cannot operate on type %s", obj.Type()), obj.Debug())
+		return runExc("cannot operate on variable: no implementation for __set__()").WithDebug(obj.Debug())
 	}
 
 	setterFn, ok := setter.(*language.Function)
 	if !ok {
-		return newErr(ErrUnsupported, fmt.Sprintf("cannot operate on type %s", obj.Type()), obj.Debug())
+		return runExc("cannot operate on variable: bad implementation for __set__()").WithDebug(obj.Debug())
 	}
 
-	_, err = setterFn.Data([]language.Object{obj, value})
-	return err
+	if _, err = setterFn.Data([]language.Object{obj, value}); err != nil {
+		return wrapRunExc(err, obj.Debug())
+	}
+
+	return nil
 }

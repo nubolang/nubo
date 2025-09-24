@@ -37,7 +37,7 @@ func (i *Interpreter) evaluateElement(node *astnode.Node) (language.Object, erro
 			valNode := arg.Value.(*astnode.Node)
 			val, err := i.eval(valNode)
 			if err != nil {
-				return nil, err
+				return nil, exception.From(err, arg.Debug, "failed to evaluate dynamic area")
 			}
 			attr.Value = val
 		} else if arg.Kind == "TEXT" && arg.Value != nil {
@@ -52,7 +52,7 @@ func (i *Interpreter) evaluateElement(node *astnode.Node) (language.Object, erro
 		case astnode.NodeTypeElement:
 			val, err := i.evaluateElement(child)
 			if err != nil {
-				return nil, err
+				return nil, exception.From(err, child.Debug, "failed to evaluate element")
 			}
 			childElem := val.(*language.Element)
 			elem.Children = append(elem.Children, language.ElementChild{
@@ -69,7 +69,7 @@ func (i *Interpreter) evaluateElement(node *astnode.Node) (language.Object, erro
 		case astnode.NodeTypeElementDynamicText:
 			val, err := i.eval(child.Value.(*astnode.Node))
 			if err != nil {
-				return nil, err
+				return nil, exception.From(err, child.Debug, "failed to evaluate dynamic text")
 			}
 
 			elem.Children = append(elem.Children, language.ElementChild{
@@ -100,7 +100,7 @@ func (i *Interpreter) evaluateElement(node *astnode.Node) (language.Object, erro
 	fnType := language.NewFunctionType(language.TypeHtml, cctx.Type())
 
 	if !fnType.Compare(fn.Type()) {
-		return nil, exception.Create("invalid element, expected type %s, got %s", fnType, fn.Type()).WithLevel(exception.LevelRuntime).WithDebug(node.Debug)
+		return nil, exception.Create("invalid element, expected type %s, got %s", fnType, fn.Type()).WithLevel(exception.LevelType).WithDebug(node.Debug)
 	}
 
 	var (
@@ -128,7 +128,7 @@ func (i *Interpreter) evaluateElement(node *astnode.Node) (language.Object, erro
 
 	d, err := language.NewDict(argKeys, argValues, language.TypeString, language.TypeAny, node.Debug)
 	if err != nil {
-		return nil, exception.Create(err.Error()).WithBase(ErrTypeMismatch).WithDebug(node.Debug).WithLevel(exception.LevelRuntime)
+		return nil, exception.From(err, node.Debug, "dict type mismatch")
 	}
 
 	c := language.NewList(children, language.NewUnionType(language.TypeString, language.TypeHtml), node.Debug)
@@ -138,8 +138,13 @@ func (i *Interpreter) evaluateElement(node *astnode.Node) (language.Object, erro
 	init := initFunc.(*language.Function)
 	cctxInstance, err := init.Data([]language.Object{d, c})
 	if err != nil {
-		return nil, exception.Create(err.Error()).WithDebug(node.Debug).WithLevel(exception.LevelRuntime)
+		return nil, exception.From(err, node.Debug, "Context instance creation failed")
 	}
 
-	return fn.Data([]language.Object{cctxInstance})
+	data, err := fn.Data([]language.Object{cctxInstance})
+	if err != nil {
+		return nil, exception.From(err, node.Debug, "function call failed: @err")
+	}
+
+	return data, nil
 }

@@ -6,38 +6,42 @@ import (
 	"strings"
 
 	"github.com/nubolang/nubo/internal/ast/astnode"
+	"github.com/nubolang/nubo/internal/exception"
 	"github.com/nubolang/nubo/native"
 )
 
 func (ir *Interpreter) handleImport(node *astnode.Node) error {
 	_, ok := ir.GetObject(node.Content)
 	if ok {
-		return newErr(ErrImportError, fmt.Sprintf("imported module name should not be used as an identifier"), node.Debug)
+		return runExc("imported module name ('%s') should not be used as an identifier", node.Content).WithDebug(node.Debug)
 	}
 
 	ir.mu.RLock()
 	_, ok = ir.imports[node.Content]
 	if ok {
 		ir.mu.RUnlock()
-		return newErr(ErrImportError, fmt.Sprintf("module %s already imported", node.Content), node.Debug)
+		return runExc("already imported module ('%s')", node.Content).WithDebug(node.Debug)
 	}
 	ir.mu.RUnlock()
 
 	fileName := node.Value.(string)
 
 	if strings.HasPrefix(fileName, "@std") || strings.HasPrefix(fileName, "@server") {
-		return ir.stdImport(node, fileName)
+		if err := ir.stdImport(node, fileName); err != nil {
+			return exception.From(err, node.Debug, "failed to import standard library module")
+		}
+		return nil
 	}
 
 	if strings.HasPrefix(fileName, "@") {
 		fileName = strings.TrimPrefix(fileName, "@")
 		p, err := ir.runtime.GetPacker()
 		if err != nil {
-			return newErr(ErrImportError, fmt.Sprintf("failed to load packer registry"), node.Debug)
+			return exception.From(err, node.Debug, "failed to load packer registry")
 		}
 		name, err := p.ImportFile(fileName)
 		if err != nil {
-			return newErr(ErrImportError, fmt.Sprintf("failed to import file from packer registry: %s", fileName), node.Debug)
+			return exception.From(err, node.Debug, fmt.Sprintf("failed to import file from packer registry: %s", fileName))
 		}
 		fileName = name
 	}
@@ -59,12 +63,12 @@ func (ir *Interpreter) handleImport(node *astnode.Node) error {
 	if !ok {
 		nodes, err := native.NodesFromFile(path, path)
 		if err != nil {
-			return newErr(err, ErrImportError.Error(), node.Debug)
+			return exception.From(err, node.Debug, "failed to parse imported file")
 		}
 
 		imported = New(path, ir.runtime, true, ir.workdir)
 		if _, err := imported.Run(nodes); err != nil {
-			return newErr(err, ErrImportError.Error(), node.Debug)
+			return exception.From(err, node.Debug, "failed to execute imported file")
 		}
 		ir.runtime.AddInterpreter(path, imported)
 	}
@@ -83,15 +87,15 @@ func (ir *Interpreter) handleImport(node *astnode.Node) error {
 		for _, child := range node.Children {
 			name := child.Value.(string)
 			if _, ok := ir.GetObject(name); ok {
-				return newErr(ErrImportError, fmt.Sprintf("variable %s already exists, cannot redeclare", name), node.Debug)
+				return runExc("variable ('%s') already declared", name).WithDebug(node.Debug)
 			}
 
 			value, ok := imported.GetObject(child.Content)
 			if !ok {
-				return newErr(ErrImportError, fmt.Sprintf("failed to import object from package: %s", child.Value.(string)), node.Debug)
+				return exception.Create("failed to import ('%s') from %s", name, path).WithDebug(node.Debug)
 			}
 			if err := ir.Declare(name, value, value.Type(), false); err != nil {
-				return err
+				return exception.From(err, node.Debug, "failed to declare variable")
 			}
 		}
 	}
@@ -107,32 +111,35 @@ func (ir *Interpreter) stdImport(node *astnode.Node, fileName string) error {
 		}
 
 		if node.Kind == "SINGLE" {
-			return ir.Declare(node.Content, obj, obj.Type(), false)
+			if err := ir.Declare(node.Content, obj, obj.Type(), false); err != nil {
+				return wrapRunExc(err, node.Debug)
+			}
+			return nil
 		}
 
 		if node.Kind == "MULTIPLE" {
 			for _, child := range node.Children {
 				name := child.Value.(string)
 				if _, ok := ir.GetObject(name); ok {
-					return newErr(ErrImportError, fmt.Sprintf("variable %s already exists, cannot redeclare", name), node.Debug)
+					return runExc("cannot redeclare variable %q", name).WithDebug(node.Debug)
 				}
 
 				if obj.GetPrototype() == nil {
-					return newErr(ErrImportError, fmt.Sprintf("failed to import object from package: %s", child.Value.(string)), node.Debug)
+					return runExc("failed to import object from package: %s", child.Value.(string)).WithDebug(node.Debug)
 				}
 
 				value, ok := obj.GetPrototype().GetObject(child.Content)
 				if !ok {
-					return newErr(ErrImportError, fmt.Sprintf("failed to import object from package: %s", child.Value.(string)), node.Debug)
+					return runExc("failed to import object from package: %s", child.Value.(string)).WithDebug(node.Debug)
 				}
 
 				if err := ir.Declare(name, value, value.Type(), false); err != nil {
-					return err
+					return wrapRunExc(err, node.Debug)
 				}
 
 				return nil
 			}
 		}
 	}
-	return newErr(ErrImportError, fmt.Sprintf("failed to import package from standard library: %s", strings.TrimPrefix(fileName, "@std/")), node.Debug)
+	return runExc("failed to import %s from @std", strings.TrimPrefix(fileName, "@std/")).WithDebug(node.Debug)
 }

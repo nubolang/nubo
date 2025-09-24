@@ -16,7 +16,7 @@ func (i *Interpreter) handleReturn(node *astnode.Node) (language.Object, error) 
 
 	value, err := i.eval(node)
 	if err != nil {
-		return nil, err
+		return nil, wrapRunExc(err, node.Debug)
 	}
 
 	if value != nil {

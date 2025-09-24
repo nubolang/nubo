@@ -9,6 +9,7 @@ import (
 	"github.com/expr-lang/expr"
 	"github.com/nubolang/nubo/internal/ast/astnode"
 	"github.com/nubolang/nubo/internal/debug"
+	"github.com/nubolang/nubo/internal/exception"
 	"github.com/nubolang/nubo/language"
 )
 
@@ -59,7 +60,7 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 				if len(node.Body) == 1 {
 					if len(node.Body[0].ArrayAccess) > 0 {
 						if ob, err := i.checkGetter(obj, child); err != nil {
-							return nil, err
+							return nil, exception.From(err, node.Debug, "accessing getter failed")
 						} else {
 							obj = ob
 						}
@@ -82,7 +83,7 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 						if ok {
 							value, err := fn.Data(nil)
 							if err != nil {
-								return nil, err
+								return nil, exception.From(err, obj.Debug(), "function call failed: @err")
 							}
 							obj = value
 						}
@@ -91,7 +92,7 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 
 				if len(child.ArrayAccess) > 0 {
 					if ob, err := i.checkGetter(obj, child); err != nil {
-						return nil, err
+						return nil, exception.From(err, child.Debug, "accessing getter failed")
 					} else {
 						obj = ob
 					}
@@ -110,7 +111,7 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 		} else if child.Type == astnode.NodeTypeFunctionCall {
 			value, err := i.handleFunctionCall(child)
 			if err != nil {
-				return nil, err
+				return nil, exception.From(err, child.Debug, "function call failed: @err")
 			}
 
 			if len(node.Body) == 1 {
@@ -135,7 +136,11 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 			if len(node.Body) != 1 {
 				return nil, cannotOperateOn("<element>").WithDebug(node.Debug)
 			}
-			return i.evaluateElement(child)
+			ret, err := i.evaluateElement(child)
+			if err != nil {
+				return nil, exception.From(err, child.Debug, "element evaluation failed: @err")
+			}
+			return ret, nil
 		} else if child.Type == astnode.NodeTypeTemplateLiteral {
 			var st strings.Builder
 			for _, ch := range child.Children {
@@ -144,7 +149,7 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 				} else {
 					val, err := i.eval(ch.Value.(*astnode.Node))
 					if err != nil {
-						return nil, err
+						return nil, exception.From(err, ch.Debug, "", "template literal evaluation failed: @err")
 					}
 					st.WriteString(val.String())
 				}
@@ -277,7 +282,7 @@ func (i *Interpreter) evalList(node *astnode.Node, typ *language.Type) (language
 	for j, child := range node.Children {
 		obj, err := i.eval(child)
 		if err != nil {
-			return nil, err
+			return nil, exception.From(err, child.Debug, "failed to evaluate list element: @err")
 		}
 		list[j] = obj
 
@@ -315,12 +320,12 @@ func (i *Interpreter) evalDict(node *astnode.Node, keyType, valueType *language.
 
 		keyObj, err := i.eval(keyNode)
 		if err != nil {
-			return nil, err
+			return nil, exception.From(err, keyNode.Debug, "failed to evaluate dict key: @err")
 		}
 
 		valueObj, err := i.eval(pair.Children[0])
 		if err != nil {
-			return nil, err
+			return nil, exception.From(err, pair.Debug, "failed to evaluate dict value: @err")
 		}
 
 		keys = append(keys, keyObj)
@@ -367,7 +372,7 @@ func (i *Interpreter) checkGetter(obj language.Object, node *astnode.Node) (lang
 	for _, child := range node.ArrayAccess {
 		val, err := i.eval(child)
 		if err != nil {
-			return nil, err
+			return nil, exception.From(err, child.Debug, "failed to access getter: @err")
 		}
 
 		if obj.GetPrototype() == nil {
@@ -386,7 +391,7 @@ func (i *Interpreter) checkGetter(obj language.Object, node *astnode.Node) (lang
 
 		value, err := getterFn.Data([]language.Object{val})
 		if err != nil {
-			return nil, err
+			return nil, exception.From(err, child.Debug, "function call failed: @err")
 		}
 
 		obj = value

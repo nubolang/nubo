@@ -12,8 +12,9 @@ func xdbg(node *astnode.Node) (language.Object, error) {
 	}
 
 	return n.Dict(map[any]any{
-		"line":   node.Debug.Line,
-		"column": node.Debug.Column,
-		"file":   node.Debug.File,
+		"line":      node.Debug.Line,
+		"column":    node.Debug.Column,
+		"columnEnd": node.Debug.ColumnEnd,
+		"file":      node.Debug.File,
 	}, node.Debug)
 }

@@ -2,6 +2,7 @@ package interpreter
 
 import (
 	"github.com/nubolang/nubo/internal/ast/astnode"
+	"github.com/nubolang/nubo/internal/exception"
 	"github.com/nubolang/nubo/language"
 	"github.com/nubolang/nubo/native/n"
 )
@@ -15,17 +16,17 @@ type Iterator interface {
 func (i *Interpreter) handleFor(node *astnode.Node) (language.Object, error) {
 	kv, ok := node.Value.(*astnode.ForValue)
 	if !ok {
-		return nil, runExc("expected a valid for cycle body").WithDebug(node.Debug)
+		return nil, runExc("expected a valid for cycle").WithDebug(node.Debug)
 	}
 
 	expr, err := i.eval(node.Args[0])
 	if err != nil {
-		return nil, err
+		return nil, exception.From(err, expr.Debug(), "failed to evaluate expression")
 	}
 
 	iterator, ok := expr.(Iterator)
 	if !ok {
-		return nil, runExc("expected iterator, got %s(%v)", expr.Type(), expr.Value()).WithDebug(expr.Debug())
+		return nil, runExc("expected iterator, got '%s' with value '%v'", expr.Type(), expr.Value()).WithDebug(expr.Debug())
 	}
 
 	iterate := iterator.Iterator()

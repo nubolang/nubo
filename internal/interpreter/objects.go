@@ -24,7 +24,7 @@ func hashKey(key string) uint32 {
 
 func (i *Interpreter) Declare(name string, value language.Object, typ *language.Type, mutable bool) error {
 	if strings.Contains(name, ".") {
-		return newErr(ErrImmutableVariable, "Cannot declare nested variables", nil)
+		return runExc("cannot declare nested variables").WithDebug(value.Debug())
 	}
 	return i.declareInCurrentScope(name, value, typ, mutable)
 }
@@ -45,19 +45,19 @@ func (i *Interpreter) Assign(name string, value language.Object) error {
 
 	if i.scope == ScopeBlock && i.parent != nil {
 		if i.isConstInParent(name) {
-			return newErr(ErrImmutableVariable, fmt.Sprintf("Cannot reassign to constant %s", name), value.Debug())
+			return runExc("cannot reassign constant %q", name).WithDebug(value.Debug())
 		}
 
 		return i.parent.Assign(name, value)
 	}
 
-	return newErr(ErrUndefinedVariable, fmt.Sprintf("Undefined variable %s", name), value.Debug())
+	return wrapRunExc(assignErr, value.Debug())
 }
 
 func (i *Interpreter) assignNested(name string, value language.Object) error {
 	parts := strings.Split(name, ".")
 	if len(parts) < 2 {
-		return newErr(ErrUndefinedVariable, fmt.Sprintf("Invalid nested name %s", name), value.Debug())
+		return runExc("invalid nested name %q", name).WithDebug(value.Debug())
 	}
 
 	i.mu.RLock()
@@ -67,26 +67,26 @@ func (i *Interpreter) assignNested(name string, value language.Object) error {
 		if i.parent != nil {
 			return i.parent.assignNested(name, value)
 		}
-		return newErr(ErrUndefinedVariable, fmt.Sprintf("Undefined variable %s", parts[0]), value.Debug())
+		return runExc("undefined variable %q", parts[0]).WithDebug(value.Debug())
 	}
 
 	current := obj.value
 	for _, part := range parts[1 : len(parts)-1] {
 		proto := current.GetPrototype()
 		if proto == nil {
-			return newErr(ErrUndefinedVariable, fmt.Sprintf("Undefined property %s", part), nil)
+			return runExc("undefined property %q", part).WithDebug(value.Debug())
 		}
 		var ok bool
 		current, ok = proto.GetObject(part)
 		if !ok || current == nil {
-			return newErr(ErrUndefinedVariable, fmt.Sprintf("Undefined property '%s'", part), nil)
+			return runExc("undefined property %q", part).WithDebug(value.Debug())
 		}
 	}
 
 	lastKey := parts[len(parts)-1]
 	proto := current.GetPrototype()
 	if proto == nil {
-		return newErr(ErrUndefinedVariable, fmt.Sprintf("No prototype for %s", name), value.Debug())
+		return runExc("no prototype for %q", name).WithDebug(value.Debug())
 	}
 
 	// fallback: call set(name, value)
@@ -100,7 +100,7 @@ func (i *Interpreter) assignNested(name string, value language.Object) error {
 		return nil
 	}
 
-	return newErr(ErrPrototype, fmt.Sprintf("Failed to assign %s", name), value.Debug())
+	return runExc("failed to assign %q", name).WithDebug(value.Debug())
 }
 
 func (i *Interpreter) assignInCurrentScope(name string, value language.Object) error {
@@ -113,17 +113,17 @@ func (i *Interpreter) assignInCurrentScope(name string, value language.Object) e
 	for e := head; e != nil; e = e.next {
 		if e.key == name {
 			if !e.mutable {
-				return newErr(ErrImmutableVariable, fmt.Sprintf("Cannot assign to immutable variable %s", name), e.value.Debug())
+				return runExc("cannot assign to immutable variable %q", name).WithDebug(value.Debug())
 			}
 			if e.typ != nil && !e.typ.Compare(value.Type()) {
-				return newErr(ErrTypeMismatch, fmt.Sprintf("Variable \"%s\" type is expected to be %s, got %s", name, e.typ, value.Type()), value.Debug())
+				return typeError("variable %q type is expected to be %s, got %s", name, e.typ, value.Type()).WithDebug(value.Debug())
 			}
 			e.value = value
 			return nil
 		}
 	}
 
-	return fmt.Errorf("not found in current scope")
+	return runExc("assigment: not found in current scope").WithDebug(value.Debug())
 }
 
 func (i *Interpreter) declareInCurrentScope(name string, value language.Object, typ *language.Type, mutable bool) error {

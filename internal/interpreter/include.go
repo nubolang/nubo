@@ -10,14 +10,16 @@ import (
 )
 
 func (ir *Interpreter) handleInclude(node *astnode.Node) error {
-	_, err := ir.includeValue(node)
-	return err
+	if _, err := ir.includeValue(node); err != nil {
+		return wrapRunExc(err, node.Debug)
+	}
+	return nil
 }
 
 func (ir *Interpreter) includeValue(node *astnode.Node) (language.Object, error) {
 	value, err := ir.eval(node.Value.(*astnode.Node))
 	if err != nil {
-		return nil, err
+		return nil, wrapRunExc(err, node.Debug)
 	}
 
 	fileName := value.String()
@@ -37,7 +39,7 @@ func (ir *Interpreter) includeValue(node *astnode.Node) (language.Object, error)
 
 	nodes, err := native.NodesFromFile(path, path)
 	if err != nil {
-		return nil, newErr(err, ErrImportError.Error(), node.Debug)
+		return nil, wrapRunExc(err, node.Debug, "failed to tokenize file")
 	}
 
 	inc := newInclude(resolveIncludePath(ir.currentFile, fileName, ir.workdir), ir.runtime, ir.dependent, ir.workdir)
@@ -46,7 +48,11 @@ func (ir *Interpreter) includeValue(node *astnode.Node) (language.Object, error)
 	ir.includes = append(ir.includes, inc)
 	ir.mu.Unlock()
 
-	return inc.Run(nodes)
+	ob, err := inc.Run(nodes)
+	if err != nil {
+		return nil, wrapRunExc(err, node.Debug, "failed to execute included file")
+	}
+	return ob, nil
 }
 
 func newInclude(file string, runtime Runtime, dependent bool, wd string) *Interpreter {

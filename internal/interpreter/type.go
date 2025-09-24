@@ -30,7 +30,7 @@ func (i *Interpreter) stringToType(s string, dg *debug.Debug) (*language.Type, e
 	case "html":
 		return language.TypeHtml, nil
 	default:
-		return nil, newErr(ErrTypeMismatch, fmt.Sprintf("unknown type: %s", s), dg)
+		return nil, typeError("invalid type '%s'", s).WithDebug(dg)
 	}
 }
 
@@ -40,7 +40,7 @@ func (i *Interpreter) parseTypeNode(n *astnode.Node) (*language.Type, error) {
 	}
 
 	if n.Type != astnode.NodeTypeType {
-		return nil, fmt.Errorf("expected node type 'type', got '%s'", n.Type)
+		return nil, runExc("expected node type 'type', got '%s'", n.Type).WithDebug(n.Debug)
 	}
 
 	t := &language.Type{
@@ -54,7 +54,7 @@ func (i *Interpreter) parseTypeNode(n *astnode.Node) (*language.Type, error) {
 		}
 		elem, err := i.parseTypeNode(n.Body[0])
 		if err != nil {
-			return nil, err
+			return nil, wrapRunExc(err, n.Body[0].Debug)
 		}
 		t.Element = elem
 		t.BaseType = language.ObjectTypeList
@@ -65,11 +65,11 @@ func (i *Interpreter) parseTypeNode(n *astnode.Node) (*language.Type, error) {
 		}
 		key, err := i.parseTypeNode(n.Body[0])
 		if err != nil {
-			return nil, err
+			return nil, wrapRunExc(err, n.Body[0].Debug)
 		}
 		val, err := i.parseTypeNode(n.Body[1])
 		if err != nil {
-			return nil, err
+			return nil, wrapRunExc(err, n.Body[1].Debug)
 		}
 		t.Key = key
 		t.Value = val
@@ -81,14 +81,14 @@ func (i *Interpreter) parseTypeNode(n *astnode.Node) (*language.Type, error) {
 		}
 		ret, err := i.parseTypeNode(n.ValueType)
 		if err != nil {
-			return nil, err
+			return nil, wrapRunExc(err, n.ValueType.Debug)
 		}
 		t.Value = ret
 
 		for _, arg := range n.Args {
 			argType, err := i.parseTypeNode(arg)
 			if err != nil {
-				return nil, err
+				return nil, wrapRunExc(err, arg.Debug)
 			}
 			t.Args = append(t.Args, argType)
 		}
@@ -101,7 +101,7 @@ func (i *Interpreter) parseTypeNode(n *astnode.Node) (*language.Type, error) {
 	if err != nil {
 		ob, ok := i.GetObject(n.Content)
 		if !ok || ob.Type().Base() != language.ObjectTypeStructDefinition {
-			return nil, newErr(ErrTypeMismatch, fmt.Sprintf("unknown type: %s", n.Content), n.Debug)
+			return nil, runExc("unknown type: %q", n.Content).WithDebug(n.Debug)
 		}
 		return ob.Type(), nil
 	}
@@ -114,7 +114,7 @@ func (i *Interpreter) checkAddUnionType(t *language.Type, n *astnode.Node) (*lan
 	if len(n.Children) > 0 {
 		next, err := i.parseTypeNode(n.Children[0])
 		if err != nil {
-			return nil, err
+			return nil, wrapRunExc(err, n.Debug)
 		}
 
 		union := language.NewUnionType(t, next)

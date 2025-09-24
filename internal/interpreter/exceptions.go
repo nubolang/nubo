@@ -11,8 +11,12 @@ func runExc(format string, args ...any) *exception.Expection {
 	return exception.Create(format, args...).WithLevel(exception.LevelRuntime)
 }
 
-func wrapRunExc(err error, dg *debug.Debug) *exception.Expection {
-	return exception.From(err, dg).WithLevel(exception.LevelRuntime)
+func valueExc(format string, args ...any) *exception.Expection {
+	return exception.Create(format, args...).WithLevel(exception.LevelValue)
+}
+
+func wrapRunExc(err error, dg *debug.Debug, msg ...string) *exception.Expection {
+	return exception.From(err, dg, msg...).WithLevel(exception.LevelRuntime)
 }
 
 func undefinedVariable(name string) *exception.Expection {
@@ -24,7 +28,7 @@ func cannotOperateOn(typ any) *exception.Expection {
 }
 
 func expressionError(msg string) *exception.Expection {
-	return runExc("failed to evaluate expression: %s", msg)
+	return exception.Create("failed to evaluate expression: %s", msg).WithLevel(exception.LevelValue)
 }
 
 func typeError(format string, args ...any) *exception.Expection {
@@ -41,4 +45,8 @@ func argError(excepted, got int) *exception.Expection {
 
 func importError(format string, args ...any) *exception.Expection {
 	return runExc(fmt.Sprintf("failed to import - %s", fmt.Sprintf(format, args...)))
+}
+
+func protoErr(format string, args ...any) *exception.Expection {
+	return runExc(fmt.Sprintf("prototype error - %s", fmt.Sprintf(format, args...)))
 }

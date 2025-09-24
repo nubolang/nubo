@@ -1,24 +1,22 @@
 package interpreter
 
 import (
-	"fmt"
-
 	"github.com/nubolang/nubo/internal/ast/astnode"
 	"github.com/nubolang/nubo/language"
 )
 
 func (i *Interpreter) handleWhile(node *astnode.Node) (language.Object, error) {
 	if len(node.Args) != 1 {
-		return nil, newErr(ErrAst, "Something went wrong with creating while statement", node.Debug)
+		return nil, runExc("expected a valid while statement").WithDebug(node.Debug)
 	}
 
 	condition := func() (bool, error) {
 		ok, err := i.eval(node.Args[0])
 		if err != nil {
-			return false, err
+			return false, wrapRunExc(err, node.Debug)
 		}
 		if ok.Type() != language.TypeBool {
-			return false, newErr(ErrValueError, fmt.Sprintf("expected bool, got %s: %s", ok.Type(), ok.Value()), ok.Debug())
+			return false, valueExc("expected bool, got %s with value %s", ok.Type(), ok.Value()).WithDebug(ok.Debug())
 		}
 		return ok.Value().(bool), nil
 	}
@@ -26,7 +24,7 @@ func (i *Interpreter) handleWhile(node *astnode.Node) (language.Object, error) {
 	for {
 		ok, err := condition()
 		if err != nil {
-			return nil, err
+			return nil, wrapRunExc(err, node.Debug)
 		}
 
 		if !ok {
@@ -36,7 +34,7 @@ func (i *Interpreter) handleWhile(node *astnode.Node) (language.Object, error) {
 		ir := NewWithParent(i, ScopeBlock, "while")
 		ob, err := ir.Run(node.Body)
 		if err != nil {
-			return nil, err
+			return nil, wrapRunExc(err, node.Debug)
 		}
 		if ob != nil {
 			if ob.Type().Base() == language.ObjectTypeSignal {
@@ -46,7 +44,7 @@ func (i *Interpreter) handleWhile(node *astnode.Node) (language.Object, error) {
 				if ob.String() == "continue" {
 					continue
 				}
-				return nil, newErr(ErrInvalid, fmt.Sprintf("invalid language singnal: %s", ob.String()), ob.Debug())
+				return nil, runExc("invalid language signal: %q", ob.String()).WithDebug(ob.Debug())
 			}
 			return ob, nil
 		}

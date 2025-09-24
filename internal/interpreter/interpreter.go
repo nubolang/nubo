@@ -7,6 +7,7 @@ import (
 	"github.com/nubolang/nubo/events"
 	"github.com/nubolang/nubo/internal/ast/astnode"
 	"github.com/nubolang/nubo/internal/debug"
+	"github.com/nubolang/nubo/internal/exception"
 	"github.com/nubolang/nubo/language"
 	"github.com/nubolang/nubo/packer"
 )
@@ -100,7 +101,7 @@ func (i *Interpreter) Run(nodes []*astnode.Node) (language.Object, error) {
 	for _, node := range nodes {
 		obj, err := i.handleNode(node)
 		if err != nil {
-			return nil, err
+			return nil, exception.From(err, node.Debug, "failed to handle node: @err")
 		}
 		if obj != nil {
 			if i.parent != nil && node.Type == astnode.NodeTypeFunctionCall && i.scope == ScopeFunction {

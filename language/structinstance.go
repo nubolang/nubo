@@ -66,6 +66,18 @@ func (i *StructInstance) TypeString() string {
 }
 
 func (i *StructInstance) String() string {
+	if proto := i.GetPrototype(); proto != nil {
+		if str, ok := proto.GetObject("__string__"); ok {
+			if strFn, ok := str.(*Function); ok {
+				if len(strFn.ArgTypes) == 0 && strFn.ReturnType.Compare(TypeString) {
+					if s, err := strFn.Data(nil); err == nil {
+						return s.String()
+					}
+				}
+			}
+		}
+	}
+
 	if len(i.base.Data) == 0 {
 		return fmt.Sprintf("(struct) %s{}", i.Name)
 	}

@@ -12,7 +12,7 @@ import (
 type Level string
 
 const (
-	LevelNone     Level = ""
+	LevelNone     Level = "UnknownError"
 	LevelSyntax   Level = "SyntaxError"
 	LevelSemantic Level = "SemanticError"
 	LevelRuntime  Level = "RuntimeError"
@@ -45,7 +45,8 @@ func From(err error, dg *debug.Debug, otherwise ...string) *Expection {
 	}
 
 	if len(otherwise) > 0 {
-		return Create(otherwise[0], err).WithBase(err).WithDebug(dg)
+		otherwise[0] = strings.ReplaceAll(otherwise[0], "@err", err.Error())
+		return Create(otherwise[0]).WithBase(err).WithDebug(dg)
 	}
 
 	return Create("%v", err).WithDebug(dg)
@@ -70,11 +71,22 @@ func (e *Expection) WithDebug(debug *debug.Debug) *Expection {
 }
 
 func (e *Expection) WithTrace(trace *debug.Debug) *Expection {
-	e.trace = append(e.trace, trace)
+	if trace == nil {
+		return e
+	}
+
+	if len(e.trace) == 0 || e.trace[len(e.trace)-1] != trace {
+		e.trace = append(e.trace, trace)
+	}
+
 	return e
 }
 
 func (e *Expection) Error() string {
+	if e == nil {
+		return "unknown exception"
+	}
+
 	var sb strings.Builder
 
 	if e.level != LevelNone {
@@ -92,15 +104,24 @@ func (e *Expection) Error() string {
 
 	blue := color.New(color.FgHiBlue).SprintFunc()
 	if e.debug != nil {
-		sb.WriteString(" at ")
+		sb.WriteRune(' ')
+		sb.WriteString(color.New(color.FgCyan).Sprint("at"))
+		sb.WriteRune(' ')
 
 		if e.debug != nil {
 			sb.WriteString(fmt.Sprintf("%s:%s:%s", blue(e.debug.File), blue(e.debug.Line), blue(e.debug.Column)))
+
+			code, ok := showConsoleCodeError(e.debug.File, e.debug.Line)
+			if ok {
+				sb.WriteString(fmt.Sprintf("\n%s", code))
+			}
 		}
 	}
 
 	if len(e.trace) > 0 {
-		sb.WriteString("\nTrace:")
+		sb.WriteRune('\n')
+		sb.WriteString(color.New(color.FgYellow, color.Bold).Sprint("trace"))
+		sb.WriteRune(':')
 		for _, trace := range e.trace {
 			sb.WriteString(fmt.Sprintf("\n\t%s:%s:%s", blue(trace.File), blue(trace.Line), blue(trace.Column)))
 		}

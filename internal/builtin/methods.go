@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/nubolang/nubo/internal/debug"
+	"github.com/nubolang/nubo/internal/exception"
 	"github.com/nubolang/nubo/language"
 	"github.com/nubolang/nubo/native"
 	"github.com/nubolang/nubo/native/n"
@@ -472,7 +473,7 @@ func envFn(a *n.Args) (any, error) {
 func failFn(a *n.Args) (any, error) {
 	message := a.Name("message")
 
-	return nil, debug.NewError(nil, message.String(), message.Debug())
+	return nil, exception.Create(message.String()).WithDebug(message.Debug()).WithLevel(exception.LevelRuntime)
 }
 
 func isNilFn(a *n.Args) (any, error) {

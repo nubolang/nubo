@@ -1,31 +1,30 @@
 package interpreter
 
 import (
-	"fmt"
-
 	"github.com/nubolang/nubo/internal/ast/astnode"
+	"github.com/nubolang/nubo/internal/exception"
 	"github.com/nubolang/nubo/language"
 )
 
 func (i *Interpreter) handleIf(node *astnode.Node) (language.Object, error) {
 	if len(node.Args) != 1 {
-		return nil, newErr(ErrAst, "Something went wrong with creating if statement", node.Debug)
+		return nil, exception.Create("invalid or malformed if statement condition").WithDebug(node.Debug).WithLevel(exception.LevelSemantic)
 	}
 
 	condition := func() (bool, error) {
 		ok, err := i.eval(node.Args[0])
 		if err != nil {
-			return false, err
+			return false, exception.From(err, node.Args[0].Debug, "failed to evaluate condition: @err")
 		}
 		if ok.Type() != language.TypeBool {
-			return false, newErr(ErrValueError, fmt.Sprintf("expected bool, got %s: %s", ok.Type(), ok.Value()), ok.Debug())
+			return false, typeError("condition expected to be type bool, got %s with value: %s", ok.Type(), ok.Value()).WithDebug(ok.Debug())
 		}
 		return ok.Value().(bool), nil
 	}
 
 	ok, err := condition()
 	if err != nil {
-		return nil, err
+		return nil, exception.From(err, node.Debug, "failed to evaluate condition: @err")
 	}
 
 	var execNodes []*astnode.Node
@@ -39,7 +38,7 @@ func (i *Interpreter) handleIf(node *astnode.Node) (language.Object, error) {
 		ir := NewWithParent(i, ScopeBlock)
 		ob, err := ir.Run(execNodes)
 		if err != nil {
-			return nil, err
+			return nil, exception.From(err, node.Debug, "failed to execute statement body: @err")
 		}
 		if ob != nil {
 			return ob, nil

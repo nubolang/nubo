@@ -2,6 +2,7 @@ package n
 
 import (
 	"github.com/nubolang/nubo/internal/debug"
+	"github.com/nubolang/nubo/internal/exception"
 	"github.com/nubolang/nubo/language"
 )
 
@@ -92,7 +93,7 @@ func Function(describe *FnDescriber, fn func(*Args) (any, error)) *language.Func
 
 		value, err := fn(userArgs)
 		if err != nil {
-			return nil, err
+			return nil, exception.From(err, dg)
 		}
 
 		return language.FromValue(value, true, dg)

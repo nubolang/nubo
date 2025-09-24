@@ -1,8 +1,6 @@
 package interpreter
 
 import (
-	"fmt"
-
 	"github.com/nubolang/nubo/internal/ast/astnode"
 	"github.com/nubolang/nubo/language"
 )
@@ -14,7 +12,7 @@ func (i *Interpreter) handleStruct(node *astnode.Node) error {
 	for inx, field := range node.Body {
 		typ, err := i.parseTypeNode(field.ValueType)
 		if err != nil {
-			return newErr(ErrTypeMismatch, err.Error(), node.Debug)
+			return wrapRunExc(err, node.Debug)
 		}
 
 		body[inx] = language.StructField{
@@ -25,58 +23,69 @@ func (i *Interpreter) handleStruct(node *astnode.Node) error {
 
 	definition := language.NewStruct(name, body, node.Debug)
 
-	return i.Declare(name, definition, definition.Type(), false)
+	if err := i.Declare(name, definition, definition.Type(), false); err != nil {
+		return wrapRunExc(err, node.Debug)
+	}
+	return nil
 }
 
 func (i *Interpreter) handleStructCreation(obj language.Object, node *astnode.Node) (language.Object, error) {
 	definition, ok := obj.(*language.Struct)
 	if !ok {
-		return nil, newErr(ErrTypeMismatch, fmt.Sprintf("expected struct, got %s", obj.Type()), node.Debug)
+		return nil, typeError("expected (struct), got %s", obj.Type()).WithDebug(node.Debug)
 	}
 
 	var args = make([]language.Object, len(node.Args))
 	for j, arg := range node.Args {
 		value, err := i.eval(arg)
 		if err != nil {
-			return nil, err
+			return nil, wrapRunExc(err, arg.Debug)
 		}
 		args[j] = value.Clone()
 	}
 
 	instance, err := definition.NewInstance()
 	if err != nil {
-		return nil, newErr(ErrStructInstantiation, err.Error(), node.Debug)
+		return nil, wrapRunExc(err, node.Debug)
 	}
 
 	if newer, ok := instance.GetPrototype().GetObject("init"); ok {
 		fn, ok := newer.(*language.Function)
 		if !ok {
-			return nil, newErr(ErrTypeMismatch, fmt.Sprintf("expected function, got %s", newer.Type()), node.Debug)
+			return nil, typeError("expected function, got %s", newer.Type()).WithDebug(node.Debug)
 		}
 
 		var args = make([]language.Object, len(node.Args))
 		for j, arg := range node.Args {
 			value, err := i.eval(arg)
 			if err != nil {
-				return nil, err
+				return nil, wrapRunExc(err, arg.Debug)
 			}
 			args[j] = value.Clone()
 		}
 
 		inst, err := fn.Data(args)
 		if err != nil {
-			return nil, err
+			return nil, wrapRunExc(err, node.Debug)
 		}
 
 		if len(node.Children) == 1 {
-			return i.getValueFromObjByNode(instance, node.Children[0])
+			ob, err := i.getValueFromObjByNode(instance, node.Children[0])
+			if err != nil {
+				return nil, wrapRunExc(err, node.Children[0].Debug)
+			}
+			return ob, nil
 		}
 
 		return inst, nil
 	}
 
 	if len(node.Children) == 1 {
-		return i.getValueFromObjByNode(instance, node.Children[0])
+		ob, err := i.getValueFromObjByNode(instance, node.Children[0])
+		if err != nil {
+			return nil, wrapRunExc(err, node.Children[0].Debug)
+		}
+		return ob, nil
 	}
 
 	return instance, nil
