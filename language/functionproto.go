@@ -50,7 +50,25 @@ func NewFunctionPrototype(base *Function) *FunctionPrototype {
 		argObjs[i] = dict
 	}
 
-	fp.SetObject("args", NewList(argObjs, NewDictType(TypeString, TypeAny), base.debug))
+	fp.SetObject("__args__", NewList(argObjs, NewDictType(TypeString, TypeAny), base.debug))
+
+	typ := base.ReturnType
+	typs := make([]Object, 0)
+	for {
+		typs = append(typs, NewString(typ.String(), base.debug))
+		if typ.Next == nil {
+			break
+		}
+		typ = typ.Next
+	}
+
+	var realTyp Object
+	if len(typs) == 1 {
+		realTyp = typs[0]
+	} else {
+		realTyp = NewList(typs, TypeString, base.debug)
+	}
+	fp.SetObject("__returns__", realTyp)
 
 	return fp
 }

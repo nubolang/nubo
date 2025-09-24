@@ -58,6 +58,35 @@ func inxPP(tokens []*lexer.Token, inx *int) error {
 	return nil
 }
 
+func inxNlPP(tokens []*lexer.Token, inx *int) error {
+	reportCaller := func() string {
+		pc, file, line, ok := runtime.Caller(2)
+		if !ok {
+			return "unknown caller"
+		}
+		fn := runtime.FuncForPC(pc)
+		return fmt.Sprintf("called from %s (%s:%d)", fn.Name(), file, line)
+	}
+
+	if *inx >= len(tokens) {
+		msg := fmt.Sprintf("unexpected end of input [%s]", reportCaller())
+		return debug.NewError(ErrSyntaxError, msg, tokens[*inx-1].Debug)
+	}
+
+	*inx++
+
+	for *inx < len(tokens) && (slices.Contains(white, tokens[*inx].Type) || tokens[*inx].Type == lexer.TokenNewLine) {
+		*inx++
+	}
+
+	if *inx >= len(tokens) {
+		msg := fmt.Sprintf("unexpected end of input [%s]", reportCaller())
+		return debug.NewError(ErrSyntaxError, msg, tokens[*inx-1].Debug)
+	}
+
+	return nil
+}
+
 func skipSemi(tokens []*lexer.Token, inx *int, node *astnode.Node) *astnode.Node {
 	if *inx >= len(tokens) {
 		return node

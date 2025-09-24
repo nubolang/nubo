@@ -178,7 +178,7 @@ bodyloop:
 }
 
 func fnArgumentParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, inx *int) (*astnode.Node, bool, error) {
-	if err := inxPP(tokens, inx); err != nil {
+	if err := inxNlPP(tokens, inx); err != nil {
 		return nil, false, err
 	}
 
@@ -197,13 +197,13 @@ func fnArgumentParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token
 		Debug:   token.Debug,
 	}
 
-	if err := inxPP(tokens, inx); err != nil {
+	if err := inxNlPP(tokens, inx); err != nil {
 		return nil, false, err
 	}
 
 	token = tokens[*inx]
 	if token.Type == lexer.TokenColon {
-		if err := inxPP(tokens, inx); err != nil {
+		if err := inxNlPP(tokens, inx); err != nil {
 			return nil, false, err
 		}
 
@@ -251,6 +251,13 @@ func fnArgumentParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token
 		if token.Type == lexer.TokenComma {
 			return node, false, nil
 		}
+	}
+
+	if token.Type == lexer.TokenNewLine {
+		if err := inxNlPP(tokens, inx); err != nil {
+			return nil, false, err
+		}
+		token = tokens[*inx]
 	}
 
 	if token.Type != lexer.TokenCloseParen {

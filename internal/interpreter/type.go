@@ -5,6 +5,7 @@ import (
 
 	"github.com/nubolang/nubo/internal/ast/astnode"
 	"github.com/nubolang/nubo/internal/debug"
+	"github.com/nubolang/nubo/internal/exception"
 	"github.com/nubolang/nubo/language"
 )
 
@@ -60,7 +61,7 @@ func (i *Interpreter) parseTypeNode(n *astnode.Node) (*language.Type, error) {
 		return i.checkAddUnionType(t, n)
 	case "DICT":
 		if len(n.Body) != 2 {
-			return nil, fmt.Errorf("DICT must have exactly two body elements")
+			return nil, exception.Create("DICT must have exactly two body elements, got %d", len(n.Body)).WithLevel(exception.LevelType).WithDebug(n.Debug)
 		}
 		key, err := i.parseTypeNode(n.Body[0])
 		if err != nil {

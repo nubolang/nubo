@@ -1,0 +1,16 @@
+let x = {
+    // x
+    title: /* */ "name", //
+    content: { //
+        id: 5,
+    }
+}
+
+
+fn y(
+    z: string = "hello",
+    age: int = 18
+) html {}
+
+println(y.__args__)
+println(y.__returns__)

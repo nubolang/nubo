@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/nubolang/nubo/internal/ast/astnode"
+	"github.com/nubolang/nubo/internal/exception"
 	"github.com/nubolang/nubo/internal/lexer"
 )
 
@@ -35,18 +36,11 @@ loop:
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		default:
-			if err := inxPP(tokens, inx); err != nil {
+			if err := inxNlPP(tokens, inx); err != nil {
 				return nil, err
 			}
 
 			token := tokens[*inx]
-			if token.Type == lexer.TokenNewLine {
-				if err := nl(tokens, inx); err != nil {
-					return nil, err
-				}
-				token = tokens[*inx]
-			}
-
 			if token.Type == lexer.TokenCloseBrace {
 				break loop
 			}
@@ -103,7 +97,7 @@ loop:
 			token = tokens[*inx]
 
 			if token.Type == lexer.TokenNewLine {
-				if err := inxPP(tokens, inx); err != nil {
+				if err := inxNlPP(tokens, inx); err != nil {
 					return nil, err
 				}
 
@@ -120,7 +114,7 @@ loop:
 				break loop
 			}
 
-			return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("expected ',' or newline, got '%s'", token.Value), node.Debug)
+			return nil, exception.Create("expected \",\", got %q", token.Value).WithLevel(exception.LevelSemantic).WithDebug(node.Debug)
 		}
 	}
 
