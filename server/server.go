@@ -78,7 +78,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var cached bool
 	start := time.Now()
 
-	if os.Getenv("NUBO_DEV") == "true" {
+	if os.Getenv("NUBO_DEV") == "true" && s.isDir {
 		_ = s.router.Reload()
 	}
 
