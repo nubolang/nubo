@@ -49,83 +49,92 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 		if child.Type == astnode.NodeTypeValue || child.Type == astnode.NodeTypeFunctionArgument {
 			id := "var_" + fmt.Sprintf("%d", inx)
 			inx++
-			sb.WriteString(id)
 
 			if child.IsReference {
-				obj, ok := i.GetObject(child.Value.(string))
-				if !ok {
-					return nil, undefinedVariable(child.Value.(string)).WithDebug(node.Debug)
-				}
+				sb.WriteString(id + "()")
+				obFn := func() (any, error) {
+					obj, ok := i.GetObject(child.Value.(string))
+					if !ok {
+						return nil, undefinedVariable(child.Value.(string)).WithDebug(node.Debug)
+					}
 
-				if len(node.Body) == 1 {
-					if len(node.Body[0].ArrayAccess) > 0 {
+					if len(node.Body) == 1 {
+						if len(node.Body[0].ArrayAccess) > 0 {
+							if ob, err := i.checkGetter(obj, child); err != nil {
+								return nil, exception.From(err, node.Debug, "accessing getter failed")
+							} else {
+								obj = ob
+							}
+						}
+
+						return obj, nil
+					}
+
+					if obj.Type().Base() == language.ObjectTypeStructDefinition {
+						if len(node.Body) == 1 {
+							return obj, nil
+						}
+						return nil, cannotOperateOn("(struct) " + obj.Type().Content).WithDebug(obj.Debug())
+					}
+
+					if obj.Type().Base() == language.ObjectTypeStructInstance {
+						value, ok := obj.GetPrototype().GetObject("__value__")
+						if ok && language.NewFunctionType(language.TypeAny).Compare(value.Type()) {
+							fn, ok := value.(*language.Function)
+							if ok {
+								value, err := fn.Data(nil)
+								if err != nil {
+									return nil, exception.From(err, obj.Debug(), "function call failed: @err")
+								}
+								obj = value
+							}
+						}
+					}
+
+					if len(child.ArrayAccess) > 0 {
 						if ob, err := i.checkGetter(obj, child); err != nil {
-							return nil, exception.From(err, node.Debug, "accessing getter failed")
+							return nil, exception.From(err, child.Debug, "accessing getter failed")
 						} else {
 							obj = ob
 						}
 					}
 
-					return obj, nil
-				}
-
-				if obj.Type().Base() == language.ObjectTypeStructDefinition {
-					if len(node.Body) == 1 {
-						return obj, nil
+					if isNotEvaluable(obj.Type().Base()) {
+						return nil, cannotOperateOn(obj.Type()).WithDebug(obj.Debug())
 					}
-					return nil, cannotOperateOn("(struct) " + obj.Type().Content).WithDebug(obj.Debug())
+
+					return obj.Value(), nil
 				}
 
-				if obj.Type().Base() == language.ObjectTypeStructInstance {
-					value, ok := obj.GetPrototype().GetObject("__value__")
-					if ok && language.NewFunctionType(language.TypeAny).Compare(value.Type()) {
-						fn, ok := value.(*language.Function)
-						if ok {
-							value, err := fn.Data(nil)
-							if err != nil {
-								return nil, exception.From(err, obj.Debug(), "function call failed: @err")
-							}
-							obj = value
-						}
-					}
-				}
-
-				if len(child.ArrayAccess) > 0 {
-					if ob, err := i.checkGetter(obj, child); err != nil {
-						return nil, exception.From(err, child.Debug, "accessing getter failed")
-					} else {
-						obj = ob
-					}
-				}
-
-				if isNotEvaluable(obj.Type().Base()) {
-					return nil, cannotOperateOn(obj.Type()).WithDebug(obj.Debug())
-				}
-
-				env[id] = obj.Value()
+				env[id] = obFn
 			} else {
+				sb.WriteString(id)
 				env[id] = child.Value
 			}
 		} else if child.Type == astnode.NodeTypeOperator {
 			sb.WriteString(child.Kind)
 		} else if child.Type == astnode.NodeTypeFunctionCall {
-			value, err := i.handleFunctionCall(child)
-			if err != nil {
-				return nil, exception.From(err, child.Debug, "function call failed: @err")
-			}
+			valueFn := func() (any, error) {
+				value, err := i.handleFunctionCall(child)
+				if err != nil {
+					return nil, exception.From(err, child.Debug, "function call failed: @err")
+				}
 
-			if len(node.Body) == 1 {
-				return value, nil
-			}
+				if len(node.Body) == 1 {
+					return value, nil
+				}
 
-			if isNotEvaluable(value.Type().Base()) {
-				return nil, cannotOperateOn(value.Type()).WithDebug(value.Debug())
+				if isNotEvaluable(value.Type().Base()) {
+					return nil, cannotOperateOn(value.Type()).WithDebug(value.Debug())
+				}
+
+				return value.Value(), nil
 			}
 
 			id := "var_" + fmt.Sprintf("%d", inx)
 			inx++
-			sb.WriteString(id)
-			env[id] = value.Value()
+			sb.WriteString(id + "()")
+			env[id] = valueFn
 		} else if child.Type == astnode.NodeTypeInlineFunction {
 			if len(node.Body) != 1 {
 				return nil, cannotOperateOn("<inline function>").WithDebug(node.Debug)
@@ -142,22 +151,25 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 			}
 			return ret, nil
 		} else if child.Type == astnode.NodeTypeTemplateLiteral {
-			var st strings.Builder
-			for _, ch := range child.Children {
-				if ch.Type == astnode.NodeTypeRawText {
-					st.WriteString(ch.Content)
-				} else {
-					val, err := i.eval(ch.Value.(*astnode.Node))
-					if err != nil {
-						return nil, exception.From(err, ch.Debug, "", "template literal evaluation failed: @err")
+			stFn := func() (string, error) {
+				var st strings.Builder
+				for _, ch := range child.Children {
+					if ch.Type == astnode.NodeTypeRawText {
+						st.WriteString(ch.Content)
+					} else {
+						val, err := i.eval(ch.Value.(*astnode.Node))
+						if err != nil {
+							return "", exception.From(err, ch.Debug, "", "template literal evaluation failed: @err")
+						}
+						st.WriteString(val.String())
 					}
-					st.WriteString(val.String())
 				}
+				return st.String(), nil
 			}
 			id := "var_" + fmt.Sprintf("%d", inx)
 			inx++
-			sb.WriteString(id)
-			env[id] = st.String()
+			sb.WriteString(id + "()")
+			env[id] = stFn
 		} else {
 			sb.WriteString(child.Value.(string))
 		}
@@ -168,11 +180,17 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 
 	program, err := expr.Compile(code, expr.Env(env))
 	if err != nil {
+		if exception.Is(err) {
+			return nil, err
+		}
 		return nil, i.exprEvalHumanError(node.Body, node.Debug, err)
 	}
 
 	output, err := expr.Run(program, env)
 	if err != nil {
+		if exception.Is(err) {
+			return nil, err
+		}
 		return nil, i.exprEvalHumanError(node.Body, node.Debug, err)
 	}
 

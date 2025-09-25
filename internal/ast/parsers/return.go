@@ -9,7 +9,8 @@ import (
 
 func ReturnParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
 	node := &astnode.Node{
-		Type: astnode.NodeTypeReturn,
+		Type:  astnode.NodeTypeReturn,
+		Debug: tokens[*inx].Debug,
 	}
 
 	if err := inxPP(tokens, inx); err != nil {

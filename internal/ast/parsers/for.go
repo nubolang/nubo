@@ -10,7 +10,8 @@ import (
 
 func ForParser(ctx context.Context, p Parser_HTML, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
 	node := &astnode.Node{
-		Type: astnode.NodeTypeFor,
+		Type:  astnode.NodeTypeFor,
+		Debug: tokens[*inx].Debug,
 	}
 
 	if err := inxPP(tokens, inx); err != nil {

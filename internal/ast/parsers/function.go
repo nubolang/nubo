@@ -14,14 +14,14 @@ func fnCallParser(ctx context.Context, attrParser Parser_HTML, id string, tokens
 		return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("expected '(' but got %s", token.Type), token.Debug)
 	}
 
-	if err := inxPP(tokens, inx); err != nil {
-		return nil, err
-	}
-
 	fn := &astnode.Node{
 		Type:    astnode.NodeTypeFunctionCall,
 		Content: id,
 		Debug:   token.Debug,
+	}
+
+	if err := inxPP(tokens, inx); err != nil {
+		return nil, err
 	}
 
 	var (

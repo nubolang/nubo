@@ -33,3 +33,8 @@ func Unwrap(err error) (*ExceptionData, bool) {
 	}
 	return nil, false
 }
+
+func Is(err error) bool {
+	var excp *Expection
+	return errors.As(err, &excp)
+}

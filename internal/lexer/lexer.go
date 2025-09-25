@@ -36,6 +36,15 @@ func New(r io.Reader, file string) (*Lexer, error) {
 	}, nil
 }
 
+func (lx *Lexer) SetDebugLineColData(line int, col int) {
+	if line > -1 {
+		lx.line = line
+	}
+	if col > -1 {
+		lx.col = col
+	}
+}
+
 // ---------- small helpers ----------
 
 func (lx *Lexer) curr() rune {

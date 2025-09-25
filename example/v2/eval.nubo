@@ -1,0 +1,7 @@
+let x = {
+    a: 10
+}
+
+let y = x.keys().includes('a') ? `Hello {x.b}` : 11
+
+println(y)

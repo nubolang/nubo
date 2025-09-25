@@ -12,12 +12,14 @@ import (
 type Level string
 
 const (
-	LevelNone     Level = "UnknownError"
+	LevelFatal Level = "FatalError"
+
 	LevelSyntax   Level = "SyntaxError"
 	LevelSemantic Level = "SemanticError"
-	LevelRuntime  Level = "RuntimeError"
-	LevelType     Level = "TypeError"
-	LevelValue    Level = "ValueError"
+
+	LevelRuntime Level = "RuntimeError"
+	LevelType    Level = "TypeError"
+	LevelValue   Level = "ValueError"
 )
 
 type Expection struct {
@@ -33,7 +35,7 @@ type Expection struct {
 func Create(format string, args ...any) *Expection {
 	return &Expection{
 		msg:   fmt.Sprintf(format, args...),
-		level: LevelNone,
+		level: LevelFatal,
 		trace: make([]*debug.Debug, 0),
 	}
 }
@@ -89,12 +91,10 @@ func (e *Expection) Error() string {
 
 	var sb strings.Builder
 
-	if e.level != LevelNone {
-		if e.level == LevelSyntax || e.level == LevelSemantic {
-			sb.WriteString(color.New(color.Bold, color.FgYellow).Sprintf("%s", e.level))
-		} else {
-			sb.WriteString(color.New(color.Bold, color.FgRed).Sprintf("%s", e.level))
-		}
+	if e.level == LevelSyntax || e.level == LevelSemantic {
+		sb.WriteString(color.New(color.Bold, color.FgYellow).Sprintf("%s", e.level))
+	} else {
+		sb.WriteString(color.New(color.Bold, color.FgRed).Sprintf("%s", e.level))
 	}
 
 	if e.msg != "" {
