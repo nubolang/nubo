@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"sync"
 	"time"
 
@@ -86,7 +87,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if rcv := recover(); rcv != nil {
 			log.Printf("PANIC RECOVERED: %v. Request: %s %s", rcv, r.Method, r.URL.Path)
 
-			w.Write(fmt.Appendf([]byte{}, "Nubo - Internal Server Error:\n%s", rcv))
+			w.Write(fmt.Appendf([]byte{}, "Nubo - Internal Server Error:\n%s\nStack Trace:\n%s", rcv, string(debug.Stack())))
 			w.WriteHeader(http.StatusInternalServerError)
 
 			if os.Getenv("NUBO_DEV") == "true" {
