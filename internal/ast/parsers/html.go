@@ -44,6 +44,7 @@ func HTMLParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer.Tok
 	node := &astnode.Node{
 		Type:    astnode.NodeTypeElement,
 		Content: tag,
+		Debug:   token.Debug,
 	}
 
 	if err := inxPP(tokens, inx); err != nil {
@@ -187,7 +188,7 @@ func parseDynamicText(ctx context.Context, sn HTMLAttrValueParser, tokens []*lex
 					text := b.String()
 					text = strings.TrimSuffix(text, "}")
 					if isUnescaped {
-						text = strings.TrimPrefix(text, "@{")
+						text = strings.TrimPrefix(text, "!{")
 					} else {
 						text = strings.TrimPrefix(text, "{")
 					}

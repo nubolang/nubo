@@ -3,6 +3,7 @@ package lexer
 import (
 	"strings"
 	"unicode"
+	"unicode/utf8"
 
 	"github.com/nubolang/nubo/internal/debug"
 )
@@ -12,10 +13,14 @@ type HtmlLexer struct {
 	pos    int
 	tokens []*Token
 	debug  *debug.Debug
+
+	file string
+	line int
+	col  int
 }
 
 func NewHtmlLexer(input string, dg *debug.Debug) *HtmlLexer {
-	return &HtmlLexer{input: []rune(input), debug: dg}
+	return &HtmlLexer{input: []rune(input), debug: dg, file: dg.File, line: dg.Line, col: dg.Column}
 }
 
 func (lx *HtmlLexer) curr() rune {
@@ -35,12 +40,24 @@ func (lx *HtmlLexer) peek(n int) rune {
 
 func (lx *HtmlLexer) advance() {
 	if lx.pos < len(lx.input) {
+		if lx.curr() == '\n' {
+			lx.line++
+			lx.col = 1
+		} else {
+			lx.col++
+		}
 		lx.pos++
 	}
 }
 
 func (lx *HtmlLexer) add(t TokenType, val string) {
-	lx.tokens = append(lx.tokens, &Token{Type: t, Value: val})
+	end := lx.col + utf8.RuneCountInString(val) - 1
+	lx.tokens = append(lx.tokens, &Token{Type: t, Value: val, Debug: &debug.Debug{
+		File:      lx.file,
+		Line:      lx.line,
+		Column:    lx.col,
+		ColumnEnd: end,
+	}})
 }
 
 func (lx *HtmlLexer) Lex() ([]*Token, error) {
@@ -151,10 +168,10 @@ func (lx *HtmlLexer) lexString() {
 }
 
 func (lx *HtmlLexer) lexUnescapedBrace() {
-	// consume '@{'
+	// consume '!{'
 	lx.advance()
 	lx.advance()
-	lx.add(TokenUnescapedBrace, "@{")
+	lx.add(TokenUnescapedBrace, "!{")
 
 	// consume until matching '}'
 	depth := 1

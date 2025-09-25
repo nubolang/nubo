@@ -1,0 +1,7 @@
+import { Context } from "@std/component"
+
+fn View(ctx: Context) html {
+    return <div>!{randomfn()}</div>
+}
+
+View(nil)
