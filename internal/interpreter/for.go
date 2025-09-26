@@ -82,8 +82,9 @@ func (i *Interpreter) handleFor(node *astnode.Node) (language.Object, error) {
 				default:
 					return nil, runExc("invalid language signal: %s", ob.String()).WithDebug(ob.Debug())
 				}
+			} else {
+				return ob, nil
 			}
-			return ob, nil
 		}
 	}
 

@@ -1,0 +1,14 @@
+let x = 10
+const y = 20
+
+try err {
+    y = 10
+}
+
+if isNil(err) {
+    fail("constant cannot be modified")
+}
+
+if x == y {
+    fail("x and y are equal")
+}

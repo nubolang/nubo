@@ -1,0 +1,9 @@
+fn x() void {
+    for i in 10 {
+        if i == 5 {
+            break
+        }
+    }
+}
+
+x()

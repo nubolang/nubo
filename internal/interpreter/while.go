@@ -45,8 +45,9 @@ func (i *Interpreter) handleWhile(node *astnode.Node) (language.Object, error) {
 					continue
 				}
 				return nil, runExc("invalid language signal: %q", ob.String()).WithDebug(ob.Debug())
+			} else {
+				return ob, nil
 			}
-			return ob, nil
 		}
 	}
 
