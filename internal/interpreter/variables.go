@@ -47,7 +47,7 @@ func (i *Interpreter) handleVariableDecl(parent *astnode.Node) error {
 
 		if typ != nil && typ.Base() == language.ObjectTypeDict {
 			keyType = typ.Key
-			valueType = typ.Element
+			valueType = typ.Value
 		}
 
 		value, err = i.evalDict(node, keyType, valueType)
