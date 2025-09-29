@@ -10,6 +10,10 @@ var Nil *NilObj
 
 type NilObj struct{}
 
+func init() {
+	Nil = NewNil()
+}
+
 func NewNil() *NilObj {
 	if Nil == nil {
 		Nil = &NilObj{}

@@ -47,7 +47,7 @@ func NewDictType(key *Type, value *Type) *Type {
 }
 
 func Nullable(typ *Type) *Type {
-	return NewUnionType(typ.DeepClone(), TypeNil)
+	return NewUnionType(typ.DeepClone(), TypeNil.DeepClone())
 }
 
 func DefaultValue(typ *Type) Object {
@@ -95,6 +95,8 @@ func (t *Type) String() string {
 	switch t.BaseType {
 	default:
 		return t.BaseType.String() + next
+	case ObjectTypeNil:
+		return "(nil)"
 	case ObjectTypeString:
 		return t.Content
 	case ObjectTypeFunction:
@@ -132,12 +134,16 @@ func (t *Type) Compare(other *Type) bool {
 	}
 
 	if other.Base() == ObjectTypeNil {
-		return t.BaseType == ObjectTypeNil ||
+		ok := t.BaseType == ObjectTypeNil ||
 			t.BaseType == ObjectTypeList ||
 			t.BaseType == ObjectTypeDict ||
 			t.BaseType == ObjectTypeStructInstance ||
 			t.BaseType == ObjectTypeStructDefinition ||
 			t.BaseType == ObjectTypeFunction
+		if !ok {
+			return t.NextMatch(other)
+		}
+		return ok
 	}
 
 	if t.BaseType != ObjectTypeStructDefinition && t.BaseType != ObjectTypeStructInstance {
