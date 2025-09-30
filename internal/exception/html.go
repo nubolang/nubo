@@ -68,8 +68,13 @@ func (he *HtmlError) getTemplateProps() (map[string]any, error) {
 		return nil, he.err
 	}
 
+	var json string
+	if rawJSON, err := he.err.JSON(true); err == nil {
+		json = string(rawJSON)
+	}
+
 	return map[string]any{
-		"Error": he.err.level,
+		"Error":   he.err.level,
 		"Version": version.Version,
 		"Style":   template.HTML("<style>" + string(css) + "</style>"),
 		"Message": template.HTML(he.err.GetMessage(true)),
@@ -78,11 +83,8 @@ func (he *HtmlError) getTemplateProps() (map[string]any, error) {
 		"Lines":   template.HTML(lines),
 		"Code":    template.HTML(code),
 		"Stack":   traceHtmlString(he.err.trace),
+		"JSON":    json,
 	}, nil
-}
-
-func (he *HtmlError) JSON() ([]byte, bool) {
-	return nil, false
 }
 
 func traceHtmlString(trace []*debug.Debug) string {

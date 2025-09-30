@@ -25,9 +25,9 @@ func (s *Server) handleError(err error, w http.ResponseWriter, r *http.Request) 
 	if errors.As(err, &exc) {
 		htmlErr := exc.HTML()
 
-		if strings.Contains(strings.ToLower(r.Header.Get("Accept")), "application/json") {
-			message, isJSON := htmlErr.JSON()
-			if isJSON {
+		if prefersJSON(r) {
+			message, err := exc.JSON()
+			if err == nil {
 				w.Header().Add("Content-Type", "application/json")
 				w.WriteHeader(statusCode)
 			}
@@ -82,4 +82,20 @@ func (s *Server) customError(nodes []*astnode.Node, status int, message string, 
 	// Sync and output the generated data
 	res.Sync()
 	return nil
+}
+
+func prefersJSON(r *http.Request) bool {
+	accept := r.Header.Get("Accept")
+	if accept == "" {
+		return false
+	}
+
+	parts := strings.Split(accept, ",")
+	for _, part := range parts {
+		p := strings.TrimSpace(strings.Split(part, ";")[0])
+		if p == "application/json" {
+			return true
+		}
+	}
+	return false
 }

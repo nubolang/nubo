@@ -51,8 +51,7 @@
                     </div>
                     <div class="flex space-x-3 pt-2">
                         <pre class="noselect pl-1 pr-3 border-r text-gray-400">
-{{ .Lines }}</pre
-                        >
+{{ .Lines }}</pre>
                         <pre class="overflow-x-scroll w-full">{{ .Code }}</pre>
                     </div>
                 </div>
@@ -67,6 +66,15 @@
                     </div>
                 </div>
             </section>
+            {{- end }}
+            {{- if .JSON }}
+                <section>
+                    <h2 class="mt-5 mb-2 text-lg">JSON:</h2>
+                    <div class="bg-gray-700 px-4 py-3 rounded">
+                        <div class="flex space-x-3 pt-2">
+                            <pre class="overflow-x-scroll w-full">{{ .JSON }}</pre>
+                        </div>
+                </section>
             {{- end }}
         </main>
     </body>

@@ -196,7 +196,10 @@ func NewRequest(r *http.Request) (language.Object, error) {
 				return nil, err
 			}
 			fileObj := stdio.NewIOStream(file)
-			proto := fileObj.GetPrototype()
+			proto := fileObj.GetPrototype().(*language.StructPrototype)
+			proto.Unlock()
+			defer proto.Lock()
+
 			proto.SetObject("filename", language.NewString(fileHeader.Filename, nil))
 			proto.SetObject("size", language.NewInt(fileHeader.Size, nil))
 			proto.SetObject("header", language.NewString(fileHeader.Header.Get("Content-Type"), nil))
