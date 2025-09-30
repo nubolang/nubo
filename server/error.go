@@ -8,7 +8,7 @@ import (
 
 	"github.com/nubolang/nubo/events"
 	"github.com/nubolang/nubo/internal/ast/astnode"
-	"github.com/nubolang/nubo/internal/debug"
+	"github.com/nubolang/nubo/internal/exception"
 	"github.com/nubolang/nubo/internal/runtime"
 	"github.com/nubolang/nubo/server/modules"
 	"go.uber.org/zap"
@@ -20,27 +20,25 @@ var errNotFound = errors.New("not found")
 func (s *Server) handleError(err error, w http.ResponseWriter, r *http.Request) {
 	var statusCode = http.StatusInternalServerError
 
-	var de *debug.DebugErr
+	var exc *exception.Expection
 
-	if errors.As(err, &de) {
+	if errors.As(err, &exc) {
+		htmlErr := exc.HTML()
+
 		if strings.Contains(strings.ToLower(r.Header.Get("Accept")), "application/json") {
-			message, isJSON := de.JSONError()
+			message, isJSON := htmlErr.JSON()
 			if isJSON {
 				w.Header().Add("Content-Type", "application/json")
 				w.WriteHeader(statusCode)
 			}
-			_, _ = w.Write([]byte(message))
+			_, _ = w.Write(message)
 			return
 		}
 
 		w.Header().Add("Content-Type", "text/html")
 		w.WriteHeader(statusCode)
-		htmlErr := de.HtmlError()
-		if htmlErr == nil {
-			_, _ = w.Write([]byte(de.Error()))
-			return
-		}
-		_, _ = w.Write([]byte(htmlErr.Error()))
+		page := htmlErr.GetPage()
+		_, _ = w.Write([]byte(page))
 		return
 	}
 

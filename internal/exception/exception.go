@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	htm "html"
+
 	"github.com/fatih/color"
 	"github.com/nubolang/nubo/internal/debug"
 )
@@ -23,6 +25,8 @@ const (
 )
 
 type Expection struct {
+	statusCode int
+
 	base error
 	msg  string
 
@@ -34,9 +38,10 @@ type Expection struct {
 
 func Create(format string, args ...any) *Expection {
 	return &Expection{
-		msg:   fmt.Sprintf(format, args...),
-		level: LevelFatal,
-		trace: make([]*debug.Debug, 0),
+		msg:        fmt.Sprintf(format, args...),
+		level:      LevelFatal,
+		trace:      make([]*debug.Debug, 0),
+		statusCode: 500,
 	}
 }
 
@@ -84,6 +89,11 @@ func (e *Expection) WithTrace(trace *debug.Debug) *Expection {
 	return e
 }
 
+func (e *Expection) WithStatusCode(code int) *Expection {
+	e.statusCode = code
+	return e
+}
+
 func (e *Expection) Error() string {
 	if e == nil {
 		return "unknown exception"
@@ -128,4 +138,60 @@ func (e *Expection) Error() string {
 	}
 
 	return sb.String()
+}
+
+func (e *Expection) GetMessage(html bool) string {
+	if e == nil {
+		return "unknown exception"
+	}
+
+	var sb strings.Builder
+
+	if e.level == LevelSyntax || e.level == LevelSemantic {
+		if html {
+			sb.WriteString(fmt.Sprintf("<span style=\"color:var(--color-yellow-400)\"><strong>%s</strong></span>", e.level))
+		} else {
+			sb.WriteString(color.New(color.Bold, color.FgYellow).Sprintf("%s", e.level))
+		}
+	} else {
+		if html {
+			sb.WriteString(fmt.Sprintf("<span style=\"color:var(--color-red-400)\"><strong>%s</strong></span>", e.level))
+		} else {
+			sb.WriteString(color.New(color.Bold, color.FgRed).Sprintf("%s", e.level))
+		}
+	}
+
+	if e.msg != "" {
+		sb.WriteString(": ")
+		if html {
+			sb.WriteString(fmt.Sprintf("<span style=\"color:var(--color-red-400)\">%s</span>", htm.EscapeString(e.msg)))
+		} else {
+			sb.WriteString(color.New(color.FgRed).Sprintf("%s", e.msg))
+		}
+	}
+
+	blue := color.New(color.FgHiBlue).SprintFunc()
+	if e.debug != nil {
+		sb.WriteRune(' ')
+		if html {
+			sb.WriteString("<span style=\"color:var(--color-teal-400)\">at</span>")
+		} else {
+			sb.WriteString(color.New(color.FgCyan).Sprint("at"))
+		}
+		sb.WriteRune(' ')
+		if html {
+			sb.WriteString(fmt.Sprintf("<span style=\"color:var(--color-blue-400)\">%s</span>:<span style=\"color:var(--color-blue-400)\">%s</span>:<span style=\"color:var(--color-blue-400)\">%s</span>", blue(e.debug.File), blue(e.debug.Line), blue(e.debug.Column)))
+		} else {
+			sb.WriteString(fmt.Sprintf("%s:%s:%s", blue(e.debug.File), blue(e.debug.Line), blue(e.debug.Column)))
+		}
+	}
+
+	return sb.String()
+}
+
+func (e *Expection) HTML() *HtmlError {
+	return &HtmlError{
+		StatusCode: e.statusCode,
+		err:        e,
+	}
 }

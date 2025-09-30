@@ -1,7 +1,7 @@
 import { Context } from "@std/component"
 
 fn View(ctx: Context) html {
-    return <div>!{randomfn()}</div>
+    return <div>!{ ctx.children.join("") }</div>
 }
 
-View(nil)
+println(<View>Test</View>)
