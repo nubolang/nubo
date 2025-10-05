@@ -11,7 +11,7 @@ import (
 func ListParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
 	node := &astnode.Node{Type: astnode.NodeTypeList, Debug: tokens[*inx].Debug}
 
-	if err := inxPP(tokens, inx); err != nil {
+	if err := inxNlPP(tokens, inx); err != nil {
 		return nil, err
 	}
 
@@ -21,32 +21,72 @@ func ListParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, inx 
 		return node, nil
 	}
 
+	var (
+		cleaned     = make([]*lexer.Token, 0, len(tokens))
+		bc      int = 1
+		brace   int = 0
+		paren   int = 0
+	)
+
+	for {
+		if bc == 0 {
+			break
+		}
+
+		token := tokens[*inx]
+		if token.Type == lexer.TokenOpenBracket {
+			bc++
+		}
+
+		if token.Type == lexer.TokenCloseBracket {
+			bc--
+		}
+
+		if token.Type == lexer.TokenOpenBrace {
+			brace++
+		} else if token.Type == lexer.TokenCloseBrace {
+			brace--
+		}
+
+		if token.Type == lexer.TokenOpenParen {
+			paren++
+		} else if token.Type == lexer.TokenCloseParen {
+			paren--
+		}
+
+		cleaned = append(cleaned, token)
+
+		if brace == 0 && paren == 0 {
+			if err := inxNlPP(tokens, inx); err != nil {
+				return nil, err
+			}
+		} else {
+			*inx++
+		}
+	}
+
+	*inx--
+
+	cinx := 0
 loop:
 	for {
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		default:
-			value, err := ValueParser(ctx, sn, tokens, inx)
+			value, err := ValueParser(ctx, sn, cleaned, &cinx)
 			if err != nil {
 				return nil, err
 			}
+
 			node.Children = append(node.Children, value)
-
-			if *inx >= len(tokens) {
-				return nil, newErr(ErrUnexpectedEOF, "unexpected end of file", node.Debug)
-			}
-
-			token := tokens[*inx]
+			token := cleaned[cinx]
 			if token.Type == lexer.TokenComma {
-				if err := inxPP(tokens, inx); err != nil {
-					return nil, err
-				}
+				cinx++
 				continue loop
 			}
 
 			if token.Type == lexer.TokenCloseBracket {
-				_ = inxPP(tokens, inx)
 				break loop
 			}
 

@@ -1,0 +1,13 @@
+const words = [
+    "hello",
+    "world", "example", {
+    ss: "ss",
+    }
+]
+
+const numbers = [1, 2, 3, 4, 5]
+const empty = []
+const one = [1]
+const mixed = [1, "two", 3.0, true]
+
+println(words, numbers, empty, one, mixed)
