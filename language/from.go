@@ -2,6 +2,7 @@ package language
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/nubolang/nubo/internal/debug"
 )
@@ -103,6 +104,8 @@ func FromValue(data any, voidNil bool, dg ...*debug.Debug) (Object, error) {
 			return nil, nil
 		}
 		return Nil, nil
+	case time.Time:
+		return NewString(value.Format("2006-01-02T15:04:05-07:00"), dbg), nil
 	}
 
 	return nil, fmt.Errorf("unsupported type %T", data)
