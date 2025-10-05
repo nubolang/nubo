@@ -3,10 +3,12 @@ package exception
 import (
 	"bufio"
 	"fmt"
+	"html"
 	"os"
 	"strings"
 
 	"github.com/fatih/color"
+	"github.com/nubolang/nubo/internal/codehighlight"
 )
 
 func showConsoleCodeError(path string, line int) (string, bool) {
@@ -40,6 +42,16 @@ func showConsoleCodeError(path string, line int) (string, bool) {
 	}
 
 	width := len(fmt.Sprintf("%d", end))
+
+	linesS := strings.Join(lines, "\n")
+	hl, err := codehighlight.NewHighlight(strings.NewReader(linesS))
+	if err == nil {
+		code, err := hl.HighlightConsole()
+		if err == nil {
+			lines = strings.Split(code, "\n")
+		}
+	}
+
 	var out strings.Builder
 	for i := start; i <= end; i++ {
 		mark := " "
@@ -83,6 +95,19 @@ func showHtmlCodeError(path string, line int) (string, string, bool) {
 	}
 
 	width := len(fmt.Sprintf("%d", end))
+
+	linesS := strings.Join(lines, "\n")
+
+	var shouldEscape = true
+	hl, err := codehighlight.NewHighlight(strings.NewReader(linesS))
+	if err == nil {
+		code, err := hl.HighlightHTML()
+		if err == nil {
+			lines = strings.Split(code, "\n")
+			shouldEscape = false
+		}
+	}
+
 	var out strings.Builder
 	var linesOut strings.Builder
 	for i := start; i <= end; i++ {
@@ -94,7 +119,11 @@ func showHtmlCodeError(path string, line int) (string, string, bool) {
 			linesOut.WriteString(fmt.Sprintf("%s %*d\n", mark, width, i))
 		}
 
-		out.WriteString(lines[i-1])
+		if shouldEscape {
+			out.WriteString(html.EscapeString(lines[i-1]))
+		} else {
+			out.WriteString(lines[i-1])
+		}
 		out.WriteRune('\n')
 	}
 

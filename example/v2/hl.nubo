@@ -1,0 +1,1 @@
+println(highlight("let div = <app.Wrapper :id=\"id\" class=\"hello\">\n\t<h1>Hello World</h1>\n</app.Wrapper>", "html"))

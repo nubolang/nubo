@@ -2,6 +2,7 @@ package interpreter
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -57,6 +58,10 @@ func (ir *Interpreter) handleImport(node *astnode.Node) error {
 
 	if filepath.Ext(path) == "" {
 		path += ".nubo"
+	}
+
+	if _, err := os.Stat(path); err == os.ErrNotExist {
+		return runExc("imported file %s does not exists", path).WithDebug(node.Debug)
 	}
 
 	imported, ok := ir.runtime.FindInterpreter(path)

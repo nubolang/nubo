@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nubolang/nubo/internal/codehighlight"
 	"github.com/nubolang/nubo/internal/debug"
 	"github.com/nubolang/nubo/internal/exception"
 	"github.com/nubolang/nubo/language"
@@ -43,6 +44,8 @@ func GetBuiltins() map[string]language.Object {
 		"byte":   native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeByte, byteFn),
 		"char":   native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeChar, charFn),
 		"bytes":  native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.NewListType(language.TypeByte), bytesFn),
+
+		"highlight": n.Function(n.Describe(n.Arg("code", n.TString), n.Arg("mode", n.TString, n.String("console"))).Returns(n.TString), hlFn),
 
 		// Debug
 		"xdbg": native.NewFunction(xdbgFn),
@@ -501,4 +504,32 @@ func xdbgFn(args []language.Object) (language.Object, error) {
 	}
 	fmt.Print(strings.Join(out, " "))
 	return nil, nil
+}
+
+func hlFn(ctx *n.Args) (any, error) {
+	code := ctx.Name("code").String()
+	mode := ctx.Name("mode").String()
+
+	if mode != "html" {
+		mode = "console"
+	}
+
+	hl, err := codehighlight.NewHighlight(strings.NewReader(code))
+	if err != nil {
+		return nil, err
+	}
+
+	if mode == "console" {
+		highlighted, err := hl.HighlightConsole()
+		if err != nil {
+			return nil, err
+		}
+		return n.String(highlighted), nil
+	}
+
+	highlighted, err := hl.HighlightHTML()
+	if err != nil {
+		return nil, err
+	}
+	return n.String(highlighted), nil
 }

@@ -44,9 +44,14 @@ func (ir *Interpreter) includeValue(node *astnode.Node) (language.Object, error)
 
 	inc := newInclude(resolveIncludePath(ir.currentFile, fileName, ir.workdir), ir.runtime, ir.dependent, ir.workdir)
 
-	ir.mu.Lock()
-	ir.includes = append(ir.includes, inc)
-	ir.mu.Unlock()
+	var interp = ir
+	for interp.parent != nil {
+		interp = interp.parent
+	}
+
+	interp.mu.Lock()
+	interp.includes = append(interp.includes, inc)
+	interp.mu.Unlock()
 
 	ob, err := inc.Run(nodes)
 	if err != nil {

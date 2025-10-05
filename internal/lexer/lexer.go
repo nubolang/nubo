@@ -366,12 +366,11 @@ func (lx *Lexer) lexPrefixedNumber() error {
 	startPos := lx.pos
 
 	lx.advance()
-	lx.advance()
 
 	prefix := lx.curr()
 	lx.advance()
 
-	var base int
+	var base int = 10
 	switch prefix {
 	case 'b', 'B':
 		base = 2
@@ -381,7 +380,7 @@ func (lx *Lexer) lexPrefixedNumber() error {
 		base = 16
 	}
 
-	for unicode.IsDigit(lx.curr()) || lx.curr() == '_' {
+	for unicode.IsDigit(lx.curr()) || lx.curr() == '_' || (base == 16 && (lx.curr() == 'a' || lx.curr() == 'A' || lx.curr() == 'b' || lx.curr() == 'B' || lx.curr() == 'c' || lx.curr() == 'C' || lx.curr() == 'd' || lx.curr() == 'D' || lx.curr() == 'e' || lx.curr() == 'E' || lx.curr() == 'f' || lx.curr() == 'F')) {
 		if lx.curr() == '_' {
 			lx.advance()
 			continue

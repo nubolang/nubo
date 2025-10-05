@@ -50,14 +50,19 @@ func (lx *HtmlLexer) advance() {
 	}
 }
 
-func (lx *HtmlLexer) add(t TokenType, val string) {
+func (lx *HtmlLexer) add(t TokenType, val string, ma ...map[string]any) {
+	var m map[string]any
+	if len(ma) > 0 {
+		m = ma[0]
+	}
+
 	end := lx.col + utf8.RuneCountInString(val) - 1
 	lx.tokens = append(lx.tokens, &Token{Type: t, Value: val, Debug: &debug.Debug{
 		File:      lx.file,
 		Line:      lx.line,
 		Column:    lx.col,
 		ColumnEnd: end,
-	}})
+	}, Map: m})
 }
 
 func (lx *HtmlLexer) Lex() ([]*Token, error) {
@@ -164,7 +169,9 @@ func (lx *HtmlLexer) lexString() {
 	if lx.curr() == quote {
 		lx.advance()
 	}
-	lx.add(TokenString, val)
+	lx.add(TokenString, val, map[string]any{
+		"quote": string(quote),
+	})
 }
 
 func (lx *HtmlLexer) lexUnescapedBrace() {
