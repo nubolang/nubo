@@ -1,0 +1,5 @@
+let d: dict[string, string] = dict[string, string]{hello: "world",world: "hello"}
+
+d.remove("hello")
+
+println(d, inspect(d))

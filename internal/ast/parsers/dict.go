@@ -17,6 +17,21 @@ func DictParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, inx 
 		Debug: token.Debug,
 	}
 
+	if token.Type == lexer.TokenIdentifier && token.Value == "dict" {
+		t, err := inxPPeak(tokens, inx)
+		if err != nil {
+			return nil, err
+		}
+		if t.Type == lexer.TokenOpenBracket {
+			typ, err := TypeParser(ctx, tokens, inx)
+			if err != nil {
+				return nil, err
+			}
+			node.ValueType = typ
+			*inx--
+		}
+	}
+
 	node.Flags.Append("NODEVALUE")
 
 	if token.Type != lexer.TokenOpenBrace {

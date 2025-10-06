@@ -219,7 +219,7 @@ func (lx *HtmlLexer) lexBrace() {
 
 func (lx *HtmlLexer) lexText() {
 	start := lx.pos
-	for lx.curr() != 0 && lx.curr() != '<' && !(lx.curr() == '@' && lx.peek(1) == '{') && lx.curr() != '{' {
+	for lx.curr() != 0 && lx.curr() != '<' && !(lx.curr() == '!' && lx.peek(1) == '{') && lx.curr() != '{' {
 		lx.advance()
 	}
 	if start != lx.pos {

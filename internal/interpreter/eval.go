@@ -326,6 +326,17 @@ func (i *Interpreter) evalDict(node *astnode.Node, keyType, valueType *language.
 		inferredValueType *language.Type
 	)
 
+	if node.ValueType != nil {
+		typ, err := i.parseTypeNode(node.ValueType)
+
+		if err != nil {
+			return nil, wrapRunExc(err, node.ValueType.Debug)
+		}
+
+		keyType = typ.Key
+		valueType = typ.Value
+	}
+
 	for _, pair := range node.Children {
 		if len(pair.Children) != 1 {
 			return nil, runExc("invalid dict entry").WithDebug(pair.Debug)

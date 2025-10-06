@@ -88,6 +88,30 @@ func NewDictPrototype(base *Dict) *DictPrototype {
 			return NewList(values, base.ValueType, base.Debug()), nil
 		}, base.Debug()))
 
+	dp.SetObject("remove", NewTypedFunction([]FnArg{
+		&BasicFnArg{TypeVal: dp.base.KeyType, NameVal: "key"},
+	}, TypeVoid, func(o []Object) (Object, error) {
+		dp.mu.Lock()
+		defer dp.mu.Unlock()
+
+		keyToRemove := o[0]
+		removed := false
+		base.Data.Iterate(func(key Object, _ Object) bool {
+			if key.Value() == keyToRemove.Value() {
+				base.Data.Delete(key)
+				removed = true
+				return false
+			}
+			return true
+		})
+
+		if !removed {
+			return nil, fmt.Errorf("Key %s not found", keyToRemove)
+		}
+
+		return nil, nil
+	}, base.Debug()))
+
 	return dp
 }
 
