@@ -1,0 +1,3 @@
+let s: string|nil = "Hello"
+
+println(s, type(s))

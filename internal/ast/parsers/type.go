@@ -40,7 +40,7 @@ func TypeParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.
 		return multiType(typ, ctx, tokens, inx)
 	}
 
-	if tokens[*inx].Type == lexer.TokenIdentifier {
+	if tokens[*inx].Type == lexer.TokenIdentifier || tokens[*inx].Type == lexer.TokenNil {
 		id, err := TypeWholeIDParser(ctx, tokens, inx)
 		if err != nil {
 			return nil, err
@@ -188,7 +188,7 @@ loop:
 
 			token := tokens[*inx]
 
-			if token.Type != lexer.TokenIdentifier {
+			if token.Type != lexer.TokenIdentifier && token.Type != lexer.TokenNil {
 				return "", newErr(ErrUnexpectedToken, fmt.Sprintf("expected identifier, got: %v", token.Value), token.Debug)
 			}
 

@@ -29,6 +29,8 @@ func (i *Interpreter) stringToType(s string, dg *debug.Debug) (*language.Type, e
 		return language.TypeAny, nil
 	case "html":
 		return language.TypeHtml, nil
+	case "nil":
+		return language.TypeNil, nil
 	default:
 		return nil, typeError("invalid type '%s'", s).WithDebug(dg)
 	}
@@ -103,10 +105,17 @@ func (i *Interpreter) parseTypeNode(n *astnode.Node) (*language.Type, error) {
 		if !ok || ob.Type().Base() != language.ObjectTypeStructDefinition {
 			return nil, runExc("unknown type: %q", n.Content).WithDebug(n.Debug)
 		}
+		if n.Flags.Contains("OPTIONAL") {
+			return language.Nullable(ob.Type()), nil
+		}
 		return ob.Type(), nil
 	}
 
 	t.BaseType = baseType.Base()
+	if n.Flags.Contains("OPTIONAL") {
+		t = language.Nullable(t)
+	}
+
 	return i.checkAddUnionType(t, n)
 }
 
