@@ -77,7 +77,7 @@ func (ir *Interpreter) handleImport(node *astnode.Node) error {
 	if !ok {
 		nodes, err := native.NodesFromFile(path, path)
 		if err != nil {
-			return exception.From(err, node.Debug, "failed to parse imported file")
+			return exception.From(err, node.Debug, "failed to parse imported file: @err")
 		}
 
 		imported = New(path, ir.runtime, true, ir.workdir)

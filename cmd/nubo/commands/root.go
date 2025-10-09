@@ -23,7 +23,6 @@ var rootCmd = &cobra.Command{
 		color.NoColor = nocolor
 		loglevel, _ := cmd.Flags().GetString("loglevel")
 		dev, _ := cmd.Flags().GetBool("dev")
-
 		os.Setenv("NUBO_DEV", strconv.FormatBool(dev))
 
 		logger := logger.Create(loglevel)
