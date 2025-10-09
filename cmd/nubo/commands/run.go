@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/fatih/color"
+	"github.com/nubolang/nubo/config"
 	"github.com/nubolang/nubo/events"
 	"github.com/nubolang/nubo/internal/ast"
 	"github.com/nubolang/nubo/internal/ast/astnode"
@@ -56,16 +57,16 @@ func execRun(cmd *cobra.Command, args []string) {
 		}
 
 		if dev {
-			if err := writeDebug("lexer.yaml", tokens); err != nil {
+			if err := writeDebug(filePath, tokens, true); err != nil {
 				cmd.PrintErrln(err)
 				return
 			}
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*time.Duration(config.Current.Syntax.Tokenizer.Context.Deadline))
 		defer cancel()
 
-		builder := ast.New(ctx, time.Second*5)
+		builder := ast.New(ctx, time.Millisecond*time.Duration(config.Current.Syntax.Tokenizer.Context.Deadline))
 		syntaxTree, err = builder.Parse(tokens)
 		if err != nil {
 			cmd.PrintErrln(err)
@@ -73,14 +74,17 @@ func execRun(cmd *cobra.Command, args []string) {
 		}
 
 		if dev {
-			if err := writeDebug("ast.yaml", syntaxTree); err != nil {
+			if err := writeDebug(filePath, syntaxTree, false); err != nil {
 				cmd.PrintErrln(err)
 				return
 			}
 		}
 	}
 
-	eventProvider := events.NewDefaultProvider()
+	var eventProvider events.Provider
+	if config.Current.Runtime.Events.Enabled {
+		eventProvider = events.NewDefaultProvider()
+	}
 
 	ex := runtime.New(eventProvider)
 	if _, err := ex.Interpret(filePath, syntaxTree); err != nil {
@@ -89,13 +93,23 @@ func execRun(cmd *cobra.Command, args []string) {
 	}
 }
 
-func writeDebug(filename string, data any) error {
-	const dir = ".nubo/debug"
-	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+func writeDebug(filename string, data any, lx bool) error {
+	var path string
+	if lx {
+		path = config.Current.Syntax.Lexer.Debug.File
+	} else {
+		path = config.Current.Syntax.Tokenizer.Debug.File
+	}
+
+	if path == "{nubo_dir_full_file}" {
+		path = filepath.Join(config.Base, "debug", filename)
+	}
+
+	if err := os.MkdirAll(filepath.Dir(path), os.ModePerm); err != nil {
 		return err
 	}
 
-	file, err := os.OpenFile(filepath.Join(dir, filename), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
 		return err
 	}

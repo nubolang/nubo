@@ -1,11 +1,13 @@
 package interpreter
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/nubolang/nubo/config"
 	"github.com/nubolang/nubo/internal/ast/astnode"
 	"github.com/nubolang/nubo/internal/exception"
 	"github.com/nubolang/nubo/native"
@@ -56,11 +58,18 @@ func (ir *Interpreter) handleImport(node *astnode.Node) error {
 		path = filepath.Clean(path)
 	}
 
+	for oldPrefix, newPrefix := range config.Current.Runtime.Interpreter.Import.Prefix {
+		if strings.HasPrefix(path, oldPrefix) {
+			path = filepath.Join(newPrefix, strings.TrimPrefix(path, oldPrefix))
+			break // allow only one match (not replacing replaced paths)
+		}
+	}
+
 	if filepath.Ext(path) == "" {
 		path += ".nubo"
 	}
 
-	if _, err := os.Stat(path); err == os.ErrNotExist {
+	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
 		return runExc("imported file %s does not exists", path).WithDebug(node.Debug)
 	}
 

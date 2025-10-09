@@ -1,8 +1,10 @@
 package packages
 
 import (
+	"slices"
 	"strings"
 
+	"github.com/nubolang/nubo/config"
 	"github.com/nubolang/nubo/internal/debug"
 	"github.com/nubolang/nubo/internal/packages/component"
 	"github.com/nubolang/nubo/internal/packages/hash"
@@ -33,6 +35,11 @@ var packageList = []string{
 	"hash", "component", "os",
 }
 
+var (
+	allowList    []string
+	disallowList []string
+)
+
 func ImportPackage(name string, dg *debug.Debug) (language.Object, bool) {
 	if name == "@std" {
 		pkg := n.NewPackage("@std", dg)
@@ -51,6 +58,31 @@ func ImportPackage(name string, dg *debug.Debug) (language.Object, bool) {
 	}
 
 	name = strings.TrimPrefix(name, BuiltInModulePrefix)
+
+	if config.Current.Runtime.Std.Disallow == ":all" || config.Current.Runtime.Std.Allow == "-" {
+		return nil, false
+	}
+
+	if config.Current.Runtime.Std.Allow != ":all" {
+		if allowList == nil {
+			allowList = strings.Split(config.Current.Runtime.Std.Allow, ",")
+		}
+
+		if !slices.Contains(allowList, name) {
+			return nil, false
+		}
+	}
+
+	if config.Current.Runtime.Std.Disallow != "-" {
+		if disallowList == nil {
+			disallowList = strings.Split(config.Current.Runtime.Std.Disallow, ",")
+		}
+
+		if slices.Contains(disallowList, name) {
+			return nil, false
+		}
+	}
+
 	switch name {
 	case "io":
 		return io.NewIO(dg), true

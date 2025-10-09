@@ -6,6 +6,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/nubolang/nubo/cmd/nubo/logger"
+	"github.com/nubolang/nubo/config"
 	"github.com/nubolang/nubo/version"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -27,6 +28,10 @@ var rootCmd = &cobra.Command{
 
 		logger := logger.Create(loglevel)
 		zap.ReplaceGlobals(logger)
+		if err := config.Load(); err != nil {
+			logger.Error("Failed to load language config file", zap.Error(err))
+		}
+		config.Verify()
 	},
 	Run:  execRun,
 	Args: cobra.MinimumNArgs(1),

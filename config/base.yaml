@@ -1,0 +1,46 @@
+# Nubo configuration file
+
+# Syntax parser configuration
+syntax:
+  # Lexer allows us to configure the lexer context deadline
+  lexer:
+    debug:
+      enable: "development" # production, development, any
+      file: "{nubo_dir}/debug/lexer.yaml" # You can specify "{nubo_dir_full_file}" if you don't want lexer to rewrite the previous file
+
+  # Tokenizer also allows us to configure the tokenizer context deadline
+  tokenizer:
+    context:
+      deadline: 5000 # 5 seconds to tokenize the parsed code
+    debug:
+      enable: "development" # production, development, any
+      file: "{nubo_dir}/debug/ast.yaml" # You can specify "{nubo_dir_full_file}" if you don't want tokenizer to rewrite the previous file
+
+# Nubo runtime configuration
+runtime:
+  # @server (builtin author, like @std) packages configuration file
+  server:
+    address: ":3000" # This is the default address that nubo will use to start the server if not specified
+    max_concurrency: 50 # This is the maximum number of concurrent requests that nubo will handle
+    max_upload_size_byte: 1_000_000 # This is the maximum size of the uploaded data that nubo will handle (in bytes: 1mb)
+    max_upload_file_size: 5 # This is the maximum size of the uploaded file that nubo will handle (in megabytes: 5mb)
+
+  # @std (builtin author) packages configuration file
+  std:
+    allow: ":all" # Allow all packages, or you can specify a list of packages to allow separated by commas, like "hash,http,math"
+    disallow: "-" # Disallow packages, use "-" to allow everything, or a list of packages to disallow separated by commas, like "hash,http,math"
+    # allow: "-" or disallow: ":all" will disallow every package no matter what are the other values
+
+  # Built-in event configuration
+  events:
+    enabled: true # Enable or disable event provider
+    max_workers_per_topic: 10 # This is the maximum number of workers that nubo will handle per topic
+    channel_buffer_size: 1024 # This is the maximum size of the channel buffer that nubo will handle per topic
+
+  # Interpreter configuration
+  interpreter:
+    import:
+      prefix:
+        "~": "{current_dir}" # ~ can be used as a prefix for the current directory root
+        # You can modify this to load files from src instead by "{current_dir}/src"
+        # Add as many prefixes as you want

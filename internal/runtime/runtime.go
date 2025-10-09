@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"log"
 	"os"
 	"sync"
 
@@ -66,6 +67,10 @@ func (r *Runtime) GetPacker() (*packer.Packer, error) {
 }
 
 func (r *Runtime) GetEventProvider() events.Provider {
+	if r.pubsubProvider == nil {
+		log.Fatal("Event provider is disabled in nubo's configuration file. Enable it to use event functions.")
+	}
+
 	return r.pubsubProvider
 }
 

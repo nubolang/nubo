@@ -82,3 +82,15 @@ func (p *Packer) downloadEntry(entry *LockEntry, baseDir string) (string, error)
 	spin.Stop(fmt.Sprintf("Done %s ✅", entry.Name))
 	return dir, nil
 }
+
+func (p *Packer) Write() error {
+	if err := p.Package.Save(p.root); err != nil {
+		return err
+	}
+
+	if err := p.Lock.Save(p.root); err != nil {
+		return err
+	}
+
+	return nil
+}

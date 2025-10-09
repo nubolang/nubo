@@ -1,0 +1,11 @@
+event myEvent(x: int)
+
+sub myEvent(x) {
+    println("Event", x)
+}
+
+pub myEvent(15)
+
+while true {
+
+}

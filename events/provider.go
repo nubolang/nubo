@@ -6,11 +6,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-)
 
-const (
-	MaxWorkersPerTopic = 10
-	ChanBufferSize     = 1024
+	"github.com/nubolang/nubo/config"
 )
 
 type DefaultProvider struct {
@@ -84,7 +81,7 @@ func (p *DefaultProvider) Publish(topic string, data TransportData) error {
 	}
 
 	ts.buffer = append(ts.buffer, data)
-	if ts.workers < MaxWorkersPerTopic {
+	if ts.workers < config.Current.Runtime.Events.MaxWorkersPerTopic {
 		ts.workers++
 		go p.bufferWorker(ts)
 	}
@@ -137,7 +134,7 @@ func (p *DefaultProvider) Subscribe(topic string, handler func(TransportData)) (
 	}
 
 	ts := p.getOrCreateTopic(topic)
-	ch := make(chan TransportData, ChanBufferSize)
+	ch := make(chan TransportData, config.Current.Runtime.Events.ChannelBufferSize)
 
 	ts.mu.Lock()
 	ts.subs = append(ts.subs, ch)

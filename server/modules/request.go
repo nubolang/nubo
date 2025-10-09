@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/nubolang/nubo/config"
 	stdio "github.com/nubolang/nubo/internal/packages/io"
 	"github.com/nubolang/nubo/language"
 	"github.com/nubolang/nubo/native"
@@ -105,33 +106,29 @@ func NewRequest(r *http.Request) (language.Object, error) {
 	proto.SetObject("body", native.NewTypedFunction(nil, language.TypeString, func(ctx native.FnCtx) (language.Object, error) {
 		if body == nil {
 			var err error
-			body, err = io.ReadAll(r.Body)
+			body, err = io.ReadAll(io.LimitReader(r.Body, config.Current.Runtime.Server.MaxUploadSizeByte))
 			if err != nil {
 				return nil, fmt.Errorf("could not read body content: '%v'", err)
 			}
 		}
-
 		return language.NewString(string(body), nil), nil
 	}))
 
 	proto.SetObject("json", native.NewTypedFunction(nil, language.TypeAny, func(ctx native.FnCtx) (language.Object, error) {
 		if body == nil {
 			var err error
-			body, err = io.ReadAll(r.Body)
+			body, err = io.ReadAll(io.LimitReader(r.Body, config.Current.Runtime.Server.MaxUploadSizeByte))
 			if err != nil {
 				return nil, fmt.Errorf("could not read body content: '%v'", err)
 			}
 		}
-
 		if len(body) == 0 {
 			return language.Nil, nil
 		}
-
 		var data any
 		if err := json.Unmarshal(body, &data); err != nil {
 			return nil, fmt.Errorf("could not parse JSON body: '%v'", err)
 		}
-
 		return language.FromValue(data, false)
 	}))
 
@@ -148,15 +145,13 @@ func NewRequest(r *http.Request) (language.Object, error) {
 	}))
 
 	proto.SetObject("formData", native.NewTypedFunction(nil, language.Nullable(language.TypeDict), func(ctx native.FnCtx) (language.Object, error) {
-		if err := r.ParseMultipartForm(10 << 20); err != nil { // Max 10MB
+		if err := r.ParseMultipartForm(config.Current.Runtime.Server.MaxUploadFileSize); err != nil {
 			if err := r.ParseForm(); err != nil {
 				return nil, err
 			}
 		}
 
-		var data = make(map[any]any)
-
-		// Multipart form
+		data := make(map[any]any)
 		if r.MultipartForm != nil && r.MultipartForm.Value != nil {
 			for k, vals := range r.MultipartForm.Value {
 				if len(vals) > 0 {
@@ -164,19 +159,17 @@ func NewRequest(r *http.Request) (language.Object, error) {
 				}
 			}
 		} else {
-			// Urlencoded form
 			for k, vals := range r.Form {
 				if len(vals) > 0 {
 					data[k] = vals[0]
 				}
 			}
 		}
-
 		return n.Dict(data)
 	}))
 
 	proto.SetObject("file", native.NewTypedFunction(native.OneArg("name", language.TypeString), language.Nullable(language.TypeStructInstance), func(ctx native.FnCtx) (language.Object, error) {
-		if err := r.ParseMultipartForm(10 << 20); err != nil {
+		if err := r.ParseMultipartForm(config.Current.Runtime.Server.MaxUploadFileSize); err != nil {
 			return language.Nil, nil
 		}
 
@@ -190,6 +183,10 @@ func NewRequest(r *http.Request) (language.Object, error) {
 			}
 
 			fileHeader := fhs[0]
+
+			if fileHeader.Size > config.Current.Runtime.Server.MaxUploadFileSize {
+				return nil, fmt.Errorf("file exceeds max allowed size of %d bytes", config.Current.Runtime.Server.MaxUploadFileSize)
+			}
 
 			file, err := fileHeader.Open()
 			if err != nil {

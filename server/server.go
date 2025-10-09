@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/fatih/color"
+	"github.com/nubolang/nubo/config"
 	"github.com/nubolang/nubo/events"
 	"github.com/nubolang/nubo/internal/runtime"
 	"github.com/nubolang/nubo/server/modules"
@@ -29,6 +30,7 @@ type Server struct {
 	router    *router.Router
 
 	cache map[string]*NodeCache
+	sem   chan struct{}
 
 	mu sync.RWMutex
 }
@@ -55,11 +57,15 @@ func New(root string) (*Server, error) {
 		colorMode: color.NoColor,
 		router:    r,
 		cache:     make(map[string]*NodeCache),
+		sem:       make(chan struct{}, config.Current.Runtime.Server.MaxConcurrency),
 	}, nil
 }
 
 // Serve starts the server
 func (s *Server) Serve(addr string) error {
+	s.sem <- struct{}{}        // acquire
+	defer func() { <-s.sem }() // release
+
 	blue := color.New(color.FgBlue, color.Bold)
 	mode := "PROD"
 	if os.Getenv("NUBO_DEV") == "true" {
@@ -142,7 +148,12 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	cached = c
 
-	run := runtime.New(events.NewDefaultProvider())
+	var eventProvider events.Provider
+	if config.Current.Runtime.Events.Enabled {
+		eventProvider = events.NewDefaultProvider()
+	}
+
+	run := runtime.New(eventProvider)
 
 	// Bind the response object to the runtime
 	res := modules.NewResponse(w, r)

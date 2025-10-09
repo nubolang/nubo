@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"github.com/nubolang/nubo/config"
 	"github.com/nubolang/nubo/server"
 	"github.com/spf13/cobra"
 )
@@ -14,7 +15,7 @@ var serveCmd = &cobra.Command{
 
 func init() {
 	// Add the prepare command to the root command
-	rootCmd.PersistentFlags().String("addr", ":3000", "Address to listen on")
+	serveCmd.PersistentFlags().String("addr", "@default", "Address to listen on")
 	rootCmd.AddCommand(serveCmd)
 }
 
@@ -33,6 +34,10 @@ func execServe(cmd *cobra.Command, args []string) {
 	if err != nil {
 		cmd.PrintErrln(err)
 		return
+	}
+
+	if addr == "@default" {
+		addr = config.Current.Runtime.Server.Address
 	}
 
 	folderPath := args[0]

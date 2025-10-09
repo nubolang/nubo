@@ -13,6 +13,7 @@ import (
 	"github.com/nubolang/nubo/language"
 	"github.com/nubolang/nubo/native"
 	"github.com/nubolang/nubo/native/n"
+	"github.com/nubolang/nubo/version"
 )
 
 func GetBuiltins() map[string]language.Object {
@@ -48,7 +49,8 @@ func GetBuiltins() map[string]language.Object {
 		"highlight": n.Function(n.Describe(n.Arg("code", n.TString), n.Arg("mode", n.TString, n.String("console"))).Returns(n.TString), hlFn),
 
 		// Debug
-		"xdbg": native.NewFunction(xdbgFn),
+		"xdbg":        native.NewFunction(xdbgFn),
+		"__version__": n.String(version.Version),
 	}
 }
 

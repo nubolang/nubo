@@ -2,9 +2,12 @@ package packer
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 
+	"github.com/manifoldco/promptui"
 	"gopkg.in/yaml.v3"
 )
 
@@ -19,8 +22,9 @@ type Package struct {
 
 // PackageFile (package.yaml)
 type PackageFile struct {
-	Name     string     `yaml:"name"`
-	Packages []*Package `yaml:"packages"`
+	Name       string     `yaml:"name"`
+	Repository string     `yaml:"repository,omitempty"`
+	Packages   []*Package `yaml:"packages"`
 }
 
 func LoadPackageFile(root string) (*PackageFile, error) {
@@ -29,12 +33,7 @@ func LoadPackageFile(root string) (*PackageFile, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			var name string
-			fmt.Print("Init: Information required: <author/project>: ")
-			if _, err := fmt.Scanln(&name); err != nil {
-				return nil, err
-			}
-			return &PackageFile{Name: name}, nil
+			return getPackage()
 		}
 		return nil, err
 	}
@@ -57,4 +56,57 @@ func (pf *PackageFile) Save(root string) error {
 	defer file.Close()
 
 	return yaml.NewEncoder(file).Encode(pf)
+}
+
+func getPackage() (*PackageFile, error) {
+	validate := func(input string) error {
+		matched, _ := regexp.MatchString(`^[a-zA-Z0-9_.-]+$`, input)
+		if !matched {
+			return fmt.Errorf("must contain only letters, numbers, _, -, .")
+		}
+		return nil
+	}
+
+	validateURL := func(input string) error {
+		if input == "" {
+			return nil
+		}
+		_, err := url.ParseRequestURI(input)
+		if err != nil {
+			return fmt.Errorf("must be a valid URL")
+		}
+		return nil
+	}
+
+	authorPrompt := promptui.Prompt{
+		Label:    "Init: Author",
+		Validate: validate,
+	}
+	author, err := authorPrompt.Run()
+	if err != nil {
+		return nil, err
+	}
+
+	projectPrompt := promptui.Prompt{
+		Label:    "Init: Project",
+		Validate: validate,
+	}
+	project, err := projectPrompt.Run()
+	if err != nil {
+		return nil, err
+	}
+
+	repoPrompt := promptui.Prompt{
+		Label:    "Init: Repository",
+		Validate: validateURL,
+	}
+	repository, err := repoPrompt.Run()
+	if err != nil {
+		return nil, err
+	}
+
+	return &PackageFile{
+		Name:       author + ":" + project,
+		Repository: repository,
+	}, nil
 }

@@ -7,7 +7,7 @@ import (
 
 // intiCmd represents the init command
 var initCmd = &cobra.Command{
-	Use:   "init <author>",
+	Use:   "init",
 	Short: "Initialize a Nubo package",
 	Run:   execInit,
 }
@@ -18,18 +18,13 @@ func init() {
 }
 
 func execInit(cmd *cobra.Command, args []string) {
-	if len(args) != 1 {
-		cmd.Help()
-		return
-	}
-
 	p, err := packer.New(".")
 	if err != nil {
 		cmd.PrintErrln(err)
 		return
 	}
 
-	if err := p.Init(args[0]); err != nil {
+	if err := p.Write(); err != nil {
 		cmd.PrintErrln(err)
 		return
 	}
