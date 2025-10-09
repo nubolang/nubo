@@ -41,6 +41,7 @@ runtime:
   interpreter:
     import:
       prefix:
+        "@nubo/": "@nubolang/" # Use nubo packages with @nubo prefix instead
         "~": "{current_dir}" # ~ can be used as a prefix for the current directory root
         # You can modify this to load files from src instead by "{current_dir}/src"
         # Add as many prefixes as you want

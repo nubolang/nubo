@@ -27,6 +27,7 @@ func fnCallParser(ctx context.Context, attrParser Parser_HTML, id string, tokens
 	var (
 		parenCount    = 1
 		braceCount    = 0
+		bracketCount  = 0
 		currentTokens []*lexer.Token
 	)
 
@@ -72,7 +73,15 @@ loop:
 				braceCount--
 			}
 
-			if token.Type == lexer.TokenComma && parenCount == 1 && braceCount == 0 {
+			if token.Type == lexer.TokenOpenBracket {
+				bracketCount++
+			}
+
+			if token.Type == lexer.TokenCloseBracket {
+				bracketCount--
+			}
+
+			if token.Type == lexer.TokenComma && parenCount == 1 && braceCount == 0 && bracketCount == 0 {
 				tinx := 0
 				node, err := ValueParser(ctx, attrParser, currentTokens, &tinx)
 				if err != nil {

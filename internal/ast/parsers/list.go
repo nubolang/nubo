@@ -22,7 +22,7 @@ func ListParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, inx 
 	}
 
 	var (
-		cleaned     = make([]*lexer.Token, 0, len(tokens))
+		cleaned     = make([]*lexer.Token, 0)
 		bc      int = 1
 		brace   int = 0
 		paren   int = 0
@@ -55,6 +55,11 @@ func ListParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, inx 
 		}
 
 		cleaned = append(cleaned, token)
+
+		if bc == 0 {
+			*inx++
+			break
+		}
 
 		if brace == 0 && paren == 0 {
 			if err := inxNlPP(tokens, inx); err != nil {
