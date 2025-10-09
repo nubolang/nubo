@@ -1,0 +1,5 @@
+catch err {
+    panic("error")
+}
+
+println("error:", err)

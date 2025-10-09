@@ -34,7 +34,7 @@ func GetBuiltins() map[string]language.Object {
 		"concat":  native.NewFunction(concatFn),
 
 		// Errors
-		"fail":  n.Function(n.Describe(n.Arg("message", n.TString)), failFn),
+		"panic": n.Function(n.Describe(n.Arg("message", n.TString)), failFn),
 		"isNil": n.Function(n.Describe(n.Arg("obj", n.TAny)).Returns(n.TBool), isNilFn),
 
 		// Types

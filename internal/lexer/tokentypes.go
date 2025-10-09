@@ -36,7 +36,7 @@ const (
 	TokenNil        TokenType = "nil"
 
 	// Error
-	TokenTry TokenType = "try"
+	TokenTry TokenType = "catch"
 
 	// Symbols
 	TokenAssign         TokenType = "="
