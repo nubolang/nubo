@@ -53,15 +53,15 @@ func (ir *Interpreter) handleImport(node *astnode.Node) error {
 	if filepath.IsAbs(fileName) {
 		path = filepath.Clean(fileName)
 	} else {
-		var oldFileName string
+		path = fileName
 		for oldPrefix, newPrefix := range config.Current.Runtime.Interpreter.Import.Prefix {
 			if strings.HasPrefix(fileName, oldPrefix) {
-				fileName = filepath.Join(newPrefix, strings.TrimPrefix(fileName, oldPrefix))
+				path = filepath.Join(newPrefix, strings.TrimPrefix(fileName, oldPrefix))
 				break // allow only one match (not replacing replaced paths)
 			}
 		}
 
-		if oldFileName == fileName {
+		if path == fileName {
 			dir := filepath.Dir(ir.currentFile)
 			path = filepath.Join(dir, fileName)
 			path = filepath.Clean(path)
