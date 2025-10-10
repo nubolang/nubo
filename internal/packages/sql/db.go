@@ -82,8 +82,13 @@ func fnQuery(conn *SQLConn) func(*n.Args) (any, error) {
 			if err := rows.Scan(pointers...); err != nil {
 				return nil, err
 			}
+
 			values := make([]language.Object, len(cols))
 			for i := range rowValues {
+				if v, ok := rowValues[i].([]uint8); ok {
+					rowValues[i] = string(v)
+				}
+
 				value, err := language.FromValue(rowValues[i], false)
 				if err != nil {
 					return nil, err

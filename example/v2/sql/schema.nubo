@@ -1,0 +1,12 @@
+import sql from "@std/sql"
+import mysqldriver from "@std/sql/driver/mysql"
+
+fn connect() sql.DB {
+    const db = sql.open(mysqldriver("root", "password", "nubonotes"))
+    return db
+}
+
+const db = connect()
+
+const data = db.query("select * from sessions limit 1")
+println(data)
