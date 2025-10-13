@@ -97,6 +97,22 @@ func (r *Runtime) Interpret(file string, nodes []*astnode.Node) (language.Object
 		return nil, err
 	}
 
+	info, err := os.Stat(file)
+	if err != nil {
+		return nil, err
+	}
+
+	// check if same file already registered
+	r.mu.RLock()
+	for path := range r.filemap {
+		existingInfo, err := os.Stat(path)
+		if err == nil && os.SameFile(existingInfo, info) {
+			r.mu.RUnlock()
+			return nil, nil
+		}
+	}
+	r.mu.RUnlock()
+
 	interpreter := interpreter.New(file, r, false, wd)
 
 	r.mu.Lock()
@@ -129,14 +145,19 @@ func (r *Runtime) RemoveInterpreter(id uint) {
 }
 
 func (r *Runtime) FindInterpreter(file string) (*interpreter.Interpreter, bool) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	iid, ok := r.filemap[file]
-	if !ok {
+	info, err := os.Stat(file)
+	if err != nil {
 		return nil, false
 	}
 
-	interpreter, ok := r.interpreters[iid]
-	return interpreter, ok
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	for path, id := range r.filemap {
+		existingInfo, err := os.Stat(path)
+		if err == nil && os.SameFile(existingInfo, info) {
+			return r.interpreters[id], true
+		}
+	}
+	return nil, false
 }
