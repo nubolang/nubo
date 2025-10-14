@@ -95,7 +95,7 @@ func NewListPrototype(base *List) *ListPrototype {
 			newItems = append(newItems, result)
 		}
 
-		return NewList(newItems, TypeAny, fn.Debug()), nil
+		return NewList(newItems, fn.ReturnType, fn.Debug()), nil
 	}, base.Debug()))
 
 	lp.SetObject("includes", NewTypedFunction([]FnArg{&BasicFnArg{TypeVal: TypeAny, NameVal: "search"}}, TypeBool,
