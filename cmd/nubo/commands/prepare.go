@@ -35,7 +35,7 @@ func execPrepare(cmd *cobra.Command, args []string) {
 
 	folderPath := args[0]
 
-	if err := dotfolder.PrepareFiles(folderPath); err != nil {
+	if err := dotfolder.PrepareFiles(folderPath, false); err != nil {
 		cmd.PrintErrln(err)
 	}
 }

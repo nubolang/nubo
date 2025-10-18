@@ -113,3 +113,12 @@ func (le *LockEntry) Domain() string {
 	}
 	return uri.Hostname()
 }
+
+func (lf *LockFile) Find(url string) (*LockEntry, error) {
+	for _, entry := range lf.Entries {
+		if entry.Source == url {
+			return entry, nil
+		}
+	}
+	return nil, fmt.Errorf("package not found")
+}

@@ -27,6 +27,8 @@ type Runtime struct {
 	interpreters map[uint]*interpreter.Interpreter
 	// filemap is a map of file paths to unique interpreter identifiers.
 	filemap map[string]uint
+	// returnMap is a map of interpreter identifiers to their computed return values if any
+	returnMap map[uint]language.Object
 
 	builtins map[string]language.Object
 	packages map[string]language.Object
@@ -39,6 +41,7 @@ func New(pubsubProvider events.Provider) *Runtime {
 		iid:            0,
 		interpreters:   make(map[uint]*interpreter.Interpreter),
 		filemap:        make(map[string]uint),
+		returnMap:      make(map[uint]language.Object),
 		builtins:       builtin.GetBuiltins(),
 		packages:       make(map[string]language.Object),
 	}
@@ -104,9 +107,13 @@ func (r *Runtime) Interpret(file string, nodes []*astnode.Node) (language.Object
 
 	// check if same file already registered
 	r.mu.RLock()
-	for path := range r.filemap {
+	for path, id := range r.filemap {
 		existingInfo, err := os.Stat(path)
 		if err == nil && os.SameFile(existingInfo, info) {
+			if ret, ok := r.returnMap[id]; ok {
+				r.mu.RUnlock()
+				return ret, nil
+			}
 			r.mu.RUnlock()
 			return nil, nil
 		}

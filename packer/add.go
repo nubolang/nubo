@@ -34,30 +34,9 @@ func (p *Packer) Add(uri string) error {
 }
 
 func (p *Packer) realAdd(uri string) error {
-	uri = strings.TrimPrefix(uri, "https://")
-	uri = strings.TrimPrefix(uri, "http://")
-	atIdx := strings.LastIndex(uri, "@")
-
-	var source, version string
-	if atIdx == -1 {
-		source = uri
-		version = "latest"
-	} else {
-		source = uri[:atIdx]
-		version = uri[atIdx+1:]
-		if version == "" {
-			version = "latest"
-		}
-	}
-
-	parts := strings.Split(source, "/")
-	if len(parts) < 3 {
-		return fmt.Errorf("invalid source format")
-	}
-	domain, user, repo := parts[0], parts[1], parts[2]
-	subpath := ""
-	if len(parts) > 3 {
-		subpath = strings.Join(parts[3:], "/")
+	domain, user, repo, subpath, version, err := parseURI(uri)
+	if err != nil {
+		return err
 	}
 
 	repoURL := fmt.Sprintf("https://%s/%s/%s.git", domain, user, repo)
@@ -215,4 +194,34 @@ func (p *Packer) updatePackageFiles(user, repo, subpath, repoURL, hash, shortHas
 	}
 
 	return p.Lock.Save(p.root)
+}
+
+func parseURI(uri string) (string, string, string, string, string, error) {
+	uri = strings.TrimPrefix(uri, "https://")
+	uri = strings.TrimPrefix(uri, "http://")
+	atIdx := strings.LastIndex(uri, "@")
+
+	var source, version string
+	if atIdx == -1 {
+		source = uri
+		version = "latest"
+	} else {
+		source = uri[:atIdx]
+		version = uri[atIdx+1:]
+		if version == "" {
+			version = "latest"
+		}
+	}
+
+	parts := strings.Split(source, "/")
+	if len(parts) < 3 {
+		return "", "", "", "", "", fmt.Errorf("invalid source format")
+	}
+	domain, user, repo := parts[0], parts[1], parts[2]
+	subpath := ""
+	if len(parts) > 3 {
+		subpath = strings.Join(parts[3:], "/")
+	}
+
+	return domain, user, repo, version, subpath, nil
 }

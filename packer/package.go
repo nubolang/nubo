@@ -27,11 +27,14 @@ type PackageFile struct {
 	Packages   []*Package `yaml:"packages"`
 }
 
-func LoadPackageFile(root string) (*PackageFile, error) {
+func LoadPackageFile(root string, forceCreate bool) (*PackageFile, error) {
 	path := filepath.Join(root, PackageYaml)
 
 	file, err := os.Open(path)
 	if err != nil {
+		if !forceCreate {
+			return &PackageFile{}, nil
+		}
 		if os.IsNotExist(err) {
 			return getPackage()
 		}
@@ -109,4 +112,13 @@ func getPackage() (*PackageFile, error) {
 		Name:       author + ":" + project,
 		Repository: repository,
 	}, nil
+}
+
+func (pf *PackageFile) Find(url string) (*Package, error) {
+	for _, p := range pf.Packages {
+		if p.Source == url {
+			return p, nil
+		}
+	}
+	return nil, fmt.Errorf("package not found")
 }

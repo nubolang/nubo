@@ -14,10 +14,12 @@ import (
 	"github.com/nubolang/nubo/internal/lexer"
 )
 
-func PrepareFiles(dir string) error {
+func PrepareFiles(dir string, sameDir bool) error {
 	preparedPath := filepath.Join(dir, RootFolderName, PreparedFolderName)
-	if err := os.MkdirAll(preparedPath, 0755); err != nil {
-		return err
+	if !sameDir {
+		if err := os.MkdirAll(preparedPath, 0755); err != nil {
+			return err
+		}
 	}
 
 	return filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
@@ -35,10 +37,15 @@ func PrepareFiles(dir string) error {
 		}
 
 		newPath := strings.TrimSuffix(relPath, ".nubo") + ".nuboc"
-		dest := filepath.Join(preparedPath, newPath)
 
-		if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
-			return err
+		var dest string
+		if sameDir {
+			dest = filepath.Join(filepath.Dir(path), filepath.Base(newPath))
+		} else {
+			dest = filepath.Join(preparedPath, newPath)
+			if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
+				return err
+			}
 		}
 
 		file, err := os.Open(path)
@@ -56,7 +63,7 @@ func PrepareFiles(dir string) error {
 			return err
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
 		parser := ast.New(ctx)
@@ -77,8 +84,25 @@ func PrepareFiles(dir string) error {
 
 func HasPrepared(file string) ([]*astnode.Node, bool) {
 	dir := filepath.Dir(file)
-	name := strings.TrimSuffix(filepath.Base(file), ".nubo") + ".nuboc"
-	preparedPath := filepath.Join(dir, RootFolderName, PreparedFolderName, name)
+	base := strings.TrimSuffix(filepath.Base(file), ".nubo")
+	preparedPath := filepath.Join(dir, RootFolderName, PreparedFolderName, base+".nuboc")
+
+	// fallback path (same dir)
+	if _, err := os.Stat(preparedPath); os.IsNotExist(err) {
+		preparedPath = filepath.Join(dir, base+".nuboc")
+	}
+
+	preparedInfo, err := os.Stat(preparedPath)
+	if err != nil {
+		return nil, false
+	}
+	originalInfo, err := os.Stat(file)
+	if err != nil {
+		return nil, false
+	}
+	if originalInfo.ModTime().After(preparedInfo.ModTime()) {
+		return nil, false
+	}
 
 	f, err := os.Open(preparedPath)
 	if err != nil {

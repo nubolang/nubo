@@ -17,8 +17,26 @@ type Packer struct {
 	Lock    *LockFile
 }
 
+func Init(root string) (*Packer, error) {
+	pkg, err := LoadPackageFile(root, true)
+	if err != nil {
+		return nil, err
+	}
+
+	lock, err := LoadLockFile(root)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Packer{
+		root:    root,
+		Package: pkg,
+		Lock:    lock,
+	}, nil
+}
+
 func New(root string) (*Packer, error) {
-	pkg, err := LoadPackageFile(root)
+	pkg, err := LoadPackageFile(root, false)
 	if err != nil {
 		return nil, err
 	}

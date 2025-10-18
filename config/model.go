@@ -116,6 +116,14 @@ func (c *Config) ApplyDefaults() {
 	}
 }
 
+func (c *Config) String() string {
+	if b, err := yaml.Marshal(c); err != nil {
+		return err.Error()
+	} else {
+		return string(b)
+	}
+}
+
 // ReplaceVariables substitutes placeholders in strings using a map
 func ReplaceVariables(input string, vars map[string]string) string {
 	for k, v := range vars {

@@ -18,7 +18,7 @@ func init() {
 }
 
 func execInit(cmd *cobra.Command, args []string) {
-	p, err := packer.New(".")
+	p, err := packer.Init(".")
 	if err != nil {
 		cmd.PrintErrln(err)
 		return

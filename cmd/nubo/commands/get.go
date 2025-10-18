@@ -5,19 +5,20 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// addCmd represents the add command
-var addCmd = &cobra.Command{
-	Use:   "add <url>",
+// getCmd represents the get command
+var getCmd = &cobra.Command{
+	Use:   "get <url>",
 	Short: "Add a package to the current project from a remote host",
-	Run:   execAdd,
+	Run:   execGet,
 }
 
 func init() {
-	// Add the add command to the root command
-	rootCmd.AddCommand(addCmd)
+	getCmd.Flags().BoolP("force", "f", false, "Keep going even if a package cannot be downloaded")
+	// Add the get command to the root command
+	rootCmd.AddCommand(getCmd)
 }
 
-func execAdd(cmd *cobra.Command, args []string) {
+func execGet(cmd *cobra.Command, args []string) {
 	if len(args) == 0 {
 		cmd.Help()
 		return
@@ -29,10 +30,14 @@ func execAdd(cmd *cobra.Command, args []string) {
 		return
 	}
 
+	force, _ := cmd.Flags().GetBool("force")
+
 	for _, repo := range args {
 		if err := p.Add(repo); err != nil {
 			cmd.PrintErrln(err)
-			return
+			if !force {
+				return
+			}
 		}
 	}
 }

@@ -25,5 +25,6 @@ func execConfig(cmd *cobra.Command, args []string) {
 	if err != nil {
 		cmd.PrintErrln(err)
 	}
-	fmt.Println("Config file:", file)
+	fmt.Printf("Config file: %s\n", file)
+	fmt.Println(config.Current.String())
 }
