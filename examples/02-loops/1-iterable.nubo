@@ -9,9 +9,16 @@
 // }
 //
 // impl YourIterable {
-//      fn __iterate__(self: YourIterable) -> iter.Progress {
-//          return iter.Progress(key, value)
-//          // or...
-//          return iter.End()
+//      fn __iterate__(self: YourIterable) iter.Iterator {
+//          let length = self.s.length()
+//          let index = 0
+//
+//          return iter.Iterator(fn() iter.Progress {
+//              if index > length {
+//                  return iter.EndProgress
+//              }
+//              defer index++ // only increment index after progress is returned
+//              return iter.Progress(index, value)
+//          })
 //      }
 // }

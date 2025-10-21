@@ -1,5 +1,0 @@
-fn Button(attr: string[], children: html[]) -> html {
-    return <button class="xyz">
-        {children}
-    </button>
-}

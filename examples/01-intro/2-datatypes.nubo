@@ -60,7 +60,7 @@ let value = dictVal["one"]
 // Nil is also a type, which represents that a value is not set.
 let nilVal = nil
 // Nil can be used for functions to return a value is not set.
-fn findUser() -> dict[string,string]{
+fn findUser() dict[string, string] {
     if !false {
         return nil
     }

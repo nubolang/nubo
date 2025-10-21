@@ -12,6 +12,7 @@ type StructInstance struct {
 	base      *Struct
 	Name      string
 	prototype *StructPrototype
+	bucket    map[string]any
 	debug     *debug.Debug
 }
 
@@ -156,4 +157,18 @@ func (s *StructInstance) Iterator() func() (Object, Object, bool) {
 		inx++
 		return NewString(key.Name, s.debug), value, true
 	}
+}
+
+func (s *StructInstance) BucketGet(key string) (any, bool) {
+	if s.bucket == nil {
+		return nil, false
+	}
+	return s.bucket[key], true
+}
+
+func (s *StructInstance) BucketSet(key string, value any) {
+	if s.bucket == nil {
+		s.bucket = make(map[string]any)
+	}
+	s.bucket[key] = value
 }

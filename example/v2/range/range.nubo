@@ -1,0 +1,29 @@
+struct _range {
+    _from: int
+    _to: int
+    _step: int
+}
+
+impl _range {
+    fn init(self: _range, _from: int, to: int|nil = nil, step: int|nil = nil) _range {
+        self._from = _from;
+        self._to = 0;
+        self._step = 0;
+        return self
+    }
+
+    fn __iterate__() iter.Iterator {
+        let current = self._from
+        return iter.Iterator(fn() iter.Progress {
+            if current > self._to {
+                return iter.EndProgress
+            }
+            let value = current
+            current = current + self._step
+            return iter.Progress(value, value)
+        })
+    }
+}
+
+println(_range)
+println(inspect(_range(0).__iterate__))

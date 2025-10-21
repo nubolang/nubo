@@ -4,14 +4,14 @@
 // If not specified, every function has a union type.
 // The union type is basically a union(any, void)
 // The any type accepts any value type, except void.
-fn main() -> void {
+fn main() void {
     return
 }
 // Void functions can never be used as a value.
 // A void function returns nothing.
 
 // Alternative function declaration, other syntax but the same as fn foo(name: string) -> void
-const foo = fn(name: string) -> void {
+const foo = fn(name: string) void {
     println("Hello,", name)
     return
 }

@@ -81,6 +81,11 @@ type Prototype interface {
 	SetObject(name string, value Object) error
 }
 
+type Bucketable interface {
+	BucketGet(key string) (any, bool)
+	BucketSet(key string, value any)
+}
+
 type Object interface {
 	ID() string
 

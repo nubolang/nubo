@@ -1,0 +1,7 @@
+// Unknown object prototypes
+
+// To know the prototype of an object, use the `inspect` function.
+
+const object = {}
+
+println(inspect(object)) // this will print a complex representation of the object

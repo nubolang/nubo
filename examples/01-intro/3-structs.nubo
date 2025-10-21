@@ -24,7 +24,7 @@ demoUser.email = "john.doe@example.com"
 // This is why Nubo added the impl keyword, to implement methods for a struct.
 
 impl User {
-    fn init(self: User, name: string, age: int, email: string) -> User {
+    fn init(self: User, name: string, age: int, email: string) User {
         self.name = name
         self.age = age
         self.email = email
@@ -35,7 +35,7 @@ impl User {
         println("Hello, my name is", self.name, "and I'm", self.age, "years old.")
     }
 
-    fn __clone__(self: User) -> User {
+    fn __clone__(self: User) User {
         // string, int are cloneable by default and when passed as arguments
         // Nubo automatically clones them
         return User(self.name, self.age, self.email)

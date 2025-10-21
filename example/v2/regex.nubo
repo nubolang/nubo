@@ -1,0 +1,23 @@
+let r = regex("a\\d+")  // matches 'a' followed by digits
+
+// match
+println(r.match("a123"))   // true
+println(r.match("b123"))   // false
+
+// find
+println(r.find("x a123 y a456"))   // "a123"
+
+// findAll
+let all = r.findAll("x a123 y a456")
+for i in all.length() {
+    println(all[i])   // "a123", then "a456"
+}
+
+// replace all
+println(r.replace("x a123 y a456", "Z"))       // "x Z y Z"
+
+// replace only 1 occurrence
+println(r.replace("x a123 y a456", "Z", 1))    // "x Z y a456"
+
+// replace 0 occurrences
+println(r.replace("x a123 y a456", "Z", 0))    // "x a123 y a456"

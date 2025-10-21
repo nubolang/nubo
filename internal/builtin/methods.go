@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/DmitriyVTitov/size"
 	"github.com/nubolang/nubo/internal/codehighlight"
 	"github.com/nubolang/nubo/internal/debug"
 	"github.com/nubolang/nubo/internal/exception"
@@ -23,6 +24,7 @@ func GetBuiltins() map[string]language.Object {
 		"print":   native.NewFunction(printFn),
 		"type":    native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeString, typeFn),
 		"_type":   native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeString, _typeFn),
+		"memsize": native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeInt, memsizeFn),
 		"inspect": native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeString, inspectFn),
 		"sleep":   native.NewTypedFunction(native.OneArg("ms", language.TypeInt, language.NewInt(0, nil)), language.TypeVoid, sleepFn),
 		"ref":     native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeAny, refFn),
@@ -47,6 +49,7 @@ func GetBuiltins() map[string]language.Object {
 		"bytes":  native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.NewListType(language.TypeByte), bytesFn),
 
 		"highlight": n.Function(n.Describe(n.Arg("code", n.TString), n.Arg("mode", n.TString, n.String("console"))).Returns(n.TString), hlFn),
+		"regex":     regex(),
 
 		// Debug
 		"xdbg":        native.NewFunction(xdbgFn),
@@ -94,6 +97,14 @@ func typeFn(ctx native.FnCtx) (language.Object, error) {
 		return nil, err
 	}
 	return language.NewString(obj.Type().String(), nil), nil
+}
+
+func memsizeFn(ctx native.FnCtx) (language.Object, error) {
+	obj, err := ctx.Get("obj")
+	if err != nil {
+		return nil, err
+	}
+	return language.NewInt(int64(size.Of(obj)), nil), nil
 }
 
 func inspectFn(ctx native.FnCtx) (language.Object, error) {

@@ -3,6 +3,7 @@ module github.com/nubolang/nubo
 go 1.23.7
 
 require (
+	github.com/DmitriyVTitov/size v1.5.0
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
 	github.com/cespare/xxhash/v2 v2.3.0
 	github.com/expr-lang/expr v1.17.4
