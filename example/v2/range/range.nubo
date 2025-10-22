@@ -16,7 +16,7 @@ impl _range {
         let current = self._from
         return iter.Iterator(fn() iter.Progress {
             if current > self._to {
-                return iter.EndProgress
+                return iter.End
             }
             let value = current
             current = current + self._step

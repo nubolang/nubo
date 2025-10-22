@@ -118,12 +118,12 @@ func (i *Interpreter) handleIncrement(node *astnode.Node) error {
 	}
 
 	proto := value.GetPrototype()
-	incr, ok := proto.GetObject("increment")
+	incr, ok := proto.GetObject(i.ctx, "increment")
 	if !ok {
 		return runExc("cannot increment variable %q: no implementation for increment()", node.Content).WithDebug(node.Debug)
 	}
 
-	if _, err := incr.(*language.Function).Data(nil); err != nil {
+	if _, err := incr.(*language.Function).Data(i.ctx, nil); err != nil {
 		return wrapRunExc(err, node.Debug, fmt.Sprintf("cannot increment %q: @err", node.Content))
 	}
 	return nil
@@ -136,12 +136,12 @@ func (i *Interpreter) handleDecrement(node *astnode.Node) error {
 	}
 
 	proto := value.GetPrototype()
-	decr, ok := proto.GetObject("decrement")
+	decr, ok := proto.GetObject(i.ctx, "decrement")
 	if !ok {
 		return runExc("cannot decrement variable %q: no implementation for decrement()", node.Content).WithDebug(node.Debug)
 	}
 
-	_, err := decr.(*language.Function).Data(nil)
+	_, err := decr.(*language.Function).Data(i.ctx, nil)
 	return err
 }
 
@@ -161,7 +161,7 @@ func (i *Interpreter) setAccess(current language.Object, access []*astnode.Node,
 			return runExc("cannot operate on variable: no implementation for __get__()").WithDebug(obj.Debug())
 		}
 
-		getter, ok := current.GetPrototype().GetObject("__get__")
+		getter, ok := current.GetPrototype().GetObject(i.ctx, "__get__")
 		if !ok {
 			return runExc("cannot operate on variable: no implementation for __get__()").WithDebug(obj.Debug())
 		}
@@ -171,7 +171,7 @@ func (i *Interpreter) setAccess(current language.Object, access []*astnode.Node,
 			return runExc("cannot operate on variable: bad implementation for __get__()").WithDebug(obj.Debug())
 		}
 
-		value, err := getterFn.Data([]language.Object{obj})
+		value, err := getterFn.Data(i.ctx, []language.Object{obj})
 		if err != nil {
 			return wrapRunExc(err, obj.Debug())
 		}
@@ -190,7 +190,7 @@ func (i *Interpreter) setAccess(current language.Object, access []*astnode.Node,
 		return runExc("undefined property %s", obj.String()).WithDebug(current.Debug())
 	}
 
-	setter, ok := proto.GetObject("__set__")
+	setter, ok := proto.GetObject(i.ctx, "__set__")
 	if !ok {
 		return runExc("cannot operate on variable: no implementation for __set__()").WithDebug(obj.Debug())
 	}
@@ -200,7 +200,7 @@ func (i *Interpreter) setAccess(current language.Object, access []*astnode.Node,
 		return runExc("cannot operate on variable: bad implementation for __set__()").WithDebug(obj.Debug())
 	}
 
-	if _, err = setterFn.Data([]language.Object{obj, value}); err != nil {
+	if _, err = setterFn.Data(i.ctx, []language.Object{obj, value}); err != nil {
 		return wrapRunExc(err, obj.Debug())
 	}
 

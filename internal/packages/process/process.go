@@ -2,6 +2,7 @@ package process
 
 import (
 	"bytes"
+	"context"
 	"os/exec"
 
 	"github.com/nubolang/nubo/internal/debug"
@@ -14,7 +15,8 @@ func NewProcess(dg *debug.Debug) language.Object {
 	instance := n.NewPackage("process", dg)
 	proto := instance.GetPrototype()
 
-	proto.SetObject("run", native.NewTypedFunction(
+	ctx := context.Background()
+	proto.SetObject(ctx, "run", native.NewTypedFunction(ctx,
 		[]language.FnArg{
 			&language.BasicFnArg{TypeVal: language.TypeString, NameVal: "cmd"},
 			&language.BasicFnArg{TypeVal: language.TypeList, NameVal: "args", DefaultVal: language.NewList(nil, language.TypeAny, nil)},
@@ -45,11 +47,12 @@ func NewProcess(dg *debug.Debug) language.Object {
 				}
 			}
 
+			c := context.Background()
 			result := language.NewStruct("@std/process:result", nil, nil)
 			proto := result.GetPrototype()
-			proto.SetObject("stdout", language.NewString(outBuf.String(), nil))
-			proto.SetObject("stderr", language.NewString(errBuf.String(), nil))
-			proto.SetObject("exit", language.NewInt(int64(exitCode), nil))
+			proto.SetObject(c, "stdout", language.NewString(outBuf.String(), nil))
+			proto.SetObject(c, "stderr", language.NewString(errBuf.String(), nil))
+			proto.SetObject(c, "exit", language.NewInt(int64(exitCode), nil))
 
 			return result, nil
 		},

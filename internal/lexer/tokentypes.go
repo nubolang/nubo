@@ -28,6 +28,7 @@ const (
 	TokenContinue TokenType = "continue"
 	TokenReturn   TokenType = "return"
 	TokenDefer    TokenType = "defer"
+	TokenPrivate  TokenType = "private"
 
 	TokenIdentifier TokenType = "identifier"
 	TokenString     TokenType = "string"
@@ -128,6 +129,7 @@ func Keywords() []TokenType {
 
 		TokenTry,
 		TokenDefer,
+		TokenPrivate,
 	}
 }
 

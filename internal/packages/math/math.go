@@ -1,6 +1,7 @@
 package math
 
 import (
+	"context"
 	"math"
 
 	"github.com/nubolang/nubo/internal/debug"
@@ -13,14 +14,15 @@ func NewMath(dg *debug.Debug) language.Object {
 	instance := n.NewPackage("math", dg)
 	proto := instance.GetPrototype()
 
-	proto.SetObject("abs", native.NewTypedFunction(native.OneArg("number", language.TypeNumber), language.TypeNumber, absFn))
-	proto.SetObject("sqrt", native.NewTypedFunction(native.OneArg("number", language.TypeNumber), language.TypeFloat, sqrtFn))
-	proto.SetObject("pow", native.NewTypedFunction([]language.FnArg{
+	ctx := context.Background()
+	proto.SetObject(ctx, "abs", native.NewTypedFunction(ctx, native.OneArg("number", language.TypeNumber), language.TypeNumber, absFn))
+	proto.SetObject(ctx, "sqrt", native.NewTypedFunction(ctx, native.OneArg("number", language.TypeNumber), language.TypeFloat, sqrtFn))
+	proto.SetObject(ctx, "pow", native.NewTypedFunction(ctx, []language.FnArg{
 		&language.BasicFnArg{TypeVal: language.TypeNumber, NameVal: "base"},
 		&language.BasicFnArg{TypeVal: language.TypeNumber, NameVal: "exp"},
 	}, language.TypeFloat, powFn))
-	proto.SetObject("sin", native.NewTypedFunction(native.OneArg("x", language.TypeNumber), language.TypeFloat, sinFn))
-	proto.SetObject("cos", native.NewTypedFunction(native.OneArg("x", language.TypeNumber), language.TypeFloat, cosFn))
+	proto.SetObject(ctx, "sin", native.NewTypedFunction(ctx, native.OneArg("x", language.TypeNumber), language.TypeFloat, sinFn))
+	proto.SetObject(ctx, "cos", native.NewTypedFunction(ctx, native.OneArg("x", language.TypeNumber), language.TypeFloat, cosFn))
 
 	return instance
 }

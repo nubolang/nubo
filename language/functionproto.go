@@ -1,6 +1,9 @@
 package language
 
-import "sync"
+import (
+	"context"
+	"sync"
+)
 
 type FunctionPrototype struct {
 	base *Function
@@ -50,7 +53,9 @@ func NewFunctionPrototype(base *Function) *FunctionPrototype {
 		argObjs[i] = dict
 	}
 
-	fp.SetObject("__args__", NewList(argObjs, NewDictType(TypeString, TypeAny), base.debug))
+	ctx := context.Background()
+
+	fp.SetObject(ctx, "__args__", NewList(argObjs, NewDictType(TypeString, TypeAny), base.debug))
 
 	typ := base.ReturnType
 	typs := make([]Object, 0)
@@ -68,19 +73,19 @@ func NewFunctionPrototype(base *Function) *FunctionPrototype {
 	} else {
 		realTyp = NewList(typs, TypeString, base.debug)
 	}
-	fp.SetObject("__returns__", realTyp)
+	fp.SetObject(ctx, "__returns__", realTyp)
 
 	return fp
 }
 
-func (fp *FunctionPrototype) GetObject(name string) (Object, bool) {
+func (fp *FunctionPrototype) GetObject(ctx context.Context, name string) (Object, bool) {
 	fp.mu.RLock()
 	defer fp.mu.RUnlock()
 	obj, ok := fp.data[name]
 	return obj, ok
 }
 
-func (fp *FunctionPrototype) SetObject(name string, value Object) error {
+func (fp *FunctionPrototype) SetObject(ctx context.Context, name string, value Object) error {
 	fp.mu.Lock()
 	defer fp.mu.Unlock()
 	fp.data[name] = value

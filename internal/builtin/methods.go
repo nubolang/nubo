@@ -1,6 +1,7 @@
 package builtin
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strconv"
@@ -18,19 +19,21 @@ import (
 )
 
 func GetBuiltins() map[string]language.Object {
+	ctx := context.Background()
+
 	return map[string]language.Object{
-		"_id":     native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeString, idFn),
+		"_id":     native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeString, idFn),
 		"println": native.NewFunction(printlnFn),
 		"print":   native.NewFunction(printFn),
-		"type":    native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeString, typeFn),
-		"_type":   native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeString, _typeFn),
-		"memsize": native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeInt, memsizeFn),
-		"inspect": native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeString, inspectFn),
-		"sleep":   native.NewTypedFunction(native.OneArg("ms", language.TypeInt, language.NewInt(0, nil)), language.TypeVoid, sleepFn),
-		"ref":     native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeAny, refFn),
-		"unwrap":  native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeAny, unwrapFn),
-		"clone":   native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeAny, cloneFn),
-		"exit":    native.NewTypedFunction(native.OneArg("code", language.TypeInt, language.NewInt(0, nil)), language.TypeVoid, exitFn),
+		"type":    native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeString, typeFn),
+		"_type":   native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeString, _typeFn),
+		"memsize": native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeInt, memsizeFn),
+		"inspect": native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeString, inspectFn),
+		"sleep":   native.NewTypedFunction(ctx, native.OneArg("ms", language.TypeInt, language.NewInt(0, nil)), language.TypeVoid, sleepFn),
+		"ref":     native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeAny, refFn),
+		"unwrap":  native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeAny, unwrapFn),
+		"clone":   native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeAny, cloneFn),
+		"exit":    native.NewTypedFunction(ctx, native.OneArg("code", language.TypeInt, language.NewInt(0, nil)), language.TypeVoid, exitFn),
 		"range":   n.Function(n.Describe(n.Arg("start", n.TInt), n.Arg("stop", n.TUnion(n.TInt, n.TNil), language.Nil), n.Arg("step", n.TInt, n.Int(1))).Returns(n.TTList(n.TInt)), rangeFn),
 		"env":     n.Function(n.Describe(n.Arg("name", n.TString), n.Arg("value", n.Nullable(n.TString), language.Nil)).Returns(n.Nullable(n.TString)), envFn),
 		"concat":  native.NewFunction(concatFn),
@@ -40,13 +43,13 @@ func GetBuiltins() map[string]language.Object {
 		"isNil": n.Function(n.Describe(n.Arg("obj", n.TAny)).Returns(n.TBool), isNilFn),
 
 		// Types
-		"string": native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeString, stringFn),
-		"int":    native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeInt, intFn),
-		"float":  native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeFloat, floatFn),
-		"bool":   native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeBool, boolFn),
-		"byte":   native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeByte, byteFn),
-		"char":   native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.TypeChar, charFn),
-		"bytes":  native.NewTypedFunction(native.OneArg("obj", language.TypeAny), language.NewListType(language.TypeByte), bytesFn),
+		"string": native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeString, stringFn),
+		"int":    native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeInt, intFn),
+		"float":  native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeFloat, floatFn),
+		"bool":   native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeBool, boolFn),
+		"byte":   native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeByte, byteFn),
+		"char":   native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeChar, charFn),
+		"bytes":  native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.NewListType(language.TypeByte), bytesFn),
 
 		"highlight": n.Function(n.Describe(n.Arg("code", n.TString), n.Arg("mode", n.TString, n.String("console"))).Returns(n.TString), hlFn),
 		"regex":     regex(),

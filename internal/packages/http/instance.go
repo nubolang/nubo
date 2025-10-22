@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -24,8 +25,8 @@ func NewInstance(dg *debug.Debug) (language.Object, error) {
 	proto.Unlock()
 	defer proto.Lock()
 
-	proto.SetObject("request", n.Function(n.Describe(n.Arg("method", n.TString), n.Arg("url", n.TString), n.Arg("config", config(dg).Type(), language.Nil)).Returns(getResp(dg).Type()), func(a *n.Args) (any, error) {
-		base, _ := proto.GetObject("baseUrl")
+	proto.SetObject(context.Background(), "request", n.Function(n.Describe(n.Arg("method", n.TString), n.Arg("url", n.TString), n.Arg("config", config(dg).Type(), language.Nil)).Returns(getResp(dg).Type()), func(a *n.Args) (any, error) {
+		base, _ := proto.GetObject(a.Context(), "baseUrl")
 		baseUrl := base.String()
 
 		method := a.Name("method").String()
@@ -48,13 +49,13 @@ func NewInstance(dg *debug.Debug) (language.Object, error) {
 		config := a.Name("config")
 		if config.Type().Base() != language.ObjectTypeNil {
 			configProto := config.GetPrototype()
-			if bd, ok := configProto.GetObject("body"); ok {
+			if bd, ok := configProto.GetObject(a.Context(), "body"); ok {
 				if bd.Type().Base() != language.ObjectTypeNil {
 					body = strings.NewReader(bd.String())
 				}
 			}
 
-			if tm, ok := configProto.GetObject("timeout"); ok {
+			if tm, ok := configProto.GetObject(a.Context(), "timeout"); ok {
 				if tm.Type().Base() != language.ObjectTypeNil {
 					tmInt := tm.Value().(int64)
 					if tmInt != 0 {
@@ -63,7 +64,7 @@ func NewInstance(dg *debug.Debug) (language.Object, error) {
 				}
 			}
 
-			if hd, ok := configProto.GetObject("headers"); ok {
+			if hd, ok := configProto.GetObject(a.Context(), "headers"); ok {
 				if hd.Type().Base() != language.ObjectTypeNil {
 					hds := hd.Value().(map[language.Object]language.Object)
 					for k, v := range hds {

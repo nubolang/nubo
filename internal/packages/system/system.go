@@ -1,6 +1,7 @@
 package system
 
 import (
+	"context"
 	"os"
 
 	"github.com/nubolang/nubo/internal/debug"
@@ -12,32 +13,33 @@ func NewSystem(dg *debug.Debug) language.Object {
 	instance := n.NewPackage("system", dg)
 	proto := instance.GetPrototype()
 
-	proto.SetObject("stdin", n.Int(int(os.Stdin.Fd()), dg))
-	proto.SetObject("stdout", n.Int(int(os.Stdout.Fd()), dg))
-	proto.SetObject("stderr", n.Int(int(os.Stderr.Fd()), dg))
+	ctx := context.Background()
+	proto.SetObject(ctx, "stdin", n.Int(int(os.Stdin.Fd()), dg))
+	proto.SetObject(ctx, "stdout", n.Int(int(os.Stdout.Fd()), dg))
+	proto.SetObject(ctx, "stderr", n.Int(int(os.Stderr.Fd()), dg))
 
 	// Program-control
-	proto.SetObject("args", args)
-	proto.SetObject("exit", exit)
-	proto.SetObject("abort", abort)
-	proto.SetObject("pid", pid)
-	proto.SetObject("kill", kill)
+	proto.SetObject(ctx, "args", args)
+	proto.SetObject(ctx, "exit", exit)
+	proto.SetObject(ctx, "abort", abort)
+	proto.SetObject(ctx, "pid", pid)
+	proto.SetObject(ctx, "kill", kill)
 
 	// System information
-	proto.SetObject("osName", osName)
-	proto.SetObject("arch", arch)
-	proto.SetObject("hostname", hostname)
-	proto.SetObject("user", user)
-	proto.SetObject("cpu", cpu)
-	proto.SetObject("memoryTotal", memoryTotal)
-	proto.SetObject("memoryFree", memoryFree)
-	proto.SetObject("uptime", uptime)
-	proto.SetObject("isTTY", isTTY)
+	proto.SetObject(ctx, "osName", osName)
+	proto.SetObject(ctx, "arch", arch)
+	proto.SetObject(ctx, "hostname", hostname)
+	proto.SetObject(ctx, "user", user)
+	proto.SetObject(ctx, "cpu", cpu)
+	proto.SetObject(ctx, "memoryTotal", memoryTotal)
+	proto.SetObject(ctx, "memoryFree", memoryFree)
+	proto.SetObject(ctx, "uptime", uptime)
+	proto.SetObject(ctx, "isTTY", isTTY)
 
 	// Filesystem
-	proto.SetObject("cwd", cwd)
-	proto.SetObject("chdir", chdir)
-	proto.SetObject("tempDir", tempDir)
+	proto.SetObject(ctx, "cwd", cwd)
+	proto.SetObject(ctx, "chdir", chdir)
+	proto.SetObject(ctx, "tempDir", tempDir)
 
 	return instance
 }

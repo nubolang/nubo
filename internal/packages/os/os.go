@@ -1,6 +1,7 @@
 package os
 
 import (
+	"context"
 	"os"
 
 	"github.com/nubolang/nubo/internal/debug"
@@ -34,7 +35,8 @@ func NewOS(dg *debug.Debug) language.Object {
 		}, dg)
 	}
 
-	proto.SetObject("readDir", n.Function(n.Describe(n.Arg("dir", n.TString)).Returns(n.TTList(dirEntry.Type())), readDir))
+	ctx := context.Background()
+	proto.SetObject(ctx, "readDir", n.Function(n.Describe(n.Arg("dir", n.TString)).Returns(n.TTList(dirEntry.Type())), readDir))
 
 	return instance
 }
@@ -46,6 +48,8 @@ func readDir(args *n.Args) (any, error) {
 		return nil, err
 	}
 
+	ctx := context.Background()
+
 	var result = make([]language.Object, len(entries))
 	for i, entry := range entries {
 		inst, err := dirEntry.NewInstance()
@@ -53,10 +57,10 @@ func readDir(args *n.Args) (any, error) {
 			return nil, err
 		}
 		proto := inst.GetPrototype()
-		proto.SetObject("name", n.String(entry.Name(), dir.Debug()))
-		proto.SetObject("isDir", n.Bool(entry.IsDir(), dir.Debug()))
+		proto.SetObject(ctx, "name", n.String(entry.Name(), dir.Debug()))
+		proto.SetObject(ctx, "isDir", n.Bool(entry.IsDir(), dir.Debug()))
 
-		proto.SetObject("info", n.Function(n.Describe().Returns(fileInfo.Type()), func(a *n.Args) (any, error) {
+		proto.SetObject(ctx, "info", n.Function(n.Describe().Returns(fileInfo.Type()), func(a *n.Args) (any, error) {
 			info, err := entry.Info()
 			if err != nil {
 				return nil, err
@@ -74,16 +78,16 @@ func readDir(args *n.Args) (any, error) {
 			}
 
 			proto := inst.GetPrototype()
-			proto.SetObject("name", n.String(name, dir.Debug()))
-			proto.SetObject("isDir", n.Bool(isDir, dir.Debug()))
-			proto.SetObject("size", n.Int64(size, dir.Debug()))
-			proto.SetObject("mode", n.Int64(mode, dir.Debug()))
+			proto.SetObject(ctx, "name", n.String(name, dir.Debug()))
+			proto.SetObject(ctx, "isDir", n.Bool(isDir, dir.Debug()))
+			proto.SetObject(ctx, "size", n.Int64(size, dir.Debug()))
+			proto.SetObject(ctx, "mode", n.Int64(mode, dir.Debug()))
 
 			timeInst, err := time.NewInstance(modTime)
 			if err != nil {
 				return nil, err
 			}
-			proto.SetObject("modTime", timeInst)
+			proto.SetObject(ctx, "modTime", timeInst)
 
 			return inst, nil
 		}))

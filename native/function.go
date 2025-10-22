@@ -1,6 +1,7 @@
 package native
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/nubolang/nubo/internal/debug"
@@ -28,16 +29,18 @@ func (ctx FnCtx) All() []language.Object {
 }
 
 func NewFunction(fn func(args []language.Object) (language.Object, error)) *language.Function {
-	return language.NewFunction(fn, nil)
+	return language.NewFunction(func(ctx context.Context, o []language.Object) (language.Object, error) {
+		return fn(o)
+	}, nil)
 }
 
-func NewTypedFunction(typedArgs []language.FnArg, returnType *language.Type, fn FunctionWrapper) *language.Function {
-	return language.NewTypedFunction(typedArgs, returnType, func(args []language.Object) (language.Object, error) {
-		ctx := FnCtx{
+func NewTypedFunction(ctx context.Context, typedArgs []language.FnArg, returnType *language.Type, fn FunctionWrapper) *language.Function {
+	return language.NewTypedFunction(typedArgs, returnType, func(ctx context.Context, args []language.Object) (language.Object, error) {
+		fnCtx := FnCtx{
 			typedArgs:    typedArgs,
 			providedArgs: args,
 		}
 
-		return fn(ctx)
+		return fn(fnCtx)
 	}, nil)
 }

@@ -1,6 +1,7 @@
 package interpreter
 
 import (
+	"context"
 	"path/filepath"
 	"sync"
 
@@ -19,6 +20,8 @@ const (
 )
 
 type Interpreter struct {
+	ctx context.Context
+
 	ID          uint
 	currentFile string
 	dependent   bool
@@ -40,8 +43,9 @@ type Interpreter struct {
 	mu sync.RWMutex
 }
 
-func New(currentFile string, runtime Runtime, dependent bool, wd string) *Interpreter {
+func New(ctx context.Context, currentFile string, runtime Runtime, dependent bool, wd string) *Interpreter {
 	ir := &Interpreter{
+		ctx:         ctx,
 		ID:          runtime.NewID(),
 		currentFile: filepath.Clean(currentFile),
 		scope:       ScopeGlobal,
@@ -70,6 +74,7 @@ func NewWithParent(parent *Interpreter, scope Scope, name ...string) *Interprete
 	}
 
 	return &Interpreter{
+		ctx:         parent.ctx,
 		ID:          parent.ID,
 		currentFile: parent.currentFile,
 		scope:       scope,

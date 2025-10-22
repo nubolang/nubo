@@ -1,6 +1,7 @@
 package language
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -51,6 +52,9 @@ func (i *StructInstance) Inspect() string {
 
 	var items []string = make([]string, 0, len(objs))
 	for name, item := range objs {
+		if _, ok := i.base.privateMap[name]; ok {
+			name = fmt.Sprintf("(private) %s", name)
+		}
 		items = append(items, fmt.Sprintf("%s: %s", name, indentString(item.Type().String(), "\t")))
 	}
 
@@ -68,10 +72,10 @@ func (i *StructInstance) TypeString() string {
 
 func (i *StructInstance) String() string {
 	if proto := i.GetPrototype(); proto != nil {
-		if str, ok := proto.GetObject("__string__"); ok {
+		if str, ok := proto.GetObject(context.Background(), "__string__"); ok {
 			if strFn, ok := str.(*Function); ok {
 				if len(strFn.ArgTypes) == 0 && strFn.ReturnType.Compare(TypeString) {
-					if s, err := strFn.Data(nil); err == nil {
+					if s, err := strFn.Data(context.Background(), nil); err == nil {
 						return s.String()
 					}
 				}
@@ -85,7 +89,7 @@ func (i *StructInstance) String() string {
 
 	var items = make([]string, len(i.base.Data))
 	for inx, field := range i.base.Data {
-		ob, ok := i.GetPrototype().GetObject(field.Name)
+		ob, ok := i.GetPrototype().GetObject(context.Background(), field.Name)
 		if !ok {
 			items[inx] = fmt.Sprintf("%s: <invalid>", field.Name)
 		} else {
@@ -118,14 +122,14 @@ func (i *StructInstance) Clone() Object {
 		return i
 	}
 
-	cl, ok := proto.GetObject("__clone__")
+	cl, ok := proto.GetObject(context.Background(), "__clone__")
 	if ok {
 		clFn, ok := cl.(*Function)
 		if !ok {
 			zap.L().Fatal(i.String(), zap.String("warn", " __clone__ should be a function"))
 			return i
 		}
-		cl, err := clFn.Data(nil)
+		cl, err := clFn.Data(context.Background(), nil)
 		if err != nil {
 			zap.L().Fatal(i.String(), zap.String("error", err.Error()))
 			return i
@@ -148,7 +152,7 @@ func (s *StructInstance) Iterator() func() (Object, Object, bool) {
 		}
 
 		key := s.base.Data[inx]
-		value, ok := s.GetPrototype().GetObject(key.Name)
+		value, ok := s.GetPrototype().GetObject(context.Background(), key.Name)
 		if !ok {
 			zap.L().Warn(s.String(), zap.String("field not found", key.Name))
 			return nil, nil, false

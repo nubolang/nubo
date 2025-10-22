@@ -1,6 +1,7 @@
 package builtin
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 
@@ -17,16 +18,17 @@ func regex() *language.Struct {
 		}, nil)
 
 		sp := regexStruct.GetPrototype().(*language.StructPrototype)
+		ctx := context.Background()
 
 		sp.Unlock()
-		sp.SetObject("init", n.Function(n.Describe(
+		sp.SetObject(ctx, "init", n.Function(n.Describe(
 			n.Arg("self", regexStruct.Type()),
 			n.Arg("pattern", n.TString),
 		).Returns(regexStruct.Type()),
 			func(a *n.Args) (any, error) {
 				self := a.Name("self")
 				proto := self.GetPrototype()
-				proto.SetObject("pattern", a.Name("pattern"))
+				proto.SetObject(ctx, "pattern", a.Name("pattern"))
 
 				re, err := regexp.Compile(a.Name("pattern").String())
 				if err != nil {
@@ -42,7 +44,7 @@ func regex() *language.Struct {
 			}))
 
 		// match
-		sp.SetObject("match", n.Function(n.Describe(
+		sp.SetObject(ctx, "match", n.Function(n.Describe(
 			n.Arg("self", regexStruct.Type()),
 			n.Arg("text", n.TString),
 		).Returns(n.TBool),
@@ -57,7 +59,7 @@ func regex() *language.Struct {
 			}))
 
 		// find
-		sp.SetObject("find", n.Function(n.Describe(
+		sp.SetObject(ctx, "find", n.Function(n.Describe(
 			n.Arg("self", regexStruct.Type()),
 			n.Arg("text", n.TString),
 		).Returns(n.TString),
@@ -72,7 +74,7 @@ func regex() *language.Struct {
 			}))
 
 		// findAll
-		sp.SetObject("findAll", n.Function(n.Describe(
+		sp.SetObject(ctx, "findAll", n.Function(n.Describe(
 			n.Arg("self", regexStruct.Type()),
 			n.Arg("text", n.TString),
 		).Returns(n.TTList(n.TString)),
@@ -95,7 +97,7 @@ func regex() *language.Struct {
 			}))
 
 		// replace with optional times
-		sp.SetObject("replace", n.Function(n.Describe(
+		sp.SetObject(ctx, "replace", n.Function(n.Describe(
 			n.Arg("self", regexStruct.Type()),
 			n.Arg("text", n.TString),
 			n.Arg("replacement", n.TString),

@@ -1,6 +1,7 @@
 package interpreter
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -58,8 +59,9 @@ func (i *Interpreter) handleFunctionDecl(node *astnode.Node, ret ...bool) (langu
 		}
 	}
 
-	fn := language.NewTypedFunction(args, returnType, func(o []language.Object) (language.Object, error) {
+	fn := language.NewTypedFunction(args, returnType, func(ctx context.Context, o []language.Object) (language.Object, error) {
 		ir := NewWithParent(i, ScopeFunction)
+		ir.ctx = ctx
 
 		for j, arg := range args {
 			providedArg := o[j]
@@ -130,7 +132,7 @@ func (i *Interpreter) handleFunctionCall(node *astnode.Node) (language.Object, e
 		return nil, exception.Create("expected function, got %s", node.Type).WithDebug(node.Debug)
 	}
 
-	value, err := okFn.Data(args)
+	value, err := okFn.Data(i.ctx, args)
 	if err != nil {
 		return nil, exception.From(err, node.Debug, fmt.Sprintf("error calling function %s: @err", node.Content))
 	}
@@ -169,7 +171,7 @@ func (i *Interpreter) getValueFromObjByNode(value language.Object, node *astnode
 	switch node.Type {
 	case astnode.NodeTypeValue:
 		if node.Kind == "IDENTIFIER" {
-			obj, ok := proto.GetObject(objID)
+			obj, ok := proto.GetObject(i.ctx, objID)
 			if !ok {
 				return nil, runExc("cannot find property %q on %s", node.Content, value.Type()).WithDebug(node.Debug)
 			}
@@ -183,7 +185,7 @@ func (i *Interpreter) getValueFromObjByNode(value language.Object, node *astnode
 			return obj, nil
 		}
 	case astnode.NodeTypeFunctionCall:
-		fn, ok := proto.GetObject(objID)
+		fn, ok := proto.GetObject(i.ctx, objID)
 		if !ok {
 			return nil, valueExc("function %q does not exist", node.Content).WithDebug(node.Debug)
 		}
@@ -206,7 +208,7 @@ func (i *Interpreter) getValueFromObjByNode(value language.Object, node *astnode
 			return nil, typeError("expected function, got %s", node.Type).WithDebug(node.Debug)
 		}
 
-		value, err := okFn.Data(args)
+		value, err := okFn.Data(i.ctx, args)
 		if err != nil {
 			return nil, exception.From(err, node.Debug)
 		}
@@ -232,7 +234,7 @@ func (i *Interpreter) getFieldFromObjByNode(value language.Object, fields []stri
 			return nil, runExc("value does not have a prototype").WithDebug(value.Debug())
 		}
 
-		fieldValue, ok := proto.GetObject(field)
+		fieldValue, ok := proto.GetObject(i.ctx, field)
 		if !ok {
 			return nil, runExc("prototype field %q not found", field).WithDebug(value.Debug())
 		}
@@ -269,8 +271,9 @@ func (i *Interpreter) createInlineFunction(node *astnode.Node) (language.Object,
 		}
 	}
 
-	fn := language.NewTypedFunction(args, returnType, func(o []language.Object) (language.Object, error) {
+	fn := language.NewTypedFunction(args, returnType, func(ctx context.Context, o []language.Object) (language.Object, error) {
 		ir := NewWithParent(i, ScopeFunction)
+		ir.ctx = ctx
 
 		for j, arg := range args {
 			providedArg := o[j]
@@ -305,7 +308,7 @@ func (i *Interpreter) createInlineFunction(node *astnode.Node) (language.Object,
 			args[j] = value.Clone()
 		}
 
-		ob, err := fn.Data(args)
+		ob, err := fn.Data(i.ctx, args)
 		if err != nil {
 			return nil, exception.From(err, node.Debug, "cannot run function body")
 		}

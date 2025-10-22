@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
@@ -37,9 +38,10 @@ func createResp(data struct {
 	proto := response.GetPrototype().(*language.StructPrototype)
 	proto.Unlock()
 	defer proto.Lock()
+	ctx := context.Background()
 
-	proto.SetObject("url", n.String(data.Url, dg))
-	proto.SetObject("status", n.Int(data.Status, dg))
+	proto.SetObject(ctx, "url", n.String(data.Url, dg))
+	proto.SetObject(ctx, "status", n.Int(data.Status, dg))
 
 	m := make(map[any]any)
 	for k, v := range data.Headers {
@@ -55,11 +57,11 @@ func createResp(data struct {
 		return nil, err
 	}
 
-	proto.SetObject("headers", headers)
-	proto.SetObject("body", n.Function(n.Describe().Returns(n.TString), func(a *n.Args) (any, error) {
+	proto.SetObject(ctx, "headers", headers)
+	proto.SetObject(ctx, "body", n.Function(n.Describe().Returns(n.TString), func(a *n.Args) (any, error) {
 		return n.String(string(data.Body), dg), nil
 	}))
-	proto.SetObject("json", n.Function(n.Describe().Returns(n.TAny), func(a *n.Args) (any, error) {
+	proto.SetObject(ctx, "json", n.Function(n.Describe().Returns(n.TAny), func(a *n.Args) (any, error) {
 		var d any
 		err = json.Unmarshal(data.Body, &d)
 		if err != nil {

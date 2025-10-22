@@ -1,6 +1,7 @@
 package language
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -32,7 +33,7 @@ func (b *BasicFnArg) Default() Object {
 }
 
 type Function struct {
-	Data       func(args []Object) (Object, error)
+	Data       func(ctx context.Context, args []Object) (Object, error)
 	ArgTypes   []FnArg
 	ReturnType *Type
 	typ        *Type
@@ -40,7 +41,7 @@ type Function struct {
 	proto      *FunctionPrototype
 }
 
-func NewFunction(data func([]Object) (Object, error), debug *debug.Debug) *Function {
+func NewFunction(data func(context.Context, []Object) (Object, error), debug *debug.Debug) *Function {
 	return &Function{
 		Data:  data,
 		debug: debug,
@@ -48,7 +49,7 @@ func NewFunction(data func([]Object) (Object, error), debug *debug.Debug) *Funct
 	}
 }
 
-func NewTypedFunction(argTypes []FnArg, returnType *Type, data func([]Object) (Object, error), debug *debug.Debug) *Function {
+func NewTypedFunction(argTypes []FnArg, returnType *Type, data func(context.Context, []Object) (Object, error), debug *debug.Debug) *Function {
 	args := make([]*Type, len(argTypes))
 	for i, arg := range argTypes {
 		args[i] = arg.Type()
@@ -60,7 +61,7 @@ func NewTypedFunction(argTypes []FnArg, returnType *Type, data func([]Object) (O
 		Args:     args,
 	}
 
-	fn := func(args []Object) (Object, error) {
+	fn := func(ctx context.Context, args []Object) (Object, error) {
 		minRequiredArgs := 0
 		for _, arg := range argTypes {
 			if arg.Default() == nil {
@@ -89,7 +90,7 @@ func NewTypedFunction(argTypes []FnArg, returnType *Type, data func([]Object) (O
 			}
 		}
 
-		value, err := data(provideArgs)
+		value, err := data(ctx, provideArgs)
 		if err != nil {
 			return nil, err
 		}

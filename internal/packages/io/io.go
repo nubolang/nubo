@@ -1,6 +1,7 @@
 package io
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -20,13 +21,14 @@ func NewIO(dg *debug.Debug) language.Object {
 		streamStruct = language.NewStruct("Stream", nil, dg)
 	}
 
-	proto.SetObject("Stream", streamStruct)
-	proto.SetObject("read", native.NewTypedFunction(native.OneArg("text", language.TypeString, language.NewString("", nil)), language.TypeString, readFn))
-	proto.SetObject("open", native.NewTypedFunction([]language.FnArg{
+	ctx := context.Background()
+	proto.SetObject(ctx, "Stream", streamStruct)
+	proto.SetObject(ctx, "read", native.NewTypedFunction(ctx, native.OneArg("text", language.TypeString, language.NewString("", nil)), language.TypeString, readFn))
+	proto.SetObject(ctx, "open", native.NewTypedFunction(ctx, []language.FnArg{
 		&language.BasicFnArg{TypeVal: language.TypeString, NameVal: "file"},
 		&language.BasicFnArg{TypeVal: language.TypeString, NameVal: "encoding", DefaultVal: language.NewString("utf-8", nil)},
 	}, streamStruct.Type(), openFn))
-	proto.SetObject("writeFile", n.Function(n.Describe(n.Arg("file", n.TString), n.Arg("data", n.TAny), n.Arg("perm", n.TInt, n.Int(int(os.ModePerm), nil))), writeFile))
+	proto.SetObject(ctx, "writeFile", n.Function(n.Describe(n.Arg("file", n.TString), n.Arg("data", n.TAny), n.Arg("perm", n.TInt, n.Int(int(os.ModePerm), nil))), writeFile))
 
 	return instance
 }

@@ -1,6 +1,8 @@
 package sql
 
 import (
+	"context"
+
 	"github.com/nubolang/nubo/internal/debug"
 	"github.com/nubolang/nubo/language"
 	"github.com/nubolang/nubo/native/n"
@@ -16,9 +18,10 @@ func NewSQL(dg *debug.Debug) language.Object {
 		dbStruct = language.NewStruct("sql.DB", nil, dg)
 	}
 
-	inst.SetObject("DB", dbStruct)
+	ctx := context.Background()
+	inst.SetObject(ctx, "DB", dbStruct)
 
-	inst.SetObject("open", n.Function(n.Describe(n.Arg("provider", n.TStruct)).Returns(dbStruct.Type()), func(args *n.Args) (any, error) {
+	inst.SetObject(ctx, "open", n.Function(n.Describe(n.Arg("provider", n.TStruct)).Returns(dbStruct.Type()), func(args *n.Args) (any, error) {
 		rawProvider := args.Name("provider")
 		provider, ok := rawProvider.(*SQLConn)
 		if !ok {

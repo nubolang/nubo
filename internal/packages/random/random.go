@@ -1,6 +1,7 @@
 package random
 
 import (
+	"context"
 	"math/rand"
 	"time"
 
@@ -15,8 +16,9 @@ func NewRandom(dg *debug.Debug) language.Object {
 	proto := instance.GetPrototype()
 
 	random := rand.New(rand.NewSource(time.Now().UnixNano()))
+	ctx := context.Background()
 
-	proto.SetObject("between", native.NewTypedFunction(
+	proto.SetObject(ctx, "between", native.NewTypedFunction(ctx,
 		[]language.FnArg{
 			&language.BasicFnArg{TypeVal: language.TypeInt, NameVal: "min"},
 			&language.BasicFnArg{TypeVal: language.TypeInt, NameVal: "max"},
@@ -37,7 +39,7 @@ func NewRandom(dg *debug.Debug) language.Object {
 		},
 	))
 
-	proto.SetObject("float", native.NewTypedFunction(
+	proto.SetObject(ctx, "float", native.NewTypedFunction(ctx,
 		nil,
 		language.TypeFloat,
 		func(ctx native.FnCtx) (language.Object, error) {
@@ -45,7 +47,7 @@ func NewRandom(dg *debug.Debug) language.Object {
 		},
 	))
 
-	proto.SetObject("bool", native.NewTypedFunction(
+	proto.SetObject(ctx, "bool", native.NewTypedFunction(ctx,
 		nil,
 		language.TypeBool,
 		func(ctx native.FnCtx) (language.Object, error) {
@@ -53,7 +55,7 @@ func NewRandom(dg *debug.Debug) language.Object {
 		},
 	))
 
-	proto.SetObject("choice", native.NewTypedFunction(
+	proto.SetObject(ctx, "choice", native.NewTypedFunction(ctx,
 		[]language.FnArg{
 			&language.BasicFnArg{TypeVal: language.TypeList, NameVal: "list"},
 		},
@@ -69,7 +71,7 @@ func NewRandom(dg *debug.Debug) language.Object {
 		},
 	))
 
-	proto.SetObject("seed", native.NewTypedFunction(
+	proto.SetObject(ctx, "seed", native.NewTypedFunction(ctx,
 		[]language.FnArg{
 			&language.BasicFnArg{TypeVal: language.TypeInt, NameVal: "value"},
 		},

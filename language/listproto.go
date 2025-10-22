@@ -1,6 +1,7 @@
 package language
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -21,9 +22,11 @@ func NewListPrototype(base *List) *ListPrototype {
 		data: make(map[string]Object),
 	}
 
+	ctx := context.Background()
+
 	// get(index int) -> ItemType
-	lp.SetObject("__get__", NewTypedFunction([]FnArg{&BasicFnArg{TypeVal: TypeInt, NameVal: "index"}}, lp.base.ItemType,
-		func(o []Object) (Object, error) {
+	lp.SetObject(ctx, "__get__", NewTypedFunction([]FnArg{&BasicFnArg{TypeVal: TypeInt, NameVal: "index"}}, lp.base.ItemType,
+		func(ctx context.Context, o []Object) (Object, error) {
 			lp.mu.RLock()
 			defer lp.mu.RUnlock()
 
@@ -37,10 +40,10 @@ func NewListPrototype(base *List) *ListPrototype {
 		}, base.Debug()))
 
 	// set(index int, value any)
-	lp.SetObject("__set__", NewTypedFunction([]FnArg{
+	lp.SetObject(ctx, "__set__", NewTypedFunction([]FnArg{
 		&BasicFnArg{TypeVal: TypeInt, NameVal: "index"},
 		&BasicFnArg{TypeVal: lp.base.ItemType, NameVal: "value"},
-	}, TypeVoid, func(o []Object) (Object, error) {
+	}, TypeVoid, func(ctx context.Context, o []Object) (Object, error) {
 		lp.mu.Lock()
 		defer lp.mu.Unlock()
 
@@ -54,9 +57,9 @@ func NewListPrototype(base *List) *ListPrototype {
 	}, base.Debug()))
 
 	// join(sep string) -> string
-	lp.SetObject("join", NewTypedFunction([]FnArg{
+	lp.SetObject(ctx, "join", NewTypedFunction([]FnArg{
 		&BasicFnArg{TypeVal: TypeString, NameVal: "sep"},
-	}, TypeString, func(o []Object) (Object, error) {
+	}, TypeString, func(ctx context.Context, o []Object) (Object, error) {
 		lp.mu.RLock()
 		defer lp.mu.RUnlock()
 
@@ -70,7 +73,7 @@ func NewListPrototype(base *List) *ListPrototype {
 	}, base.Debug()))
 
 	// length() -> int
-	lp.SetObject("length", NewTypedFunction(nil, TypeInt, func(o []Object) (Object, error) {
+	lp.SetObject(ctx, "length", NewTypedFunction(nil, TypeInt, func(ctx context.Context, o []Object) (Object, error) {
 		lp.mu.RLock()
 		defer lp.mu.RUnlock()
 
@@ -78,9 +81,9 @@ func NewListPrototype(base *List) *ListPrototype {
 	}, base.Debug()))
 
 	// map(fn: function(item any) any) -> List
-	lp.SetObject("map", NewTypedFunction([]FnArg{
+	lp.SetObject(ctx, "map", NewTypedFunction([]FnArg{
 		&BasicFnArg{TypeVal: NewFunctionType(TypeAny, base.ItemType), NameVal: "fn"},
-	}, TypeList, func(o []Object) (Object, error) {
+	}, TypeList, func(ctx context.Context, o []Object) (Object, error) {
 		fn := o[0].(*Function)
 
 		lp.mu.RLock()
@@ -88,7 +91,7 @@ func NewListPrototype(base *List) *ListPrototype {
 
 		newItems := make([]Object, 0, len(lp.base.Data))
 		for _, item := range lp.base.Data {
-			result, err := fn.Data([]Object{item})
+			result, err := fn.Data(ctx, []Object{item})
 			if err != nil {
 				return nil, err
 			}
@@ -98,8 +101,8 @@ func NewListPrototype(base *List) *ListPrototype {
 		return NewList(newItems, fn.ReturnType, fn.Debug()), nil
 	}, base.Debug()))
 
-	lp.SetObject("includes", NewTypedFunction([]FnArg{&BasicFnArg{TypeVal: TypeAny, NameVal: "search"}}, TypeBool,
-		func(o []Object) (Object, error) {
+	lp.SetObject(ctx, "includes", NewTypedFunction([]FnArg{&BasicFnArg{TypeVal: TypeAny, NameVal: "search"}}, TypeBool,
+		func(ctx context.Context, o []Object) (Object, error) {
 			lp.mu.RLock()
 			defer lp.mu.RUnlock()
 
@@ -113,8 +116,8 @@ func NewListPrototype(base *List) *ListPrototype {
 			return NewBool(false, lp.base.Debug()), nil
 		}, base.Debug()))
 
-	lp.SetObject("push", NewTypedFunction([]FnArg{&BasicFnArg{TypeVal: lp.base.ItemType, NameVal: "value"}}, TypeVoid,
-		func(o []Object) (Object, error) {
+	lp.SetObject(ctx, "push", NewTypedFunction([]FnArg{&BasicFnArg{TypeVal: lp.base.ItemType, NameVal: "value"}}, TypeVoid,
+		func(ctx context.Context, o []Object) (Object, error) {
 			lp.mu.RLock()
 			defer lp.mu.RUnlock()
 
@@ -122,12 +125,12 @@ func NewListPrototype(base *List) *ListPrototype {
 			return nil, nil
 		}, base.Debug()))
 
-	lp.SetObject("insert", NewTypedFunction(
+	lp.SetObject(ctx, "insert", NewTypedFunction(
 		[]FnArg{
 			&BasicFnArg{TypeVal: TypeInt, NameVal: "index"},
 			&BasicFnArg{TypeVal: lp.base.ItemType, NameVal: "value"},
 		}, TypeVoid,
-		func(o []Object) (Object, error) {
+		func(ctx context.Context, o []Object) (Object, error) {
 			lp.mu.RLock()
 			defer lp.mu.RUnlock()
 
@@ -141,11 +144,11 @@ func NewListPrototype(base *List) *ListPrototype {
 		}, base.Debug(),
 	))
 
-	lp.SetObject("del", NewTypedFunction(
+	lp.SetObject(ctx, "del", NewTypedFunction(
 		[]FnArg{
 			&BasicFnArg{TypeVal: TypeInt, NameVal: "index"},
 		}, TypeVoid,
-		func(o []Object) (Object, error) {
+		func(ctx context.Context, o []Object) (Object, error) {
 			lp.mu.RLock()
 			defer lp.mu.RUnlock()
 
@@ -158,8 +161,8 @@ func NewListPrototype(base *List) *ListPrototype {
 		}, base.Debug(),
 	))
 
-	lp.SetObject("pop", NewTypedFunction(nil, lp.base.ItemType,
-		func(o []Object) (Object, error) {
+	lp.SetObject(ctx, "pop", NewTypedFunction(nil, lp.base.ItemType,
+		func(ctx context.Context, o []Object) (Object, error) {
 			lp.mu.RLock()
 			defer lp.mu.RUnlock()
 
@@ -172,8 +175,8 @@ func NewListPrototype(base *List) *ListPrototype {
 		}, base.Debug(),
 	))
 
-	lp.SetObject("shift", NewTypedFunction(nil, lp.base.ItemType,
-		func(o []Object) (Object, error) {
+	lp.SetObject(ctx, "shift", NewTypedFunction(nil, lp.base.ItemType,
+		func(ctx context.Context, o []Object) (Object, error) {
 			lp.mu.RLock()
 			defer lp.mu.RUnlock()
 
@@ -186,10 +189,10 @@ func NewListPrototype(base *List) *ListPrototype {
 		}, base.Debug(),
 	))
 
-	lp.SetObject("unshift", NewTypedFunction(
+	lp.SetObject(ctx, "unshift", NewTypedFunction(
 		[]FnArg{&BasicFnArg{TypeVal: lp.base.ItemType, NameVal: "value"}},
 		TypeVoid,
-		func(o []Object) (Object, error) {
+		func(ctx context.Context, o []Object) (Object, error) {
 			lp.mu.RLock()
 			defer lp.mu.RUnlock()
 
@@ -198,12 +201,12 @@ func NewListPrototype(base *List) *ListPrototype {
 		}, base.Debug(),
 	))
 
-	lp.SetObject("slice", NewTypedFunction(
+	lp.SetObject(ctx, "slice", NewTypedFunction(
 		[]FnArg{
 			&BasicFnArg{TypeVal: TypeInt, NameVal: "start"},
 			&BasicFnArg{TypeVal: TypeInt, NameVal: "end"},
 		}, lp.base.Type(),
-		func(o []Object) (Object, error) {
+		func(ctx context.Context, o []Object) (Object, error) {
 			lp.mu.RLock()
 			defer lp.mu.RUnlock()
 
@@ -217,8 +220,8 @@ func NewListPrototype(base *List) *ListPrototype {
 		}, base.Debug(),
 	))
 
-	lp.SetObject("clear", NewTypedFunction(nil, TypeVoid,
-		func(o []Object) (Object, error) {
+	lp.SetObject(ctx, "clear", NewTypedFunction(nil, TypeVoid,
+		func(ctx context.Context, o []Object) (Object, error) {
 			lp.mu.RLock()
 			defer lp.mu.RUnlock()
 
@@ -227,8 +230,8 @@ func NewListPrototype(base *List) *ListPrototype {
 		}, base.Debug(),
 	))
 
-	lp.SetObject("reverse", NewTypedFunction(nil, TypeVoid,
-		func(o []Object) (Object, error) {
+	lp.SetObject(ctx, "reverse", NewTypedFunction(nil, TypeVoid,
+		func(ctx context.Context, o []Object) (Object, error) {
 			lp.mu.RLock()
 			defer lp.mu.RUnlock()
 
@@ -242,14 +245,14 @@ func NewListPrototype(base *List) *ListPrototype {
 	return lp
 }
 
-func (lp *ListPrototype) GetObject(name string) (Object, bool) {
+func (lp *ListPrototype) GetObject(ctx context.Context, name string) (Object, bool) {
 	lp.mu.RLock()
 	defer lp.mu.RUnlock()
 	obj, ok := lp.data[name]
 	return obj, ok
 }
 
-func (lp *ListPrototype) SetObject(name string, value Object) error {
+func (lp *ListPrototype) SetObject(ctx context.Context, name string, value Object) error {
 	lp.mu.Lock()
 	defer lp.mu.Unlock()
 	lp.data[name] = value

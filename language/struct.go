@@ -8,8 +8,9 @@ import (
 )
 
 type StructField struct {
-	Name string
-	Type *Type
+	Name    string
+	Type    *Type
+	Private bool
 }
 
 type StructDefinition struct {
@@ -24,6 +25,7 @@ type Struct struct {
 	Data       []StructField
 	prototype  *StructPrototype
 	debug      *debug.Debug
+	privateMap map[string]struct{}
 }
 
 func NewStruct(name string, fields []StructField, debug *debug.Debug) *Struct {
@@ -37,6 +39,13 @@ func NewStruct(name string, fields []StructField, debug *debug.Debug) *Struct {
 		structType: structType,
 		Data:       fields,
 		debug:      debug,
+		privateMap: make(map[string]struct{}, len(fields)),
+	}
+
+	for _, field := range fields {
+		if field.Private {
+			s.privateMap[field.Name] = struct{}{}
+		}
 	}
 
 	structType.ID = fmt.Sprintf("%p", s)
@@ -76,6 +85,10 @@ func (i *Struct) Inspect() string {
 
 	var items []string = make([]string, 0, len(objs))
 	for name, item := range objs {
+		if _, ok := i.privateMap[name]; ok {
+			name = fmt.Sprintf("(private) %s", name)
+		}
+
 		items = append(items, fmt.Sprintf("%s: %s", name, indentString(item.Type().String(), "\t")))
 	}
 
@@ -106,7 +119,11 @@ func (i *Struct) String() string {
 
 	var items []string = make([]string, len(objs))
 	for i, item := range objs {
-		items[i] = fmt.Sprintf("%s: %s", item.Name, indentString(item.Type.String(), "\t"))
+		name := item.Name
+		if item.Private {
+			name = fmt.Sprintf("(private) %s", name)
+		}
+		items[i] = fmt.Sprintf("%s: %s", name, indentString(item.Type.String(), "\t"))
 	}
 
 	return fmt.Sprintf(

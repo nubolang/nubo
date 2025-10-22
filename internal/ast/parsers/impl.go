@@ -112,6 +112,16 @@ func implBodyPartParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Tok
 	token := tokens[*inx]
 
 	switch token.Type {
+	case lexer.TokenPrivate:
+		if err := inxPP(tokens, inx); err != nil {
+			return nil, err
+		}
+		node, err := FnParser(ctx, sn, tokens, inx, sn, false)
+		if err != nil {
+			return nil, err
+		}
+		node.Flags.Append("PRIVATE")
+		return node, nil
 	case lexer.TokenFn:
 		node, err := FnParser(ctx, sn, tokens, inx, sn, false)
 		if err != nil {

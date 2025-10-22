@@ -1,6 +1,7 @@
 package time
 
 import (
+	"context"
 	"time"
 
 	"github.com/araddon/dateparse"
@@ -30,11 +31,12 @@ func NewTime(dg *debug.Debug) language.Object {
 
 	t := n.NewPackage("time", dg)
 	proto := t.GetPrototype()
+	ctx := context.Background()
 
-	proto.SetObject("Time", timeStruct)
-	proto.SetObject("now", n.Function(n.Describe().Returns(timeStruct.Type()), fnNow))
-	proto.SetObject("parse", n.Function(n.Describe(n.Arg("format", n.TString), n.Arg("value", n.TString)).Returns(timeStruct.Type()), fnParse))
-	proto.SetObject("parseAny", n.Function(n.Describe(n.Arg("time", n.TUnion(n.TString, n.TInt))).Returns(timeStruct.Type()), fnFrom))
+	proto.SetObject(ctx, "Time", timeStruct)
+	proto.SetObject(ctx, "now", n.Function(n.Describe().Returns(timeStruct.Type()), fnNow))
+	proto.SetObject(ctx, "parse", n.Function(n.Describe(n.Arg("format", n.TString), n.Arg("value", n.TString)).Returns(timeStruct.Type()), fnParse))
+	proto.SetObject(ctx, "parseAny", n.Function(n.Describe(n.Arg("time", n.TUnion(n.TString, n.TInt))).Returns(timeStruct.Type()), fnFrom))
 
 	return t
 }

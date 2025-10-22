@@ -76,12 +76,25 @@ loop:
 				break loop
 			}
 
+			token = tokens[*inx]
 			child := &astnode.Node{
-				Type: astnode.NodeTypeStructField,
+				Type:  astnode.NodeTypeStructField,
+				Debug: token.Debug,
 			}
 
-			token = tokens[*inx]
+			if token.Type == lexer.TokenPrivate {
+				child.Flags.Append("PRIVATE")
+				if err := inxPP(tokens, inx); err != nil {
+					return nil, err
+				}
+				token = tokens[*inx]
+			}
+
 			if token.Type != lexer.TokenIdentifier {
+				if token.Type == lexer.TokenNewLine {
+					*inx++
+					continue loop
+				}
 				return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("expected identifier, got %s", token.Type), token.Debug)
 			}
 			child.Content = token.Value

@@ -2,6 +2,7 @@ package io
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"io"
 	"strings"
@@ -21,13 +22,14 @@ func NewIOStream(r io.Reader) language.Object {
 	proto.Unlock()
 	defer proto.Lock()
 
-	proto.SetObject("read", native.NewTypedFunction(nil, language.TypeString, streamReadFn(r)))
-	proto.SetObject("readAll", native.NewTypedFunction(nil, language.TypeString, streamReadAllFn(r)))
-	proto.SetObject("readByte", native.NewTypedFunction(nil, language.TypeInt, streamReadByteFn(r)))
-	proto.SetObject("readLine", native.NewTypedFunction(nil, language.TypeString, streamReadLineFn(r)))
-	proto.SetObject("readLines", native.NewTypedFunction(nil, n.TTList(n.TString), streamReadLinesFn(r)))
+	ctx := context.Background()
+	proto.SetObject(ctx, "read", native.NewTypedFunction(ctx, nil, language.TypeString, streamReadFn(r)))
+	proto.SetObject(ctx, "readAll", native.NewTypedFunction(ctx, nil, language.TypeString, streamReadAllFn(r)))
+	proto.SetObject(ctx, "readByte", native.NewTypedFunction(ctx, nil, language.TypeInt, streamReadByteFn(r)))
+	proto.SetObject(ctx, "readLine", native.NewTypedFunction(ctx, nil, language.TypeString, streamReadLineFn(r)))
+	proto.SetObject(ctx, "readLines", native.NewTypedFunction(ctx, nil, n.TTList(n.TString), streamReadLinesFn(r)))
 	if rc, ok := r.(io.Closer); ok {
-		proto.SetObject("close", native.NewTypedFunction(nil, language.TypeVoid, streamCloseFn(rc)))
+		proto.SetObject(ctx, "close", native.NewTypedFunction(ctx, nil, language.TypeVoid, streamCloseFn(rc)))
 	}
 
 	return instance

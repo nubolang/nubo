@@ -1,6 +1,7 @@
 package sql
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/nubolang/nubo/language"
@@ -27,16 +28,18 @@ func NewDB(conn *SQLConn) (language.Object, error) {
 	inst.Unlock()
 	defer inst.Lock()
 
+	ctx := context.Background()
+
 	emptyList, _ := n.List(nil)
-	inst.SetObject("query", n.Function(n.Describe(n.Arg("query", n.TString), n.Arg("args", n.TList, emptyList)).Returns(n.TTList(n.TDict)), fnQuery(conn)))
-	inst.SetObject("exec", n.Function(n.Describe(n.Arg("query", n.TString), n.Arg("args", n.TList, emptyList)).Returns(n.TInt), fnExec(conn)))
-	inst.SetObject("close", n.Function(n.EmptyDescribe(), func(a *n.Args) (any, error) {
+	inst.SetObject(ctx, "query", n.Function(n.Describe(n.Arg("query", n.TString), n.Arg("args", n.TList, emptyList)).Returns(n.TTList(n.TDict)), fnQuery(conn)))
+	inst.SetObject(ctx, "exec", n.Function(n.Describe(n.Arg("query", n.TString), n.Arg("args", n.TList, emptyList)).Returns(n.TInt), fnExec(conn)))
+	inst.SetObject(ctx, "close", n.Function(n.EmptyDescribe(), func(a *n.Args) (any, error) {
 		if db != nil {
 			return nil, db.Close()
 		}
 		return nil, nil
 	}))
-	inst.SetObject("ping", n.Function(n.Describe().Returns(n.TBool), fnPing(conn)))
+	inst.SetObject(ctx, "ping", n.Function(n.Describe().Returns(n.TBool), fnPing(conn)))
 
 	return obj, nil
 }

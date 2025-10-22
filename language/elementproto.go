@@ -1,6 +1,7 @@
 package language
 
 import (
+	"context"
 	"slices"
 	"sync"
 
@@ -23,7 +24,7 @@ func NewElementPrototype(base *Element) *ElementPrototype {
 	setAttr := NewTypedFunction(
 		[]FnArg{&BasicFnArg{TypeVal: TypeString, NameVal: "name"}, &BasicFnArg{TypeVal: TypeAny, NameVal: "value"}},
 		TypeVoid,
-		func(o []Object) (Object, error) {
+		func(ctx context.Context, o []Object) (Object, error) {
 			ep.mu.Lock()
 			defer ep.mu.Unlock()
 
@@ -56,15 +57,18 @@ func NewElementPrototype(base *Element) *ElementPrototype {
 
 			return nil, nil
 		}, base.debug)
-	ep.SetObject("setAttribute", setAttr)
-	ep.SetObject("__set__", setAttr)
 
-	ep.SetObject("removeAttribute", NewTypedFunction(
+	ctx := context.Background()
+
+	ep.SetObject(ctx, "setAttribute", setAttr)
+	ep.SetObject(ctx, "__set__", setAttr)
+
+	ep.SetObject(ctx, "removeAttribute", NewTypedFunction(
 		[]FnArg{
 			&BasicFnArg{TypeVal: TypeString, NameVal: "name"},
 		},
 		TypeVoid,
-		func(o []Object) (Object, error) {
+		func(ctx context.Context, o []Object) (Object, error) {
 			ep.mu.Lock()
 			defer ep.mu.Unlock()
 
@@ -87,7 +91,7 @@ func NewElementPrototype(base *Element) *ElementPrototype {
 			&BasicFnArg{TypeVal: TypeString, NameVal: "name"},
 		},
 		TypeAny,
-		func(o []Object) (Object, error) {
+		func(ctx context.Context, o []Object) (Object, error) {
 			ep.mu.RLock()
 			defer ep.mu.RUnlock()
 
@@ -101,15 +105,15 @@ func NewElementPrototype(base *Element) *ElementPrototype {
 		},
 		base.debug,
 	)
-	ep.SetObject("getAttribute", getAttr)
-	ep.SetObject("__get__", getAttr)
+	ep.SetObject(ctx, "getAttribute", getAttr)
+	ep.SetObject(ctx, "__get__", getAttr)
 
-	ep.SetObject("hasAttribute", NewTypedFunction(
+	ep.SetObject(ctx, "hasAttribute", NewTypedFunction(
 		[]FnArg{
 			&BasicFnArg{TypeVal: TypeString, NameVal: "name"},
 		},
 		TypeBool,
-		func(o []Object) (Object, error) {
+		func(ctx context.Context, o []Object) (Object, error) {
 			ep.mu.RLock()
 			defer ep.mu.RUnlock()
 
@@ -124,7 +128,7 @@ func NewElementPrototype(base *Element) *ElementPrototype {
 		base.debug,
 	))
 
-	ep.SetObject("children", NewTypedFunction(nil, NewListType(NewUnionType(TypeHtml, TypeString)), func(o []Object) (Object, error) {
+	ep.SetObject(ctx, "children", NewTypedFunction(nil, NewListType(NewUnionType(TypeHtml, TypeString)), func(ctx context.Context, o []Object) (Object, error) {
 		ep.mu.RLock()
 		defer ep.mu.RUnlock()
 
@@ -140,12 +144,12 @@ func NewElementPrototype(base *Element) *ElementPrototype {
 		return NewList(objs, NewUnionType(TypeHtml, TypeString), base.debug), nil
 	}, ep.base.debug))
 
-	ep.SetObject("setChildren", NewTypedFunction([]FnArg{
+	ep.SetObject(ctx, "setChildren", NewTypedFunction([]FnArg{
 		&BasicFnArg{
 			NameVal: "children",
 			TypeVal: NewListType(NewUnionType(TypeHtml, TypeString)),
 		},
-	}, TypeVoid, func(o []Object) (Object, error) {
+	}, TypeVoid, func(ctx context.Context, o []Object) (Object, error) {
 		ep.mu.Lock()
 		defer ep.mu.Unlock()
 
@@ -172,14 +176,14 @@ func NewElementPrototype(base *Element) *ElementPrototype {
 	return ep
 }
 
-func (e *ElementPrototype) GetObject(name string) (Object, bool) {
+func (e *ElementPrototype) GetObject(ctx context.Context, name string) (Object, bool) {
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 	obj, ok := e.data[name]
 	return obj, ok
 }
 
-func (e *ElementPrototype) SetObject(name string, value Object) error {
+func (e *ElementPrototype) SetObject(ctx context.Context, name string, value Object) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	e.data[name] = value

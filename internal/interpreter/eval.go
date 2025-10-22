@@ -78,11 +78,11 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 					}
 
 					if obj.Type().Base() == language.ObjectTypeStructInstance {
-						value, ok := obj.GetPrototype().GetObject("__value__")
+						value, ok := obj.GetPrototype().GetObject(i.ctx, "__value__")
 						if ok && language.NewFunctionType(language.TypeAny).Compare(value.Type()) {
 							fn, ok := value.(*language.Function)
 							if ok {
-								value, err := fn.Data(nil)
+								value, err := fn.Data(i.ctx, nil)
 								if err != nil {
 									return nil, exception.From(err, obj.Debug(), "function call failed: @err")
 								}
@@ -408,7 +408,7 @@ func (i *Interpreter) checkGetter(obj language.Object, node *astnode.Node) (lang
 			return nil, cannotOperateOn(obj.Type()).WithDebug(obj.Debug())
 		}
 
-		getter, ok := obj.GetPrototype().GetObject("__get__")
+		getter, ok := obj.GetPrototype().GetObject(i.ctx, "__get__")
 		if !ok {
 			return nil, cannotOperateOn(obj.Type()).WithDebug(obj.Debug())
 		}
@@ -418,7 +418,7 @@ func (i *Interpreter) checkGetter(obj language.Object, node *astnode.Node) (lang
 			return nil, cannotOperateOn(obj.Type()).WithDebug(obj.Debug())
 		}
 
-		value, err := getterFn.Data([]language.Object{val})
+		value, err := getterFn.Data(i.ctx, []language.Object{val})
 		if err != nil {
 			return nil, exception.From(err, child.Debug, "function call failed: @err")
 		}

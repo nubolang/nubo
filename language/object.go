@@ -1,6 +1,10 @@
 package language
 
-import "github.com/nubolang/nubo/internal/debug"
+import (
+	"context"
+
+	"github.com/nubolang/nubo/internal/debug"
+)
 
 type ObjectType int
 
@@ -77,8 +81,8 @@ func (ot ObjectType) Hashable() bool {
 
 type Prototype interface {
 	Objects() map[string]Object
-	GetObject(name string) (Object, bool)
-	SetObject(name string, value Object) error
+	GetObject(ctx context.Context, name string) (Object, bool)
+	SetObject(ctx context.Context, name string, value Object) error
 }
 
 type Bucketable interface {

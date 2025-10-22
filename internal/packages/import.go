@@ -1,6 +1,7 @@
 package packages
 
 import (
+	"context"
 	"slices"
 	"strings"
 
@@ -11,7 +12,6 @@ import (
 	"github.com/nubolang/nubo/internal/packages/http"
 	"github.com/nubolang/nubo/internal/packages/io"
 	"github.com/nubolang/nubo/internal/packages/json"
-	"github.com/nubolang/nubo/internal/packages/layoutjs"
 	"github.com/nubolang/nubo/internal/packages/log"
 	"github.com/nubolang/nubo/internal/packages/math"
 	"github.com/nubolang/nubo/internal/packages/os"
@@ -31,7 +31,7 @@ const (
 
 var packageList = []string{
 	"io", "math", "json", "log", "thread", "random",
-	"process", "layoutjs", "sql", "time", "http", "system",
+	"process", "sql", "time", "http", "system",
 	"hash", "component", "os",
 }
 
@@ -48,7 +48,7 @@ func ImportPackage(name string, dg *debug.Debug) (language.Object, bool) {
 			if !ok {
 				continue
 			}
-			pkg.GetPrototype().SetObject(pkgName, getPkg)
+			pkg.GetPrototype().SetObject(context.Background(), pkgName, getPkg)
 		}
 		return pkg, true
 	}
@@ -98,8 +98,6 @@ func ImportPackage(name string, dg *debug.Debug) (language.Object, bool) {
 		return random.NewRandom(dg), true
 	case "process":
 		return process.NewProcess(dg), true
-	case "layoutjs":
-		return layoutjs.NewLayoutJS(dg), true
 	case "sql":
 		return sql.NewSQL(dg), true
 	case "sql/driver/sqlite":

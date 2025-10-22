@@ -29,7 +29,16 @@ func (i *Interpreter) handleImpl(node *astnode.Node) error {
 		if err != nil {
 			return wrapRunExc(err, child.Debug)
 		}
-		if err := proto.SetObject(name, fn); err != nil {
+
+		ctx := i.ctx
+		if child.Flags.Contains("PRIVATE") {
+			if name == "init" {
+				return runExc("struct (%s) \"init\" hook method cannot be private", node.Content).WithDebug(child.Debug)
+			}
+			ctx = language.StructSetPrivate(ctx)
+		}
+
+		if err := proto.SetObject(ctx, name, fn); err != nil {
 			return wrapRunExc(err, node.Debug)
 		}
 	}

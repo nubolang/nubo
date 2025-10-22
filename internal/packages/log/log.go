@@ -1,6 +1,7 @@
 package log
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -25,12 +26,13 @@ func NewLog(dg *debug.Debug) language.Object {
 	instance := n.NewPackage("log", dg)
 	proto := instance.GetPrototype()
 
-	proto.SetObject("debug", native.NewFunction(logFn("DEBUG")))
-	proto.SetObject("info", native.NewFunction(logFn("INFO")))
-	proto.SetObject("warn", native.NewFunction(logFn("WARN")))
-	proto.SetObject("error", native.NewFunction(logFn("ERROR")))
+	ctx := context.Background()
+	proto.SetObject(ctx, "debug", native.NewFunction(logFn("DEBUG")))
+	proto.SetObject(ctx, "info", native.NewFunction(logFn("INFO")))
+	proto.SetObject(ctx, "warn", native.NewFunction(logFn("WARN")))
+	proto.SetObject(ctx, "error", native.NewFunction(logFn("ERROR")))
 
-	proto.SetObject("setLevel", native.NewTypedFunction(native.OneArg("level", language.TypeString), language.TypeVoid, setLogLevelFn))
+	proto.SetObject(ctx, "setLevel", native.NewTypedFunction(ctx, native.OneArg("level", language.TypeString), language.TypeVoid, setLogLevelFn))
 
 	return instance
 }

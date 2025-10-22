@@ -1,6 +1,8 @@
 package n
 
 import (
+	"context"
+
 	"github.com/nubolang/nubo/internal/debug"
 	"github.com/nubolang/nubo/internal/exception"
 	"github.com/nubolang/nubo/language"
@@ -52,6 +54,11 @@ func (fd *FnDescriber) Returns(returns *language.Type) *FnDescriber {
 type Args struct {
 	typedArgs    []language.FnArg
 	providedArgs []language.Object
+	ctx          context.Context
+}
+
+func (a *Args) Context() context.Context {
+	return a.ctx
 }
 
 func (a *Args) Get(inx int) language.Object {
@@ -79,7 +86,7 @@ func Function(describe *FnDescriber, fn func(*Args) (any, error)) *language.Func
 		args[i] = &language.BasicFnArg{TypeVal: arg.Type, NameVal: arg.Name, DefaultVal: arg.Default}
 	}
 
-	return language.NewTypedFunction(args, describe.returns, func(o []language.Object) (language.Object, error) {
+	return language.NewTypedFunction(args, describe.returns, func(ctx context.Context, o []language.Object) (language.Object, error) {
 		var dg *debug.Debug
 
 		if len(o) > 0 {
@@ -89,6 +96,7 @@ func Function(describe *FnDescriber, fn func(*Args) (any, error)) *language.Func
 		userArgs := &Args{
 			typedArgs:    args,
 			providedArgs: o,
+			ctx:          ctx,
 		}
 
 		value, err := fn(userArgs)

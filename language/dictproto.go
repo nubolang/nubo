@@ -1,6 +1,7 @@
 package language
 
 import (
+	"context"
 	"fmt"
 	"sync"
 )
@@ -17,9 +18,11 @@ func NewDictPrototype(base *Dict) *DictPrototype {
 		data: make(map[string]Object),
 	}
 
-	dp.SetObject("__get__", NewTypedFunction([]FnArg{
+	ctx := context.Background()
+
+	dp.SetObject(ctx, "__get__", NewTypedFunction([]FnArg{
 		&BasicFnArg{TypeVal: base.KeyType, NameVal: "key"},
-	}, base.ValueType, func(o []Object) (Object, error) {
+	}, base.ValueType, func(ctx context.Context, o []Object) (Object, error) {
 		dp.mu.RLock()
 		defer dp.mu.RUnlock()
 
@@ -40,10 +43,10 @@ func NewDictPrototype(base *Dict) *DictPrototype {
 		return found, nil
 	}, base.Debug()))
 
-	dp.SetObject("__set__", NewTypedFunction([]FnArg{
+	dp.SetObject(ctx, "__set__", NewTypedFunction([]FnArg{
 		&BasicFnArg{TypeVal: dp.base.KeyType, NameVal: "key"},
 		&BasicFnArg{TypeVal: dp.base.ValueType, NameVal: "value"},
-	}, TypeVoid, func(o []Object) (Object, error) {
+	}, TypeVoid, func(ctx context.Context, o []Object) (Object, error) {
 		dp.mu.Lock()
 		defer dp.mu.Unlock()
 
@@ -60,8 +63,8 @@ func NewDictPrototype(base *Dict) *DictPrototype {
 		return nil, nil
 	}, base.Debug()))
 
-	dp.SetObject("keys", NewTypedFunction(nil, NewListType(base.KeyType),
-		func(o []Object) (Object, error) {
+	dp.SetObject(ctx, "keys", NewTypedFunction(nil, NewListType(base.KeyType),
+		func(ctx context.Context, o []Object) (Object, error) {
 			dp.mu.RLock()
 			defer dp.mu.RUnlock()
 
@@ -74,8 +77,8 @@ func NewDictPrototype(base *Dict) *DictPrototype {
 			return NewList(keys, base.KeyType, base.Debug()), nil
 		}, base.Debug()))
 
-	dp.SetObject("values", NewTypedFunction(nil, NewListType(base.ValueType),
-		func(o []Object) (Object, error) {
+	dp.SetObject(ctx, "values", NewTypedFunction(nil, NewListType(base.ValueType),
+		func(ctx context.Context, o []Object) (Object, error) {
 			dp.mu.RLock()
 			defer dp.mu.RUnlock()
 
@@ -88,9 +91,9 @@ func NewDictPrototype(base *Dict) *DictPrototype {
 			return NewList(values, base.ValueType, base.Debug()), nil
 		}, base.Debug()))
 
-	dp.SetObject("remove", NewTypedFunction([]FnArg{
+	dp.SetObject(ctx, "remove", NewTypedFunction([]FnArg{
 		&BasicFnArg{TypeVal: dp.base.KeyType, NameVal: "key"},
-	}, TypeVoid, func(o []Object) (Object, error) {
+	}, TypeVoid, func(ctx context.Context, o []Object) (Object, error) {
 		dp.mu.Lock()
 		defer dp.mu.Unlock()
 
@@ -115,14 +118,14 @@ func NewDictPrototype(base *Dict) *DictPrototype {
 	return dp
 }
 
-func (dp *DictPrototype) GetObject(name string) (Object, bool) {
+func (dp *DictPrototype) GetObject(ctx context.Context, name string) (Object, bool) {
 	dp.mu.RLock()
 	defer dp.mu.RUnlock()
 	obj, ok := dp.data[name]
 	return obj, ok
 }
 
-func (dp *DictPrototype) SetObject(name string, value Object) error {
+func (dp *DictPrototype) SetObject(ctx context.Context, name string, value Object) error {
 	dp.mu.Lock()
 	defer dp.mu.Unlock()
 	dp.data[name] = value

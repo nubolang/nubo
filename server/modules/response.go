@@ -83,21 +83,23 @@ func (r *Response) setupInstance(inst *language.StructInstance) {
 	proto.Unlock()
 	defer proto.Lock()
 
-	proto.SetObject("status", native.NewTypedFunction(native.OneArg("code", language.TypeInt), language.TypeVoid, r.fnStatus))
-	proto.SetObject("write", native.NewTypedFunction(native.OneArg("content", language.TypeAny), language.TypeVoid, r.fnWrite))
-	proto.SetObject("header", native.NewTypedFunction([]language.FnArg{
+	ctx := r.r.Context()
+
+	proto.SetObject(ctx, "status", native.NewTypedFunction(ctx, native.OneArg("code", language.TypeInt), language.TypeVoid, r.fnStatus))
+	proto.SetObject(ctx, "write", native.NewTypedFunction(ctx, native.OneArg("content", language.TypeAny), language.TypeVoid, r.fnWrite))
+	proto.SetObject(ctx, "header", native.NewTypedFunction(ctx, []language.FnArg{
 		&language.BasicFnArg{TypeVal: language.TypeString, NameVal: "key"},
 		&language.BasicFnArg{TypeVal: language.TypeString, NameVal: "value"},
 	}, language.TypeVoid, r.fnHeader))
-	proto.SetObject("flushbuf", native.NewTypedFunction(nil, language.TypeVoid, r.fnFlushbuf))
-	proto.SetObject("json", native.NewTypedFunction(native.OneArg("data", language.TypeAny), language.TypeVoid, r.fnJSON))
-	proto.SetObject("setCookie", native.NewTypedFunction([]language.FnArg{
+	proto.SetObject(ctx, "flushbuf", native.NewTypedFunction(ctx, nil, language.TypeVoid, r.fnFlushbuf))
+	proto.SetObject(ctx, "json", native.NewTypedFunction(ctx, native.OneArg("data", language.TypeAny), language.TypeVoid, r.fnJSON))
+	proto.SetObject(ctx, "setCookie", native.NewTypedFunction(ctx, []language.FnArg{
 		&language.BasicFnArg{TypeVal: language.TypeString, NameVal: "name"},
 		&language.BasicFnArg{TypeVal: language.TypeString, NameVal: "value"},
 		&language.BasicFnArg{TypeVal: language.Nullable(language.TypeInt), NameVal: "maxAge", DefaultVal: language.Nil},
 		&language.BasicFnArg{TypeVal: language.TypeString, NameVal: "path", DefaultVal: n.String("/")},
 	}, language.TypeVoid, r.fnSetCookie))
-	proto.SetObject("redirect", native.NewTypedFunction(native.OneArg("url", language.TypeString), language.TypeVoid, r.fnRedirect))
+	proto.SetObject(ctx, "redirect", native.NewTypedFunction(ctx, native.OneArg("url", language.TypeString), language.TypeVoid, r.fnRedirect))
 }
 
 func (r *Response) fnStatus(ctx native.FnCtx) (language.Object, error) {

@@ -83,7 +83,7 @@ func (ir *Interpreter) handleImport(node *astnode.Node) error {
 			return exception.From(err, node.Debug, "failed to parse imported file: @err")
 		}
 
-		imported = New(path, ir.runtime, true, ir.workdir)
+		imported = New(ir.ctx, path, ir.runtime, true, ir.workdir)
 		if _, err := imported.Run(nodes); err != nil {
 			return exception.From(err, node.Debug, "failed to execute imported file")
 		}
@@ -145,7 +145,7 @@ func (ir *Interpreter) stdImport(node *astnode.Node, fileName string) error {
 					return runExc("failed to import object from package: %s", child.Value.(string)).WithDebug(node.Debug)
 				}
 
-				value, ok := obj.GetPrototype().GetObject(child.Content)
+				value, ok := obj.GetPrototype().GetObject(ir.ctx, child.Content)
 				if !ok {
 					return runExc("failed to import object from package: %s", child.Value.(string)).WithDebug(node.Debug)
 				}

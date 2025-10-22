@@ -1,6 +1,8 @@
 package interpreter
 
 import (
+	"context"
+
 	"github.com/nubolang/nubo/internal/ast/astnode"
 	"github.com/nubolang/nubo/language"
 )
@@ -14,10 +16,12 @@ func (i *Interpreter) handleStruct(node *astnode.Node) error {
 		if err != nil {
 			return wrapRunExc(err, node.Debug)
 		}
+		priv := field.Flags.Contains("PRIVATE")
 
 		body[inx] = language.StructField{
-			Name: field.Content,
-			Type: typ,
+			Name:    field.Content,
+			Type:    typ,
+			Private: priv,
 		}
 	}
 
@@ -49,7 +53,7 @@ func (i *Interpreter) handleStructCreation(obj language.Object, node *astnode.No
 		return nil, wrapRunExc(err, node.Debug)
 	}
 
-	if newer, ok := instance.GetPrototype().GetObject("init"); ok {
+	if newer, ok := instance.GetPrototype().GetObject(context.Background(), "init"); ok {
 		fn, ok := newer.(*language.Function)
 		if !ok {
 			return nil, typeError("expected function, got %s", newer.Type()).WithDebug(node.Debug)
@@ -64,7 +68,7 @@ func (i *Interpreter) handleStructCreation(obj language.Object, node *astnode.No
 			args[j] = value.Clone()
 		}
 
-		inst, err := fn.Data(args)
+		inst, err := fn.Data(language.StructAllowPrivateCtx(i.ctx), args)
 		if err != nil {
 			return nil, wrapRunExc(err, node.Debug)
 		}

@@ -1,0 +1,27 @@
+struct User {
+    name: string
+    age: int
+    private email: string
+}
+
+impl User {
+    fn init(self: User, email: string) User {
+        println("Hello")
+        self.email = email
+        return self
+    }
+
+    fn first(self: User) {
+        println(1, self.email)
+        self.second()
+        println(3, self.email)
+    }
+
+    private fn second(self: User) {
+        self.email = "hello@app.net"
+        println(2, self.email)
+    }
+}
+
+let user = User("example@example.com")
+user.first()

@@ -1,6 +1,7 @@
 package modules
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -55,17 +56,18 @@ func NewRequest(r *http.Request) (language.Object, error) {
 		}
 	}
 
-	proto.SetObject("method", language.NewString(r.Method, nil))
-	proto.SetObject("headers", headers)
-	proto.SetObject("secure", language.NewBool(r.TLS != nil, nil))
+	ctx := r.Context()
+	proto.SetObject(ctx, "method", language.NewString(r.Method, nil))
+	proto.SetObject(ctx, "headers", headers)
+	proto.SetObject(ctx, "secure", language.NewBool(r.TLS != nil, nil))
 
-	proto.SetObject("accepts", native.NewTypedFunction(native.OneArg("contentType", language.TypeString), language.TypeBool, func(ctx native.FnCtx) (language.Object, error) {
+	proto.SetObject(ctx, "accepts", native.NewTypedFunction(ctx, native.OneArg("contentType", language.TypeString), language.TypeBool, func(ctx native.FnCtx) (language.Object, error) {
 		contentType, _ := ctx.Get("contentType")
 		accept := strings.ToLower(r.Header.Get("Accept"))
 		return language.NewBool(strings.ToLower(contentType.String()) == accept, nil), nil
 	}))
 
-	proto.SetObject("param", native.NewTypedFunction(native.OneArg("name", language.TypeString), language.Nullable(language.TypeString), func(ctx native.FnCtx) (language.Object, error) {
+	proto.SetObject(ctx, "param", native.NewTypedFunction(ctx, native.OneArg("name", language.TypeString), language.Nullable(language.TypeString), func(ctx native.FnCtx) (language.Object, error) {
 		name, _ := ctx.Get("name")
 		param, ok := params[name.String()]
 		if ok {
@@ -75,7 +77,7 @@ func NewRequest(r *http.Request) (language.Object, error) {
 		return language.Nil, nil
 	}))
 
-	proto.SetObject("query", native.NewTypedFunction(native.OneArg("name", language.TypeString), language.Nullable(language.TypeString), func(ctx native.FnCtx) (language.Object, error) {
+	proto.SetObject(ctx, "query", native.NewTypedFunction(ctx, native.OneArg("name", language.TypeString), language.Nullable(language.TypeString), func(ctx native.FnCtx) (language.Object, error) {
 		name, _ := ctx.Get("name")
 		value := r.URL.Query().Get(name.String())
 		if value == "" {
@@ -84,7 +86,7 @@ func NewRequest(r *http.Request) (language.Object, error) {
 		return language.NewString(value, name.Debug()), nil
 	}))
 
-	proto.SetObject("cookie", native.NewTypedFunction(native.OneArg("name", language.TypeString), language.Nullable(language.TypeString), func(ctx native.FnCtx) (language.Object, error) {
+	proto.SetObject(ctx, "cookie", native.NewTypedFunction(ctx, native.OneArg("name", language.TypeString), language.Nullable(language.TypeString), func(ctx native.FnCtx) (language.Object, error) {
 		name, _ := ctx.Get("name")
 		cookie, err := r.Cookie(name.String())
 		if err != nil {
@@ -93,17 +95,17 @@ func NewRequest(r *http.Request) (language.Object, error) {
 		return language.NewString(cookie.Value, name.Debug()), nil
 	}))
 
-	proto.SetObject("path", language.NewString(r.URL.Path, nil))
-	proto.SetObject("url", language.NewString(r.URL.String(), nil))
-	proto.SetObject("host", language.NewString(r.Host, nil))
-	proto.SetObject("ip", language.NewString(r.RemoteAddr, nil))
+	proto.SetObject(ctx, "path", language.NewString(r.URL.Path, nil))
+	proto.SetObject(ctx, "url", language.NewString(r.URL.String(), nil))
+	proto.SetObject(ctx, "host", language.NewString(r.Host, nil))
+	proto.SetObject(ctx, "ip", language.NewString(r.RemoteAddr, nil))
 
-	proto.SetObject("is", native.NewTypedFunction(native.OneArg("method", language.TypeString), language.TypeBool, func(ctx native.FnCtx) (language.Object, error) {
+	proto.SetObject(ctx, "is", native.NewTypedFunction(ctx, native.OneArg("method", language.TypeString), language.TypeBool, func(ctx native.FnCtx) (language.Object, error) {
 		method, _ := ctx.Get("method")
 		return language.NewBool(strings.EqualFold(r.Method, method.String()), method.Debug()), nil
 	}))
 
-	proto.SetObject("body", native.NewTypedFunction(nil, language.TypeString, func(ctx native.FnCtx) (language.Object, error) {
+	proto.SetObject(ctx, "body", native.NewTypedFunction(ctx, nil, language.TypeString, func(ctx native.FnCtx) (language.Object, error) {
 		if body == nil {
 			var err error
 			body, err = io.ReadAll(io.LimitReader(r.Body, config.Current.Runtime.Server.MaxUploadSizeByte))
@@ -114,7 +116,7 @@ func NewRequest(r *http.Request) (language.Object, error) {
 		return language.NewString(string(body), nil), nil
 	}))
 
-	proto.SetObject("json", native.NewTypedFunction(nil, language.TypeAny, func(ctx native.FnCtx) (language.Object, error) {
+	proto.SetObject(ctx, "json", native.NewTypedFunction(ctx, nil, language.TypeAny, func(ctx native.FnCtx) (language.Object, error) {
 		if body == nil {
 			var err error
 			body, err = io.ReadAll(io.LimitReader(r.Body, config.Current.Runtime.Server.MaxUploadSizeByte))
@@ -132,7 +134,7 @@ func NewRequest(r *http.Request) (language.Object, error) {
 		return language.FromValue(data, false)
 	}))
 
-	proto.SetObject("form", native.NewTypedFunction(native.OneArg("name", language.TypeString), language.Nullable(language.TypeString), func(ctx native.FnCtx) (language.Object, error) {
+	proto.SetObject(ctx, "form", native.NewTypedFunction(ctx, native.OneArg("name", language.TypeString), language.Nullable(language.TypeString), func(ctx native.FnCtx) (language.Object, error) {
 		if err := r.ParseForm(); err != nil {
 			return language.Nil, nil
 		}
@@ -144,7 +146,7 @@ func NewRequest(r *http.Request) (language.Object, error) {
 		return language.NewString(value, nil), nil
 	}))
 
-	proto.SetObject("formData", native.NewTypedFunction(nil, language.Nullable(language.TypeDict), func(ctx native.FnCtx) (language.Object, error) {
+	proto.SetObject(ctx, "formData", native.NewTypedFunction(ctx, nil, language.Nullable(language.TypeDict), func(ctx native.FnCtx) (language.Object, error) {
 		if err := r.ParseMultipartForm(config.Current.Runtime.Server.MaxUploadFileSize); err != nil {
 			if err := r.ParseForm(); err != nil {
 				return nil, err
@@ -168,7 +170,7 @@ func NewRequest(r *http.Request) (language.Object, error) {
 		return n.Dict(data)
 	}))
 
-	proto.SetObject("file", native.NewTypedFunction(native.OneArg("name", language.TypeString), language.Nullable(language.TypeStructInstance), func(ctx native.FnCtx) (language.Object, error) {
+	proto.SetObject(ctx, "file", native.NewTypedFunction(ctx, native.OneArg("name", language.TypeString), language.Nullable(language.TypeStructInstance), func(ctx native.FnCtx) (language.Object, error) {
 		if err := r.ParseMultipartForm(config.Current.Runtime.Server.MaxUploadFileSize); err != nil {
 			return language.Nil, nil
 		}
@@ -197,9 +199,10 @@ func NewRequest(r *http.Request) (language.Object, error) {
 			proto.Unlock()
 			defer proto.Lock()
 
-			proto.SetObject("filename", language.NewString(fileHeader.Filename, nil))
-			proto.SetObject("size", language.NewInt(fileHeader.Size, nil))
-			proto.SetObject("header", language.NewString(fileHeader.Header.Get("Content-Type"), nil))
+			ctx := context.Background()
+			proto.SetObject(ctx, "filename", language.NewString(fileHeader.Filename, nil))
+			proto.SetObject(ctx, "size", language.NewInt(fileHeader.Size, nil))
+			proto.SetObject(ctx, "header", language.NewString(fileHeader.Header.Get("Content-Type"), nil))
 
 			return fileObj, nil
 		}

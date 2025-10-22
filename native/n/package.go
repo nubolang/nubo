@@ -1,6 +1,7 @@
 package n
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"sync"
@@ -89,14 +90,14 @@ func NewPackagePrototype(base *Package) *PackagePrototype {
 	return ip
 }
 
-func (i *PackagePrototype) GetObject(name string) (language.Object, bool) {
+func (i *PackagePrototype) GetObject(ctx context.Context, name string) (language.Object, bool) {
 	i.mu.RLock()
 	defer i.mu.RUnlock()
 	obj, ok := i.data[name]
 	return obj, ok
 }
 
-func (i *PackagePrototype) SetObject(name string, value language.Object) error {
+func (i *PackagePrototype) SetObject(ctx context.Context, name string, value language.Object) error {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 	i.data[name] = value

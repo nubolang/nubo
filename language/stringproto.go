@@ -1,6 +1,7 @@
 package language
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"sync"
@@ -22,17 +23,19 @@ func NewStringPrototype(base *String) *StringPrototype {
 		data: make(map[string]Object),
 	}
 
-	sp.SetObject("length", NewTypedFunction(nil, TypeInt, func(o []Object) (Object, error) {
+	ctx := context.Background()
+
+	sp.SetObject(ctx, "length", NewTypedFunction(nil, TypeInt, func(ctx context.Context, o []Object) (Object, error) {
 		sp.mu.RLock()
 		defer sp.mu.RUnlock()
 
 		return NewInt(int64(len(base.Data)), base.debug), nil
 	}, nil))
 
-	sp.SetObject("includes", NewTypedFunction(
+	sp.SetObject(ctx, "includes", NewTypedFunction(
 		[]FnArg{&BasicFnArg{TypeVal: TypeString, NameVal: "substr"}},
 		TypeBool,
-		func(o []Object) (Object, error) {
+		func(ctx context.Context, o []Object) (Object, error) {
 			sp.mu.RLock()
 			defer sp.mu.RUnlock()
 
@@ -40,10 +43,10 @@ func NewStringPrototype(base *String) *StringPrototype {
 			return NewBool(strings.Contains(base.Data, substr), base.debug), nil
 		}, nil))
 
-	sp.SetObject("indexOf", NewTypedFunction(
+	sp.SetObject(ctx, "indexOf", NewTypedFunction(
 		[]FnArg{&BasicFnArg{TypeVal: TypeString, NameVal: "substr"}},
 		TypeInt,
-		func(o []Object) (Object, error) {
+		func(ctx context.Context, o []Object) (Object, error) {
 			sp.mu.RLock()
 			defer sp.mu.RUnlock()
 
@@ -51,10 +54,10 @@ func NewStringPrototype(base *String) *StringPrototype {
 			return NewInt(int64(strings.Index(base.Data, substr)), base.debug), nil
 		}, nil))
 
-	sp.SetObject("lastIndexOf", NewTypedFunction(
+	sp.SetObject(ctx, "lastIndexOf", NewTypedFunction(
 		[]FnArg{&BasicFnArg{TypeVal: TypeString, NameVal: "substr"}},
 		TypeInt,
-		func(o []Object) (Object, error) {
+		func(ctx context.Context, o []Object) (Object, error) {
 			sp.mu.RLock()
 			defer sp.mu.RUnlock()
 
@@ -62,10 +65,10 @@ func NewStringPrototype(base *String) *StringPrototype {
 			return NewInt(int64(strings.LastIndex(base.Data, substr)), base.debug), nil
 		}, nil))
 
-	sp.SetObject("startsWith", NewTypedFunction(
+	sp.SetObject(ctx, "startsWith", NewTypedFunction(
 		[]FnArg{&BasicFnArg{TypeVal: TypeString, NameVal: "prefix"}},
 		TypeBool,
-		func(o []Object) (Object, error) {
+		func(ctx context.Context, o []Object) (Object, error) {
 			sp.mu.RLock()
 			defer sp.mu.RUnlock()
 
@@ -73,10 +76,10 @@ func NewStringPrototype(base *String) *StringPrototype {
 			return NewBool(strings.HasPrefix(base.Data, prefix), base.debug), nil
 		}, nil))
 
-	sp.SetObject("endsWith", NewTypedFunction(
+	sp.SetObject(ctx, "endsWith", NewTypedFunction(
 		[]FnArg{&BasicFnArg{TypeVal: TypeString, NameVal: "suffix"}},
 		TypeBool,
-		func(o []Object) (Object, error) {
+		func(ctx context.Context, o []Object) (Object, error) {
 			sp.mu.RLock()
 			defer sp.mu.RUnlock()
 
@@ -84,38 +87,38 @@ func NewStringPrototype(base *String) *StringPrototype {
 			return NewBool(strings.HasSuffix(base.Data, suffix), base.debug), nil
 		}, nil))
 
-	sp.SetObject("toUpperCase", NewFunction(func(o []Object) (Object, error) {
+	sp.SetObject(ctx, "toUpperCase", NewFunction(func(ctx context.Context, o []Object) (Object, error) {
 		sp.mu.RLock()
 		defer sp.mu.RUnlock()
 
 		return NewString(strings.ToUpper(base.Data), base.debug), nil
 	}, nil))
 
-	sp.SetObject("toLowerCase", NewFunction(func(o []Object) (Object, error) {
+	sp.SetObject(ctx, "toLowerCase", NewFunction(func(ctx context.Context, o []Object) (Object, error) {
 		sp.mu.RLock()
 		defer sp.mu.RUnlock()
 
 		return NewString(strings.ToLower(base.Data), base.debug), nil
 	}, nil))
 
-	sp.SetObject("capitalize", NewFunction(func(o []Object) (Object, error) {
+	sp.SetObject(ctx, "capitalize", NewFunction(func(ctx context.Context, o []Object) (Object, error) {
 		sp.mu.RLock()
 		defer sp.mu.RUnlock()
 
 		return NewString(cases.Title(language.English, cases.Compact).String(base.Data), base.debug), nil
 	}, nil))
 
-	sp.SetObject("trim", NewFunction(func(o []Object) (Object, error) {
+	sp.SetObject(ctx, "trim", NewFunction(func(ctx context.Context, o []Object) (Object, error) {
 		sp.mu.RLock()
 		defer sp.mu.RUnlock()
 
 		return NewString(strings.TrimSpace(base.Data), base.debug), nil
 	}, nil))
 
-	sp.SetObject("trimPrefix", NewTypedFunction(
+	sp.SetObject(ctx, "trimPrefix", NewTypedFunction(
 		[]FnArg{&BasicFnArg{TypeVal: TypeString, NameVal: "prefix"}},
 		TypeString,
-		func(o []Object) (Object, error) {
+		func(ctx context.Context, o []Object) (Object, error) {
 			sp.mu.RLock()
 			defer sp.mu.RUnlock()
 
@@ -123,10 +126,10 @@ func NewStringPrototype(base *String) *StringPrototype {
 			return NewString(strings.TrimPrefix(base.Data, prefix), base.debug), nil
 		}, nil))
 
-	sp.SetObject("trimSuffix", NewTypedFunction(
+	sp.SetObject(ctx, "trimSuffix", NewTypedFunction(
 		[]FnArg{&BasicFnArg{TypeVal: TypeString, NameVal: "suffix"}},
 		TypeString,
-		func(o []Object) (Object, error) {
+		func(ctx context.Context, o []Object) (Object, error) {
 			sp.mu.RLock()
 			defer sp.mu.RUnlock()
 
@@ -134,14 +137,14 @@ func NewStringPrototype(base *String) *StringPrototype {
 			return NewString(strings.TrimSuffix(base.Data, suffix), base.debug), nil
 		}, nil))
 
-	sp.SetObject("replace", NewTypedFunction(
+	sp.SetObject(ctx, "replace", NewTypedFunction(
 		[]FnArg{
 			&BasicFnArg{TypeVal: TypeString, NameVal: "old"},
 			&BasicFnArg{TypeVal: TypeString, NameVal: "new"},
 			&BasicFnArg{TypeVal: TypeInt, NameVal: "n", DefaultVal: NewInt(-1, nil)},
 		},
 		TypeString,
-		func(o []Object) (Object, error) {
+		func(ctx context.Context, o []Object) (Object, error) {
 			sp.mu.RLock()
 			defer sp.mu.RUnlock()
 
@@ -151,10 +154,10 @@ func NewStringPrototype(base *String) *StringPrototype {
 			return NewString(strings.Replace(base.Data, old, newStr, n), base.debug), nil
 		}, nil))
 
-	sp.SetObject("split", NewTypedFunction(
+	sp.SetObject(ctx, "split", NewTypedFunction(
 		[]FnArg{&BasicFnArg{TypeVal: TypeString, NameVal: "sep", DefaultVal: NewString(" ", nil)}},
 		TypeList,
-		func(o []Object) (Object, error) {
+		func(ctx context.Context, o []Object) (Object, error) {
 			sp.mu.RLock()
 			defer sp.mu.RUnlock()
 
@@ -167,13 +170,13 @@ func NewStringPrototype(base *String) *StringPrototype {
 			return NewList(data, TypeString, nil), nil
 		}, nil))
 
-	sp.SetObject("substring", NewTypedFunction(
+	sp.SetObject(ctx, "substring", NewTypedFunction(
 		[]FnArg{
 			&BasicFnArg{TypeVal: TypeInt, NameVal: "start"},
 			&BasicFnArg{TypeVal: TypeInt, NameVal: "end"},
 		},
 		TypeString,
-		func(o []Object) (Object, error) {
+		func(ctx context.Context, o []Object) (Object, error) {
 			sp.mu.RLock()
 			defer sp.mu.RUnlock()
 
@@ -188,7 +191,7 @@ func NewStringPrototype(base *String) *StringPrototype {
 	charAt := NewTypedFunction(
 		[]FnArg{&BasicFnArg{TypeVal: TypeInt, NameVal: "index"}},
 		TypeChar,
-		func(o []Object) (Object, error) {
+		func(ctx context.Context, o []Object) (Object, error) {
 			sp.mu.RLock()
 			defer sp.mu.RUnlock()
 
@@ -199,13 +202,13 @@ func NewStringPrototype(base *String) *StringPrototype {
 			}
 			return NewChar(runes[idx], base.debug), nil
 		}, nil)
-	sp.SetObject("charAt", charAt)
-	sp.SetObject("__get__", charAt)
+	sp.SetObject(ctx, "charAt", charAt)
+	sp.SetObject(ctx, "__get__", charAt)
 
-	sp.SetObject("codePointAt", NewTypedFunction(
+	sp.SetObject(ctx, "codePointAt", NewTypedFunction(
 		[]FnArg{&BasicFnArg{TypeVal: TypeInt, NameVal: "index"}},
 		TypeInt,
-		func(o []Object) (Object, error) {
+		func(ctx context.Context, o []Object) (Object, error) {
 			sp.mu.RLock()
 			defer sp.mu.RUnlock()
 
@@ -217,21 +220,21 @@ func NewStringPrototype(base *String) *StringPrototype {
 			return NewInt(int64(runes[idx]), base.debug), nil
 		}, nil))
 
-	sp.SetObject("toKebabCase", NewFunction(func(o []Object) (Object, error) {
+	sp.SetObject(ctx, "toKebabCase", NewFunction(func(ctx context.Context, o []Object) (Object, error) {
 		sp.mu.RLock()
 		defer sp.mu.RUnlock()
 
 		return NewString(strcase.KebabCase(base.Data), base.debug), nil
 	}, nil))
 
-	sp.SetObject("toCamelCase", NewFunction(func(o []Object) (Object, error) {
+	sp.SetObject(ctx, "toCamelCase", NewFunction(func(ctx context.Context, o []Object) (Object, error) {
 		sp.mu.RLock()
 		defer sp.mu.RUnlock()
 
 		return NewString(strcase.LowerCamelCase(base.Data), base.debug), nil
 	}, nil))
 
-	sp.SetObject("toSnakeCase", NewFunction(func(o []Object) (Object, error) {
+	sp.SetObject(ctx, "toSnakeCase", NewFunction(func(ctx context.Context, o []Object) (Object, error) {
 		sp.mu.RLock()
 		defer sp.mu.RUnlock()
 
@@ -241,14 +244,14 @@ func NewStringPrototype(base *String) *StringPrototype {
 	return sp
 }
 
-func (s *StringPrototype) GetObject(name string) (Object, bool) {
+func (s *StringPrototype) GetObject(ctx context.Context, name string) (Object, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	obj, ok := s.data[name]
 	return obj, ok
 }
 
-func (s *StringPrototype) SetObject(name string, value Object) error {
+func (s *StringPrototype) SetObject(ctx context.Context, name string, value Object) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.data[name] = value

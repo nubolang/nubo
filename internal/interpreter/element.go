@@ -95,7 +95,7 @@ func (i *Interpreter) evaluateElement(node *astnode.Node) (language.Object, erro
 		return language.NewElement(elem, node.Debug), nil
 	}
 
-	cctxRaw, _ := component.NewComponent(node.Debug).GetPrototype().GetObject("Context")
+	cctxRaw, _ := component.NewComponent(node.Debug).GetPrototype().GetObject(i.ctx, "Context")
 	cctx := cctxRaw.(*language.Struct)
 	fnType := language.NewFunctionType(language.TypeHtml, cctx.Type())
 
@@ -134,14 +134,14 @@ func (i *Interpreter) evaluateElement(node *astnode.Node) (language.Object, erro
 	c := language.NewList(children, language.NewUnionType(language.TypeString, language.TypeHtml), node.Debug)
 
 	inst, _ := cctx.NewInstance()
-	initFunc, _ := inst.GetPrototype().GetObject("init")
+	initFunc, _ := inst.GetPrototype().GetObject(i.ctx, "init")
 	init := initFunc.(*language.Function)
-	cctxInstance, err := init.Data([]language.Object{d, c})
+	cctxInstance, err := init.Data(i.ctx, []language.Object{d, c})
 	if err != nil {
 		return nil, exception.From(err, node.Debug, "Context instance creation failed")
 	}
 
-	data, err := fn.Data([]language.Object{cctxInstance})
+	data, err := fn.Data(i.ctx, []language.Object{cctxInstance})
 	if err != nil {
 		return nil, exception.From(err, node.Debug, "function call failed: @err")
 	}

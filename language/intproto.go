@@ -1,6 +1,7 @@
 package language
 
 import (
+	"context"
 	"sync"
 )
 
@@ -16,7 +17,9 @@ func NewIntPrototype(base *Int) *IntPrototype {
 		data: make(map[string]Object),
 	}
 
-	ip.SetObject("increment", NewFunction(func(o []Object) (Object, error) {
+	ctx := context.Background()
+
+	ip.SetObject(ctx, "increment", NewFunction(func(ctx context.Context, o []Object) (Object, error) {
 		ip.mu.Lock()
 		defer ip.mu.Unlock()
 
@@ -24,7 +27,7 @@ func NewIntPrototype(base *Int) *IntPrototype {
 		return nil, nil
 	}, base.Debug()))
 
-	ip.SetObject("decrement", NewFunction(func(o []Object) (Object, error) {
+	ip.SetObject(ctx, "decrement", NewFunction(func(ctx context.Context, o []Object) (Object, error) {
 		ip.mu.Lock()
 		defer ip.mu.Unlock()
 
@@ -35,14 +38,14 @@ func NewIntPrototype(base *Int) *IntPrototype {
 	return ip
 }
 
-func (i *IntPrototype) GetObject(name string) (Object, bool) {
+func (i *IntPrototype) GetObject(ctx context.Context, name string) (Object, bool) {
 	i.mu.RLock()
 	defer i.mu.RUnlock()
 	obj, ok := i.data[name]
 	return obj, ok
 }
 
-func (i *IntPrototype) SetObject(name string, value Object) error {
+func (i *IntPrototype) SetObject(ctx context.Context, name string, value Object) error {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 	i.data[name] = value

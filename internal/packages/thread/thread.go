@@ -1,6 +1,7 @@
 package thread
 
 import (
+	"context"
 	"fmt"
 	"runtime"
 
@@ -15,7 +16,8 @@ func NewThread(dg *debug.Debug) language.Object {
 	instance := n.NewPackage("thread", dg)
 	proto := instance.GetPrototype()
 
-	proto.SetObject("spawn", native.NewFunction(func(args []language.Object) (language.Object, error) {
+	ctx := context.Background()
+	proto.SetObject(ctx, "spawn", native.NewFunction(func(args []language.Object) (language.Object, error) {
 		if len(args) < 1 {
 			return nil, fmt.Errorf("Expected at least one argument")
 		}
@@ -38,8 +40,8 @@ func NewThread(dg *debug.Debug) language.Object {
 			}
 		}
 
-		go func(fn func(args []language.Object) (language.Object, error), fnArgs []language.Object) {
-			_, err := fn(fnArgs)
+		go func(fn func(ctx context.Context, args []language.Object) (language.Object, error), fnArgs []language.Object) {
+			_, err := fn(ctx, fnArgs)
 			if err != nil {
 				zap.L().Error("@std/thread.spawn: executing a function failed", zap.Error(err))
 			}
@@ -48,7 +50,7 @@ func NewThread(dg *debug.Debug) language.Object {
 		return nil, nil
 	}))
 
-	proto.SetObject("yield", native.NewFunction(func(args []language.Object) (language.Object, error) {
+	proto.SetObject(ctx, "yield", native.NewFunction(func(args []language.Object) (language.Object, error) {
 		runtime.Gosched()
 		return nil, nil
 	}))

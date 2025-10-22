@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"context"
 	"log"
 	"os"
 	"sync"
@@ -33,6 +34,8 @@ type Runtime struct {
 	builtins map[string]language.Object
 	packages map[string]language.Object
 	packer   *packer.Packer
+
+	ctx context.Context
 }
 
 func New(pubsubProvider events.Provider) *Runtime {
@@ -44,7 +47,17 @@ func New(pubsubProvider events.Provider) *Runtime {
 		returnMap:      make(map[uint]language.Object),
 		builtins:       builtin.GetBuiltins(),
 		packages:       make(map[string]language.Object),
+		ctx:            context.Background(),
 	}
+}
+
+func (r *Runtime) Context() context.Context {
+	return r.ctx
+}
+
+func (r *Runtime) WithContext(ctx context.Context) *Runtime {
+	r.ctx = ctx
+	return r
 }
 
 func (r *Runtime) GetBuiltin(name string) (language.Object, bool) {
@@ -120,7 +133,7 @@ func (r *Runtime) Interpret(file string, nodes []*astnode.Node) (language.Object
 	}
 	r.mu.RUnlock()
 
-	interpreter := interpreter.New(file, r, false, wd)
+	interpreter := interpreter.New(r.ctx, file, r, false, wd)
 
 	r.mu.Lock()
 	r.interpreters[interpreter.ID] = interpreter

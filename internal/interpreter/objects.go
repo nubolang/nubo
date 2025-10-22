@@ -77,7 +77,7 @@ func (i *Interpreter) assignNested(name string, value language.Object) error {
 			return runExc("undefined property %q", part).WithDebug(value.Debug())
 		}
 		var ok bool
-		current, ok = proto.GetObject(part)
+		current, ok = proto.GetObject(i.ctx, part)
 		if !ok || current == nil {
 			return runExc("undefined property %q", part).WithDebug(value.Debug())
 		}
@@ -90,13 +90,13 @@ func (i *Interpreter) assignNested(name string, value language.Object) error {
 	}
 
 	// fallback: call set(name, value)
-	if setFn, ok := proto.GetObject("__set__"); ok {
+	if setFn, ok := proto.GetObject(i.ctx, "__set__"); ok {
 		if callErr := i.callSetFunction(setFn, lastKey, value); callErr == nil {
 			return nil
 		}
 	}
 
-	if err := proto.SetObject(lastKey, value); err == nil {
+	if err := proto.SetObject(i.ctx, lastKey, value); err == nil {
 		return nil
 	}
 
@@ -181,7 +181,7 @@ func (i *Interpreter) GetObject(name string) (language.Object, bool) {
 				return i.parentGetObject(name)
 			}
 			var ok bool
-			current, ok = proto.GetObject(part)
+			current, ok = proto.GetObject(i.ctx, part)
 			if !ok {
 				return i.parentGetObject(name)
 			}
@@ -197,13 +197,13 @@ func (i *Interpreter) GetObject(name string) (language.Object, bool) {
 			return i.parentGetObject(name)
 		}
 
-		val, ok := proto.GetObject(last)
+		val, ok := proto.GetObject(i.ctx, last)
 		if ok {
 			return val, true
 		}
 
 		// fallback: try get(name)
-		if getFn, ok := proto.GetObject("__get__"); ok {
+		if getFn, ok := proto.GetObject(i.ctx, "__get__"); ok {
 			if res, err := i.callGetFunction(getFn, last); err == nil {
 				return res, true
 			}
@@ -251,7 +251,7 @@ func (i *Interpreter) callGetFunction(fn language.Object, key string) (language.
 		return nil, fmt.Errorf("not callable")
 	}
 	args := []language.Object{language.NewString(key, fn.Debug())}
-	return callable.Data(args)
+	return callable.Data(i.ctx, args)
 }
 
 func (i *Interpreter) callSetFunction(fn language.Object, key string, value language.Object) error {
@@ -260,6 +260,6 @@ func (i *Interpreter) callSetFunction(fn language.Object, key string, value lang
 		return fmt.Errorf("not callable")
 	}
 	args := []language.Object{language.NewString(key, fn.Debug()), value}
-	_, err := callable.Data(args)
+	_, err := callable.Data(i.ctx, args)
 	return err
 }

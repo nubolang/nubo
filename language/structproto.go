@@ -1,6 +1,7 @@
 package language
 
 import (
+	"context"
 	"fmt"
 	"sync"
 )
@@ -14,7 +15,8 @@ type StructPrototype struct {
 	locked      bool
 
 	data map[string]Object
-	mu   sync.RWMutex
+
+	mu sync.RWMutex
 }
 
 func NewStructPrototype(base *Struct) *StructPrototype {
@@ -37,14 +39,15 @@ func (sp *StructPrototype) NewInstance(instance *StructInstance) (*StructPrototy
 	cloned.instance = instance
 	cloned.Unlock()
 
+	ctx := StructAllowPrivateCtx(context.Background())
 	for _, field := range sp.base.Data {
-		if err := cloned.SetObject(field.Name, DefaultValue(field.Type)); err != nil {
+		if err := cloned.SetObject(ctx, field.Name, DefaultValue(field.Type)); err != nil {
 			return nil, err
 		}
 	}
 
 	for name, set := range sp.setters {
-		if err := cloned.SetObject(name, set); err != nil {
+		if err := cloned.SetObject(ctx, name, set); err != nil {
 			return nil, err
 		}
 	}
@@ -53,17 +56,30 @@ func (sp *StructPrototype) NewInstance(instance *StructInstance) (*StructPrototy
 	return cloned, nil
 }
 
-func (s *StructPrototype) GetObject(name string) (Object, bool) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+func (s *StructPrototype) GetObject(ctx context.Context, name string) (Object, bool) {
+	if _, ok := s.base.privateMap[name]; ok {
+		if val := ctx.Value("unlock_struct_private"); val == nil || val != true {
+			return nil, false
+		}
+	}
+
 	obj, ok := s.data[name]
 	return obj, ok
 }
 
-func (s *StructPrototype) SetObject(name string, value Object) error {
+func (s *StructPrototype) SetObject(ctx context.Context, name string, value Object) error {
+	if _, ok := s.base.privateMap[name]; ok {
+		if val := ctx.Value("unlock_struct_private"); val == nil || val != true {
+			return fmt.Errorf("cannot modify private field outside implementation")
+		}
+	}
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.instance == nil {
+		if val := ctx.Value("set_private"); val != nil && val == true {
+			s.base.privateMap[name] = struct{}{}
+		}
 		s.setters[name] = value
 		return nil
 	}
@@ -71,7 +87,7 @@ func (s *StructPrototype) SetObject(name string, value Object) error {
 	for _, field := range s.base.Data {
 		if field.Name == name {
 			if !field.Type.Compare(value.Type()) {
-				return fmt.Errorf("Type mismatch, expected %s, got %s", field.Type, value.Type())
+				return fmt.Errorf("type mismatch, expected %s, got %s", field.Type, value.Type())
 			}
 			s.data[name] = value
 			return nil
@@ -79,24 +95,24 @@ func (s *StructPrototype) SetObject(name string, value Object) error {
 	}
 
 	if s.locked && s.instance != nil {
-		return fmt.Errorf("Cannot use struct prototype directly, add a field or implement it via the impl block")
+		return fmt.Errorf("cannot use struct prototype directly, add a field or implement it via the impl block")
 	}
 
 	if value.Type().Base() == ObjectTypeFunction {
 		fn, ok := value.(*Function)
 		if !ok {
-			return fmt.Errorf("Expected function, got %s", value.Type())
+			return fmt.Errorf("expected function, got %s", value.Type())
 		}
 
 		if len(fn.ArgTypes) > 0 {
 			if fn.ArgTypes[0].Type().Base() != ObjectTypeAny && fn.ArgTypes[0].Type().Compare(s.base.structType) {
-				newFn := NewTypedFunction(fn.ArgTypes[1:], fn.ReturnType, func(o []Object) (Object, error) {
+				newFn := NewTypedFunction(fn.ArgTypes[1:], fn.ReturnType, func(ctx context.Context, o []Object) (Object, error) {
 					objs := make([]Object, 0, len(o)+1)
 					objs = append(objs, s.instance)
 					for _, obj := range o {
 						objs = append(objs, obj)
 					}
-					return fn.Data(objs)
+					return fn.Data(StructAllowPrivateCtx(ctx), objs)
 				}, fn.Debug())
 
 				s.data[name] = newFn
@@ -149,4 +165,12 @@ func (s *StructPrototype) Lock() {
 
 func (s *StructPrototype) Unlock() {
 	s.locked = false
+}
+
+func StructAllowPrivateCtx(ctx context.Context) context.Context {
+	return context.WithValue(ctx, "unlock_struct_private", true)
+}
+
+func StructSetPrivate(ctx context.Context) context.Context {
+	return context.WithValue(ctx, "set_private", true)
 }

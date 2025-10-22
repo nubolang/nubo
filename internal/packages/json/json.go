@@ -1,6 +1,7 @@
 package json
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/nubolang/nubo/internal/debug"
@@ -13,8 +14,9 @@ func NewJSON(dg *debug.Debug) language.Object {
 	instance := n.NewPackage("json", dg)
 	proto := instance.GetPrototype()
 
-	proto.SetObject("parse", native.NewTypedFunction(native.OneArg("string", language.TypeString), language.TypeAny, parseFn))
-	proto.SetObject("stringify", native.NewTypedFunction(native.OneArg("object", language.TypeAny), language.TypeString, stringifyFn))
+	ctx := context.Background()
+	proto.SetObject(ctx, "parse", native.NewTypedFunction(ctx, native.OneArg("string", language.TypeString), language.TypeAny, parseFn))
+	proto.SetObject(ctx, "stringify", native.NewTypedFunction(ctx, native.OneArg("object", language.TypeAny), language.TypeString, stringifyFn))
 
 	return instance
 }
