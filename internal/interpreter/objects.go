@@ -43,7 +43,7 @@ func (i *Interpreter) Assign(name string, value language.Object) error {
 		return assignErr
 	}
 
-	if i.scope == ScopeBlock && i.parent != nil {
+	if (i.scope == ScopeBlock || i.scope == ScopeFunction) && i.parent != nil {
 		if i.isConstInParent(name) {
 			return runExc("cannot reassign constant %q", name).WithDebug(value.Debug())
 		}

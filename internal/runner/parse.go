@@ -75,7 +75,12 @@ func writeDebug(filename string, data any, lx bool) error {
 	}
 
 	if path == "{nubo_dir_full_file}" {
-		path = filepath.Join(config.Base, "debug", filename)
+		path = filepath.Join(config.Nubo, "debug")
+		if lx {
+			path = filepath.Join(path, filename+".lx.yaml")
+		} else {
+			path = filepath.Join(path, filename+".node.yaml")
+		}
 	}
 
 	if err := os.MkdirAll(filepath.Dir(path), os.ModePerm); err != nil {

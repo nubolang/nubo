@@ -11,6 +11,7 @@ import (
 	"github.com/nubolang/nubo/internal/packages/hash"
 	"github.com/nubolang/nubo/internal/packages/http"
 	"github.com/nubolang/nubo/internal/packages/io"
+	"github.com/nubolang/nubo/internal/packages/iter"
 	"github.com/nubolang/nubo/internal/packages/json"
 	"github.com/nubolang/nubo/internal/packages/log"
 	"github.com/nubolang/nubo/internal/packages/math"
@@ -32,7 +33,7 @@ const (
 var packageList = []string{
 	"io", "math", "json", "log", "thread", "random",
 	"process", "sql", "time", "http", "system",
-	"hash", "component", "os",
+	"hash", "component", "os", "iter",
 }
 
 var (
@@ -118,6 +119,8 @@ func ImportPackage(name string, dg *debug.Debug) (language.Object, bool) {
 		return component.NewComponent(dg), true
 	case "os":
 		return os.NewOS(dg), true
+	case "iter":
+		return iter.NewIter(dg), true
 	}
 
 	return nil, false

@@ -135,6 +135,7 @@ func ReplaceVariables(input string, vars map[string]string) string {
 var (
 	Current *Config
 	Base    string
+	Nubo    string
 )
 
 func Verify() {
@@ -158,9 +159,13 @@ func Load() error {
 		return err
 	}
 
+	Nubo = filepath.Join(pwd, ".nubo")
+
 	config := filepath.Join(base, "config.yaml")
 	if _, err := os.Stat(config); err != nil {
-		return createConfigFile(config)
+		if err := createConfigFile(config); err != nil {
+			return err
+		}
 	}
 
 	file, err := os.Open(config)
@@ -176,14 +181,14 @@ func Load() error {
 
 	var cfg Config
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
-		panic(err)
+		return err
 	}
 
 	cfg.ApplyDefaults()
 
 	// Example: replace {nubo_dir} in lexer file
 	vars := map[string]string{
-		"nubo_dir":    filepath.Join(pwd, ".nubo"),
+		"nubo_dir":    Nubo,
 		"current_dir": pwd,
 	}
 	cfg.Syntax.Lexer.Debug.File = ReplaceVariables(cfg.Syntax.Lexer.Debug.File, vars)

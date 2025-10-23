@@ -152,7 +152,7 @@ bodyloop:
 	node.Body = bodyNodes
 
 	if inline {
-		if *inx <= len(tokens) {
+		if *inx < len(tokens) {
 			token := tokens[*inx]
 			if token.Type != lexer.TokenOpenParen {
 				if tkn, err := inxPPeak(tokens, inx); err == nil && tkn.Type == lexer.TokenOpenParen {

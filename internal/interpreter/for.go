@@ -3,6 +3,7 @@ package interpreter
 import (
 	"github.com/nubolang/nubo/internal/ast/astnode"
 	"github.com/nubolang/nubo/internal/exception"
+	"github.com/nubolang/nubo/internal/packages/iter"
 	"github.com/nubolang/nubo/language"
 	"github.com/nubolang/nubo/native/n"
 )
@@ -21,15 +22,24 @@ func (i *Interpreter) handleFor(node *astnode.Node) (language.Object, error) {
 
 	expr, err := i.eval(node.Args[0])
 	if err != nil {
-		return nil, exception.From(err, expr.Debug(), "failed to evaluate expression")
+		return nil, exception.From(err, node.Debug, "failed to evaluate expression")
 	}
 
-	iterator, ok := expr.(Iterator)
-	if !ok {
-		return nil, runExc("expected iterator, got '%s' with value '%v'", expr.Type(), expr.Value()).WithDebug(expr.Debug())
-	}
+	var iterate func() (language.Object, language.Object, bool, error)
+	if it, ok := i.getIterator(expr); ok {
+		iterate = it
+	} else {
+		iterator, ok := expr.(Iterator)
+		if !ok {
+			return nil, runExc("expected iterator, got '%s' with value '%v'", expr.Type(), expr.Value()).WithDebug(expr.Debug())
+		}
 
-	iterate := iterator.Iterator()
+		fn := iterator.Iterator()
+		iterate = func() (language.Object, language.Object, bool, error) {
+			key, value, ok := fn()
+			return key, value, ok, nil
+		}
+	}
 
 	// Create loop scope only once
 	ir := NewWithParent(i, ScopeBlock, "for")
@@ -51,7 +61,10 @@ func (i *Interpreter) handleFor(node *astnode.Node) (language.Object, error) {
 	}
 
 	for {
-		key, value, ok := iterate()
+		key, value, ok, err := iterate()
+		if err != nil {
+			return nil, wrapRunExc(err, expr.Debug())
+		}
 		if !ok {
 			break
 		}
@@ -89,4 +102,86 @@ func (i *Interpreter) handleFor(node *astnode.Node) (language.Object, error) {
 	}
 
 	return nil, nil
+}
+
+func (i *Interpreter) getIterator(expr language.Object) (func() (language.Object, language.Object, bool, error), bool) {
+	proto := expr.GetPrototype()
+	if proto == nil {
+		return nil, false
+	}
+
+	it, ok := proto.GetObject(i.ctx, "__iterate__")
+	if !ok {
+		return nil, false
+	}
+
+	f, ok := it.(*language.Function)
+	if !ok {
+		return nil, false
+	}
+
+	iteratorCreator := iter.NewIter(expr.Debug())
+	iterProto := iteratorCreator.GetPrototype()
+	if iterProto == nil {
+		return nil, false
+	}
+
+	iterator, ok := iterProto.GetObject(i.ctx, "Iterator")
+	if !ok {
+		return nil, false
+	}
+
+	if !language.TypeCheck(n.TTFn(iterator.Type()), f.Type()) {
+		return nil, false
+	}
+
+	realIterObj, err := f.Data(language.StructAllowPrivateCtx(i.ctx), nil)
+	if err != nil {
+		return nil, false
+	}
+
+	realIterProto := realIterObj.GetPrototype()
+	if realIterProto == nil {
+		return nil, false
+	}
+
+	nextFn, ok := realIterProto.GetObject(i.ctx, "next")
+	if !ok {
+		return nil, false
+	}
+
+	next := nextFn.(*language.Function)
+
+	return func() (language.Object, language.Object, bool, error) {
+		current, err := next.Data(i.ctx, nil)
+		if err != nil {
+			return nil, nil, false, err
+		}
+
+		currentProto := current.GetPrototype()
+		if currentProto == nil {
+			return nil, nil, false, runExc("prototype is empty for iterable")
+		}
+
+		end, ok := currentProto.GetObject(i.ctx, "end")
+		if !ok {
+			return nil, nil, false, runExc("end property not found")
+		}
+
+		if end.Value().(bool) {
+			return nil, nil, false, nil
+		}
+
+		key, ok := currentProto.GetObject(i.ctx, "key")
+		if !ok {
+			return nil, nil, false, runExc("key property not found")
+		}
+
+		value, ok := currentProto.GetObject(i.ctx, "value")
+		if !ok {
+			return nil, nil, false, runExc("value property not found")
+		}
+
+		return key, value, true, nil
+	}, true
 }

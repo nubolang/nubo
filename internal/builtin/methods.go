@@ -34,7 +34,7 @@ func GetBuiltins() map[string]language.Object {
 		"unwrap":  native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeAny, unwrapFn),
 		"clone":   native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeAny, cloneFn),
 		"exit":    native.NewTypedFunction(ctx, native.OneArg("code", language.TypeInt, language.NewInt(0, nil)), language.TypeVoid, exitFn),
-		"range":   n.Function(n.Describe(n.Arg("start", n.TInt), n.Arg("stop", n.TUnion(n.TInt, n.TNil), language.Nil), n.Arg("step", n.TInt, n.Int(1))).Returns(n.TTList(n.TInt)), rangeFn),
+		"range":   getRangeStruct(),
 		"env":     n.Function(n.Describe(n.Arg("name", n.TString), n.Arg("value", n.Nullable(n.TString), language.Nil)).Returns(n.Nullable(n.TString)), envFn),
 		"concat":  native.NewFunction(concatFn),
 

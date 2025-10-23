@@ -89,11 +89,15 @@ func (i *StructInstance) String() string {
 
 	var items = make([]string, len(i.base.Data))
 	for inx, field := range i.base.Data {
-		ob, ok := i.GetPrototype().GetObject(context.Background(), field.Name)
+		ob, ok := i.GetPrototype().GetObject(StructAllowPrivateCtx(context.Background()), field.Name)
 		if !ok {
 			items[inx] = fmt.Sprintf("%s: <invalid>", field.Name)
 		} else {
 			items[inx] = fmt.Sprintf("%s: %s", field.Name, indentString(ob.String(), "\t"))
+		}
+
+		if _, ok := i.base.privateMap[field.Name]; ok {
+			items[inx] = fmt.Sprintf("(private) %s", items[inx])
 		}
 	}
 

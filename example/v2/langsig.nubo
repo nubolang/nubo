@@ -1,7 +1,1 @@
-fn getter() data.Pack {
-    return compact(a, b, c, d, e, f, g, h)
-}
-
-map[rawkey]key
-map[key]value
-let turbomap = turbomap(11, 4, 9, 5).filter('mapex::')
+let x = compact(x)
