@@ -1,0 +1,15 @@
+import json from "@std/json"
+
+struct App {
+    private privateKey: string
+    publicKey: string
+}
+
+impl App {
+    fn init(self: App) App {
+        self.publicKey = "MY_PUBLIC_KEY"
+        return self
+    }
+}
+
+println(json.stringify(App()), inspect(App()))

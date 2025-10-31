@@ -52,6 +52,30 @@ func (sp *StructPrototype) NewInstance(instance *StructInstance) (*StructPrototy
 		}
 	}
 
+	err := cloned.SetObject(ctx, "$convout", NewTypedFunction([]FnArg{
+		&BasicFnArg{NameVal: "self", TypeVal: sp.base.Type()},
+	}, TypeAny, func(ctx context.Context, o []Object) (Object, error) {
+		keys := make([]Object, 0, len(sp.base.Data)-len(sp.base.privateMap))
+		values := make([]Object, 0, len(sp.base.Data)-len(sp.base.privateMap))
+
+		for _, field := range sp.base.Data {
+			if field.Private {
+				continue
+			}
+			value, ok := cloned.GetObject(context.Background(), field.Name)
+			keys = append(keys, NewString(field.Name, value.Debug()))
+			if !ok {
+				return nil, fmt.Errorf("value not found for key: %s", field.Name)
+			}
+			values = append(values, value)
+		}
+
+		return NewDict(keys, values, TypeString, TypeAny, sp.base.Debug())
+	}, instance.Debug()))
+	if err != nil {
+		return nil, err
+	}
+
 	cloned.Lock()
 	return cloned, nil
 }

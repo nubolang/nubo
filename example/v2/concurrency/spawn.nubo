@@ -1,0 +1,11 @@
+let portal = Portal(10)
+defer portal.close()
+
+spawn fn() {
+    doStuff()
+    portal.send("Finished")
+}()
+
+for data in portal.receive.withTimeout(1000) {
+    println(data)
+}

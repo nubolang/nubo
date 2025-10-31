@@ -112,7 +112,9 @@ func (t *Type) String() string {
 		return fmt.Sprintf("[]%s%s", t.Element.String(), next)
 	case ObjectTypeDict:
 		return fmt.Sprintf("dict[%s, %s]%s", t.Key.String(), t.Value.String(), next)
-	case ObjectTypeStructInstance, ObjectTypeStructDefinition:
+	case ObjectTypeStructDefinition:
+		return fmt.Sprintf("(struct) %s%s", t.Content, next)
+	case ObjectTypeStructInstance:
 		return fmt.Sprintf("%s{}%s", t.Content, next)
 	}
 }
@@ -183,7 +185,7 @@ func (t *Type) Compare(other *Type) bool {
 			return t.NextMatch(other)
 		}
 		return ok
-	case ObjectTypeStructDefinition:
+	case ObjectTypeStructDefinition, ObjectTypeStructInstance:
 		return t.ID == other.ID
 	}
 

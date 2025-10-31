@@ -1,6 +1,7 @@
 package language
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -163,6 +164,20 @@ func ToValue(obj Object, json ...bool) (any, error) {
 			return nil, err
 		}
 		return out, nil
+	case *StructInstance:
+		proto := obj.GetPrototype()
+		ctx := StructAllowPrivateCtx(context.Background())
+		fn, ok := proto.GetObject(ctx, "$convout")
+		if !ok {
+			return nil, fmt.Errorf("struct instance missing $conv method")
+		}
+
+		obj, err := fn.(*Function).Data(ctx, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		return ToValue(obj, jsonMode)
 	default:
 		if val, ok := obj.(Object); ok {
 			return ToValue(val, jsonMode)
