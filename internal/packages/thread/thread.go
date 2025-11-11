@@ -16,7 +16,11 @@ func NewThread(dg *debug.Debug) language.Object {
 	instance := n.NewPackage("thread", dg)
 	proto := instance.GetPrototype()
 
+	newPortalStruct(dg)
+
 	ctx := context.Background()
+	proto.SetObject(ctx, "Portal", portalStruct)
+
 	proto.SetObject(ctx, "spawn", native.NewFunction(func(args []language.Object) (language.Object, error) {
 		if len(args) < 1 {
 			return nil, fmt.Errorf("Expected at least one argument")

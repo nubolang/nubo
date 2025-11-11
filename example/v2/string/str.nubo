@@ -1,0 +1,3 @@
+let x = string("Hello, World!").split(", ")
+
+println(x)

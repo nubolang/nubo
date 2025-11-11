@@ -53,4 +53,5 @@ const (
 	NodeTypeDynamicText     NodeType = "dynamic_text"
 
 	NodeTypeDefer NodeType = "defer"
+	NodeTypeSpawn NodeType = "spawn"
 )

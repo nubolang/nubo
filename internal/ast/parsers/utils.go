@@ -141,7 +141,7 @@ func inxPPeak(tokens []*lexer.Token, inx *int) (*lexer.Token, error) {
 		i++
 	}
 
-	if *inx >= len(tokens) {
+	if i >= len(tokens) {
 		msg := fmt.Sprintf("unexpected end of input")
 		return nil, debug.NewError(ErrSyntaxError, msg, tokens[*inx-1].Debug)
 	}

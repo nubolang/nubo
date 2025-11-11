@@ -61,7 +61,10 @@ func splitWithDynamic(s string) []TemplatePart {
 		}
 	}
 
-	for _, r := range s {
+	runes := []rune(s)
+	for i := 0; i < len(runes); i++ {
+		r := runes[i]
+
 		if escape {
 			buf = append(buf, r)
 			escape = false
@@ -86,7 +89,7 @@ func splitWithDynamic(s string) []TemplatePart {
 			continue
 		}
 
-		if r == '{' {
+		if r == '$' && i+1 < len(runes) && runes[i+1] == '{' {
 			if depth == 0 {
 				flush()
 				dynamicMode = true
@@ -94,6 +97,7 @@ func splitWithDynamic(s string) []TemplatePart {
 				buf = append(buf, r)
 			}
 			depth++
+			i++ // skip '{' since we already handled it
 			continue
 		}
 

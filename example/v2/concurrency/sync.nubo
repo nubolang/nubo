@@ -1,0 +1,29 @@
+import { Portal } from "@std/thread"
+
+let wg = 0
+let done = Portal(0) // unbuffered portal for signaling
+defer done.close()
+
+let spawnTask = fn(i: int) void {
+    spawn fn() void {
+        // do work
+        sleep(1000 * (4 - i)) // simulate work
+        println("Task", i, "done")
+        done.send(true) // signal completion
+    }()
+    wg++
+}
+
+let x = `&{hello}`
+
+spawnTask(1)
+spawnTask(2)
+spawnTask(3)
+
+// wait for all tasks
+while wg > 0 {
+    done.receive()
+    wg--
+}
+
+println("All tasks finished")

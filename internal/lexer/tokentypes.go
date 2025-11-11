@@ -19,6 +19,8 @@ const (
 	TokenFrom    TokenType = "from"
 	TokenInclude TokenType = "include"
 
+	TokenSpawn TokenType = "spawn"
+
 	TokenStatic   TokenType = "static"
 	TokenIf       TokenType = "if"
 	TokenElse     TokenType = "else"
@@ -114,6 +116,8 @@ func Keywords() []TokenType {
 		TokenImport,
 		TokenFrom,
 		TokenInclude,
+
+		TokenSpawn,
 
 		TokenIf,
 		TokenElse,
