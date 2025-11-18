@@ -28,5 +28,8 @@ func NewHttp(dg *debug.Debug) language.Object {
 		return NewInstance(dg)
 	}))
 
+	inst, _ := NewInstance(dg)
+	proto.SetObject(ctx, "base", inst)
+
 	return pkg
 }

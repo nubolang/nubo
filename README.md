@@ -64,6 +64,22 @@ Run:
 nubo hello.nubo
 ```
 
+## Error handling:
+
+Handling errors with Nubo is easier than you think.
+We omitted the try-catch blocks and only use catch as a keyword.
+
+```
+catch err {
+  fnThatMightFail()
+  // you can add more statements here
+}
+
+if !isNil(err) {
+  // handle your error here
+}
+```
+
 ## Updates:
 
 We removed the need for the `->`  symbol, to describe function return types.

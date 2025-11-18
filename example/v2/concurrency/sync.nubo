@@ -14,8 +14,6 @@ let spawnTask = fn(i: int) void {
     wg++
 }
 
-let x = `&{hello}`
-
 spawnTask(1)
 spawnTask(2)
 spawnTask(3)

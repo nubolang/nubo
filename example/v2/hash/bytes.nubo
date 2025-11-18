@@ -2,4 +2,13 @@ const mapper = fn(ch: string) any {
     return ch
 }
 let li = string("Hello, World!").split("").map(mapper)
-println(string(bytes(li)))
+
+const sum = fn(data: [](int|byte)) int {
+    let out = 0
+    for item in data {
+        out = out + int(item)
+    }
+    return out
+}
+
+println(sum(bytes(li)))

@@ -1,0 +1,8 @@
+import { base: http } from "@std/http"
+
+const res = http.request("GET", "https://jsonplaceholder.typicode.com/comments?postId=1")
+println("Request received", res.status)
+
+for i, comment in res.json() {
+    println(i, comment.name, string(comment.email).toLowerCase(), comment)
+}

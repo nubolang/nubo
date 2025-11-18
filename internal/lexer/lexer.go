@@ -230,7 +230,6 @@ func (lx *Lexer) Parse() ([]*Token, error) {
 					lx.advance()
 				}
 			}
-			break
 		case '>':
 			if lx.peek(1) == '=' {
 				lx.add(TokenGreaterEqual, ">=", nil)

@@ -11,17 +11,22 @@ import (
 	"github.com/nubolang/nubo/internal/debug"
 	"github.com/nubolang/nubo/internal/exception"
 	"github.com/nubolang/nubo/language"
+	"go.uber.org/zap"
 )
 
 func (i *Interpreter) eval(node *astnode.Node) (language.Object, error) {
 	switch node.Type {
 	default:
+		zap.L().Info("[interpreter] evaluating expression node", zap.String("nodeType", fmt.Sprint(node.Type)))
 		return i.evaluateExpression(node)
 	case astnode.NodeTypeElement:
+		zap.L().Info("[interpreter] evaluating element node", zap.String("tagName", node.Content))
 		return i.evaluateElement(node)
 	case astnode.NodeTypeDict:
+		zap.L().Info("[interpreter] evaluating dict node")
 		return i.evalDict(node, nil, nil)
 	case astnode.NodeTypeInclude:
+		zap.L().Info("[interpreter] evaluating include node")
 		return i.includeValue(node)
 	}
 }

@@ -70,6 +70,17 @@ func FromValue(data any, voidNil bool, dg ...*debug.Debug) (Object, error) {
 			li[i] = value
 		}
 		return NewList(li, TypeAny, dbg), nil
+	case []string:
+		var li = make([]Object, len(value))
+		for i, val := range value {
+			value, err := FromValue(val, voidNil, dbg)
+			if err != nil {
+				return nil, err
+			}
+
+			li[i] = value
+		}
+		return NewList(li, TypeAny, dbg), nil
 	case int:
 		return NewInt(int64(value), dbg), nil
 	case int8:
