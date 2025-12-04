@@ -98,7 +98,7 @@ func (le *LockEntry) Download(baseCacheDir string) (string, error) {
 		return "", err
 	}
 
-	hash := plumbing.NewHash(le.Hash)
+	hash := plumbing.NewHash(le.CommitHash)
 	if err := w.Checkout(&git.CheckoutOptions{Hash: hash}); err != nil {
 		return "", fmt.Errorf("failed to checkout hash: %w", err)
 	}
