@@ -6,3 +6,6 @@ bin
 package.yaml
 lock.yaml
 _nubo.yaml
+
+# log files
+nubo.log

@@ -3,56 +3,71 @@ package logger
 import (
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 
+	"github.com/nubolang/nubo/config"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
 func Create(loglevel string) *zap.Logger {
-	loglevel = strings.ToUpper(loglevel)
-
-	if loglevel == "" || loglevel == "PROD" {
-		os.Setenv("NUBO_LOG", "PROD")
-		return zap.NewNop()
+	if loglevel == "" {
+		loglevel = config.Current.Logging.Level
 	}
 
-	cfg := zap.NewDevelopmentConfig()
-	cfg.Level = zap.NewAtomicLevelAt(zapcore.DebugLevel)
-	cfg.Encoding = "console"
-	cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	lvl := strings.ToUpper(loglevel)
+	var level zapcore.Level
 
-	switch loglevel {
-	default:
-		os.Setenv("NUBO_LOG", "PROD")
+	switch lvl {
+	case "PROD", "PRODUCTION":
 		return zap.NewNop()
 	case "DEBUG":
-		os.Setenv("NUBO_LOG", "DEBUG")
-		cfg.Level = zap.NewAtomicLevelAt(zapcore.DebugLevel)
+		level = zapcore.DebugLevel
 	case "INFO":
-		os.Setenv("NUBO_LOG", "INFO")
-		cfg.Level = zap.NewAtomicLevelAt(zapcore.InfoLevel)
+		level = zapcore.InfoLevel
 	case "WARN":
-		os.Setenv("NUBO_LOG", "WARN")
-		cfg.Level = zap.NewAtomicLevelAt(zapcore.WarnLevel)
+		level = zapcore.WarnLevel
 	case "ERROR":
-		os.Setenv("NUBO_LOG", "ERROR")
-		cfg.Level = zap.NewAtomicLevelAt(zapcore.ErrorLevel)
+		level = zapcore.ErrorLevel
 	case "DPANIC":
-		os.Setenv("NUBO_LOG", "DPANIC")
-		cfg.Level = zap.NewAtomicLevelAt(zapcore.DPanicLevel)
+		level = zapcore.DPanicLevel
 	case "PANIC":
-		os.Setenv("NUBO_LOG", "PANIC")
-		cfg.Level = zap.NewAtomicLevelAt(zapcore.PanicLevel)
+		level = zapcore.PanicLevel
 	case "FATAL":
-		os.Setenv("NUBO_LOG", "FATAL")
-		cfg.Level = zap.NewAtomicLevelAt(zapcore.FatalLevel)
+		level = zapcore.FatalLevel
+	default:
+		level = zapcore.ErrorLevel // fallback
 	}
 
-	logger, err := cfg.Build()
-	if err != nil {
-		log.Fatal(err)
+	encCfg := zap.NewProductionEncoderConfig()
+	encCfg.EncodeTime = zapcore.ISO8601TimeEncoder
+
+	var cores []zapcore.Core
+
+	if config.Current.Logging.Loggers.Console.Use {
+		enc := zapcore.NewConsoleEncoder(encCfg)
+		cores = append(cores, zapcore.NewCore(enc, zapcore.AddSync(os.Stdout), level))
 	}
 
-	return logger
+	if config.Current.Logging.Loggers.File.Use {
+		path := config.Current.Logging.Loggers.File.Path
+		folder := filepath.Dir(path)
+		if err := os.MkdirAll(folder, 0o755); err != nil {
+			log.Printf("failed to create log folder: %v", err)
+		}
+		f, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
+		if err == nil {
+			enc := zapcore.NewJSONEncoder(encCfg)
+			cores = append(cores, zapcore.NewCore(enc, zapcore.AddSync(f), level))
+		} else {
+			log.Printf("failed to open log file: %v", err)
+		}
+	}
+
+	if len(cores) == 0 {
+		return zap.NewNop()
+	}
+
+	return zap.New(zapcore.NewTee(cores...))
 }

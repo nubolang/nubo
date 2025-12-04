@@ -10,6 +10,7 @@ import (
 	git "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/nubolang/nubo/version"
+	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 )
 
@@ -39,20 +40,24 @@ func LoadLockFile(root string) (*LockFile, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		if os.IsNotExist(err) {
+			zap.L().Info("packer.lock.load.new", zap.String("path", path))
 			return &LockFile{
 				Version:     LockVersion,
 				NuboVersion: version.Version,
 			}, nil
 		}
+		zap.L().Error("packer.lock.load.open", zap.String("path", path), zap.Error(err))
 		return nil, err
 	}
 	defer file.Close()
 
 	var lf LockFile
 	if err := yaml.NewDecoder(file).Decode(&lf); err != nil {
+		zap.L().Error("packer.lock.load.decode", zap.String("path", path), zap.Error(err))
 		return nil, err
 	}
 
+	zap.L().Debug("packer.lock.load.success", zap.Int("entries", len(lf.Entries)))
 	return &lf, nil
 }
 
@@ -60,27 +65,39 @@ func (lf *LockFile) Save(root string) error {
 	path := filepath.Join(root, LockYaml)
 	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
+		zap.L().Error("packer.lock.save.open", zap.String("path", path), zap.Error(err))
 		return err
 	}
 	defer file.Close()
 
-	return yaml.NewEncoder(file).Encode(lf)
+	if err := yaml.NewEncoder(file).Encode(lf); err != nil {
+		zap.L().Error("packer.lock.save.encode", zap.String("path", path), zap.Error(err))
+		return err
+	}
+
+	zap.L().Debug("packer.lock.save.success", zap.String("path", path), zap.Int("entries", len(lf.Entries)))
+	return nil
 }
 
 func (le *LockEntry) Download(baseCacheDir string) (string, error) {
 	parts := strings.Split(le.Name, "/")
 	if len(parts) < 2 {
-		return "", fmt.Errorf("invalid package name: %s", le.Name)
+		err := fmt.Errorf("invalid package name: %s", le.Name)
+		zap.L().Error("packer.lock.download.invalidName", zap.String("name", le.Name))
+		return "", err
 	}
 	user, repo := parts[0], parts[1]
 
 	if le.CommitHash == "" {
-		return "", fmt.Errorf("missing hash for package %s", le.Name)
+		err := fmt.Errorf("missing hash for package %s", le.Name)
+		zap.L().Error("packer.lock.download.noHash", zap.String("name", le.Name))
+		return "", err
 	}
 
 	dest := filepath.Join(baseCacheDir, le.Domain(), user, repo+"@"+le.CommitHash)
 	if _, err := os.Stat(dest); err == nil {
 		// Already exists
+		zap.L().Debug("packer.lock.download.cached", zap.String("name", le.Name), zap.String("dest", dest))
 		return dest, nil
 	}
 
@@ -90,19 +107,25 @@ func (le *LockEntry) Download(baseCacheDir string) (string, error) {
 		Depth:        1,
 	})
 	if err != nil {
-		return "", fmt.Errorf("failed to clone repo: %w", err)
+		err = fmt.Errorf("failed to clone repo: %w", err)
+		zap.L().Error("packer.lock.download.clone", zap.String("source", le.Source), zap.Error(err))
+		return "", err
 	}
 
 	w, err := r.Worktree()
 	if err != nil {
+		zap.L().Error("packer.lock.download.worktree", zap.String("source", le.Source), zap.Error(err))
 		return "", err
 	}
 
 	hash := plumbing.NewHash(le.CommitHash)
 	if err := w.Checkout(&git.CheckoutOptions{Hash: hash}); err != nil {
-		return "", fmt.Errorf("failed to checkout hash: %w", err)
+		err = fmt.Errorf("failed to checkout hash: %w", err)
+		zap.L().Error("packer.lock.download.checkout", zap.String("source", le.Source), zap.Error(err))
+		return "", err
 	}
 
+	zap.L().Debug("packer.lock.download.success", zap.String("name", le.Name), zap.String("dest", dest))
 	return dest, nil
 }
 
@@ -117,8 +140,11 @@ func (le *LockEntry) Domain() string {
 func (lf *LockFile) Find(url string) (*LockEntry, error) {
 	for _, entry := range lf.Entries {
 		if entry.Source == url {
+			zap.L().Debug("packer.lock.find.hit", zap.String("name", entry.Name))
 			return entry, nil
 		}
 	}
-	return nil, fmt.Errorf("package not found")
+	err := fmt.Errorf("package not found")
+	zap.L().Warn("packer.lock.find.miss", zap.String("url", url))
+	return nil, err
 }

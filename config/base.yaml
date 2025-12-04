@@ -45,3 +45,16 @@ runtime:
         "~": "{current_dir}" # ~ can be used as a prefix for the current directory root
         # You can modify this to load files from src instead by "{current_dir}/src"
         # Add as many prefixes as you want
+
+# Logging configuration
+logging:
+  level: "prod" # global log level (production level by default)
+  # Logging modes (encoding can be "console" or "json" for any logger)
+  loggers:
+    console:
+      use: true # log to terminal
+      encoding: "console"
+    file:
+      use: false # log to file
+      path: "{current_dir}/logs/nubo.log" # {date}, {datedir} and {time} variables can be used to create unique log files
+      encoding: "json" # json encoding for file logs

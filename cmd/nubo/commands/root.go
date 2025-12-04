@@ -25,12 +25,13 @@ var rootCmd = &cobra.Command{
 		dev, _ := cmd.Flags().GetBool("dev")
 		os.Setenv("NUBO_DEV", strconv.FormatBool(dev))
 
-		logger := logger.Create(loglevel)
-		zap.ReplaceGlobals(logger)
 		if err := config.Load(); err != nil {
-			logger.Error("Failed to load language config file", zap.Error(err))
+			zap.L().Error("Failed to load language config file", zap.Error(err))
 		}
 		config.Verify()
+
+		logger := logger.Create(loglevel)
+		zap.ReplaceGlobals(logger)
 	},
 	Run:  execRun,
 	Args: cobra.MinimumNArgs(1),
@@ -39,7 +40,7 @@ var rootCmd = &cobra.Command{
 func init() {
 	rootCmd.PersistentFlags().Bool("nocolor", false, "Disable colorized output")
 	rootCmd.PersistentFlags().BoolP("dev", "d", false, "Run the program in debug mode")
-	rootCmd.PersistentFlags().String("loglevel", "PROD", "Language tokenizer and interpreter log level")
+	rootCmd.PersistentFlags().String("loglevel", "", "Language tokenizer and interpreter log level")
 }
 
 func Execute() error {

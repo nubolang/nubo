@@ -8,6 +8,7 @@ import (
 	"regexp"
 
 	"github.com/manifoldco/promptui"
+	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 )
 
@@ -39,20 +40,25 @@ func LoadPackageFile(root string, forceCreate bool) (*PackageFile, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		if !forceCreate {
+			zap.L().Info("packer.package.load.empty", zap.String("path", path))
 			return &PackageFile{}, nil
 		}
 		if os.IsNotExist(err) {
+			zap.L().Info("packer.package.load.new", zap.String("path", path))
 			return getPackage()
 		}
+		zap.L().Error("packer.package.load.open", zap.String("path", path), zap.Error(err))
 		return nil, err
 	}
 	defer file.Close()
 
 	var pf PackageFile
 	if err := yaml.NewDecoder(file).Decode(&pf); err != nil {
+		zap.L().Error("packer.package.load.decode", zap.String("path", path), zap.Error(err))
 		return nil, err
 	}
 
+	zap.L().Debug("packer.package.load.success", zap.Int("packages", len(pf.Packages)))
 	return &pf, nil
 }
 
@@ -60,14 +66,22 @@ func (pf *PackageFile) Save(root string) error {
 	path := filepath.Join(root, PackageYaml)
 	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
+		zap.L().Error("packer.package.save.open", zap.String("path", path), zap.Error(err))
 		return err
 	}
 	defer file.Close()
 
-	return yaml.NewEncoder(file).Encode(pf)
+	if err := yaml.NewEncoder(file).Encode(pf); err != nil {
+		zap.L().Error("packer.package.save.encode", zap.String("path", path), zap.Error(err))
+		return err
+	}
+
+	zap.L().Debug("packer.package.save.success", zap.String("path", path), zap.Int("packages", len(pf.Packages)))
+	return nil
 }
 
 func getPackage() (*PackageFile, error) {
+	zap.L().Info("packer.package.get.start")
 	validate := func(input string) error {
 		matched, _ := regexp.MatchString(`^[a-zA-Z0-9_.-]+$`, input)
 		if !matched {
@@ -130,6 +144,7 @@ func getPackage() (*PackageFile, error) {
 		return nil, err
 	}
 
+	zap.L().Info("packer.package.get.success", zap.String("project", project))
 	return &PackageFile{
 		Name: project,
 		Author: PackageAuthor{
@@ -143,8 +158,10 @@ func getPackage() (*PackageFile, error) {
 func (pf *PackageFile) Find(url string) (*Package, error) {
 	for _, p := range pf.Packages {
 		if p.Source == url {
+			zap.L().Debug("packer.package.find.hit", zap.String("name", p.Name))
 			return p, nil
 		}
 	}
+	zap.L().Warn("packer.package.find.miss", zap.String("url", url))
 	return nil, fmt.Errorf("package not found")
 }

@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -56,6 +57,21 @@ type Config struct {
 			} `yaml:"import"`
 		} `yaml:"interpreter"`
 	} `yaml:"runtime"`
+
+	Logging struct {
+		Level   string `yaml:"level"`
+		Loggers struct {
+			Console struct {
+				Use      bool   `yaml:"use"`
+				Encoding string `yaml:"encoding"`
+			} `yaml:"console"`
+			File struct {
+				Use      bool   `yaml:"use"`
+				Path     string `yaml:"path"`
+				Encoding string `yaml:"encoding"`
+			} `yaml:"file"`
+		} `yaml:"loggers"`
+	} `yaml:"logging"`
 }
 
 // ApplyDefaults fills missing values with defaults
@@ -113,6 +129,21 @@ func (c *Config) ApplyDefaults() {
 	// interpreter defaults
 	if c.Runtime.Interpreter.Import.Prefix == nil {
 		c.Runtime.Interpreter.Import.Prefix = map[string]string{"~": "{current_dir}"}
+	}
+
+	// logging defaults
+	if c.Logging.Level == "" {
+		c.Logging.Level = "prod"
+	}
+	c.Logging.Level = strings.ToUpper(c.Logging.Level)
+	if c.Logging.Loggers.Console.Encoding == "" {
+		c.Logging.Loggers.Console.Encoding = "console"
+	}
+	if c.Logging.Loggers.File.Path == "" {
+		c.Logging.Loggers.File.Path = "{current_dir}/logs/nubo.log"
+	}
+	if c.Logging.Loggers.File.Encoding == "" {
+		c.Logging.Loggers.File.Encoding = "json"
 	}
 }
 
@@ -190,12 +221,16 @@ func Load() error {
 	vars := map[string]string{
 		"nubo_dir":    Nubo,
 		"current_dir": pwd,
+		"date":        time.Now().Format("2006-01-02"),
+		"datedir":     time.Now().Format("2006/01/02"),
+		"time":        time.Now().Format("15-04-05"),
 	}
 	cfg.Syntax.Lexer.Debug.File = ReplaceVariables(cfg.Syntax.Lexer.Debug.File, vars)
 	cfg.Syntax.Tokenizer.Debug.File = ReplaceVariables(cfg.Syntax.Tokenizer.Debug.File, vars)
 	for key, value := range cfg.Runtime.Interpreter.Import.Prefix {
 		cfg.Runtime.Interpreter.Import.Prefix[key] = ReplaceVariables(value, vars)
 	}
+	cfg.Logging.Loggers.File.Path = ReplaceVariables(cfg.Logging.Loggers.File.Path, vars)
 
 	Current = &cfg
 	return nil

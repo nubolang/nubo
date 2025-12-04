@@ -8,9 +8,11 @@ import (
 	"strings"
 
 	"github.com/yarlson/pin"
+	"go.uber.org/zap"
 )
 
 func (p *Packer) Del(uri string, cleanUp bool) error {
+	zap.L().Info("packer.del.start", zap.String("uri", uri), zap.Bool("cleanup", cleanUp))
 	spin := pin.New(fmt.Sprintf("Deleting %s", uri),
 		pin.WithSpinnerColor(pin.ColorCyan),
 		pin.WithTextColor(pin.ColorYellow),
@@ -21,28 +23,40 @@ func (p *Packer) Del(uri string, cleanUp bool) error {
 	defer spin.Stop(fmt.Sprintf("Done %s", uri))
 
 	if err := p.realDel(uri, cleanUp); err != nil {
+		zap.L().Error("packer.del.failed", zap.String("uri", uri), zap.Error(err))
 		return err
 	}
 
-	return p.Write()
+	if err := p.Write(); err != nil {
+		zap.L().Error("packer.del.writeFailed", zap.String("uri", uri), zap.Error(err))
+		return err
+	}
+
+	zap.L().Info("packer.del.success", zap.String("uri", uri))
+	return nil
 }
 
 func (p *Packer) realDel(uri string, cleanUp bool) error {
 	urlEntry, err := parseURI(uri)
 	if err != nil {
+		zap.L().Error("packer.del.parse", zap.String("uri", uri), zap.Error(err))
 		return err
 	}
 
 	repoURL := fmt.Sprintf("https://%s/%s/%s.git", urlEntry.domain, urlEntry.user, urlEntry.repo)
 	pkg, err := p.Package.Find(repoURL)
 	if err != nil {
+		zap.L().Error("packer.del.pkgNotFound", zap.String("repo", repoURL), zap.Error(err))
 		return err
 	}
 
 	lock, err := p.Lock.Find(repoURL)
 	if err != nil {
+		zap.L().Error("packer.del.lockNotFound", zap.String("repo", repoURL), zap.Error(err))
 		return err
 	}
+
+	zap.L().Debug("packer.del.target", zap.String("repo", repoURL), zap.String("commit", lock.CommitHash))
 
 	// Count references from all other packages
 	var total int
@@ -52,13 +66,16 @@ func (p *Packer) realDel(uri string, cleanUp bool) error {
 		}
 		c, err := p.countMap(entry, lock, make(map[string]bool))
 		if err != nil {
+			zap.L().Error("packer.del.countRefFailed", zap.String("entry", entry.Name), zap.Error(err))
 			return err
 		}
 		total += c
 	}
+	zap.L().Debug("packer.del.references", zap.String("repo", repoURL), zap.Int("count", total))
 
 	cachePath, err := PackageDir()
 	if err != nil {
+		zap.L().Error("packer.del.packageDir", zap.Error(err))
 		return err
 	}
 
@@ -66,6 +83,7 @@ func (p *Packer) realDel(uri string, cleanUp bool) error {
 
 	// If referenced, only remove from package metadata
 	if total > 0 {
+		zap.L().Info("packer.del.referenced", zap.String("repo", repoURL), zap.Int("references", total))
 		p.removeFromPackage(pkg)
 		return p.Package.Save(p.root)
 	}
@@ -75,6 +93,7 @@ func (p *Packer) realDel(uri string, cleanUp bool) error {
 	if _, err := os.Stat(sourcePathYaml); err == nil {
 		entries, err := p.Load(sourcePathYaml, cachePath)
 		if err != nil {
+			zap.L().Error("packer.del.loadDeps", zap.String("path", sourcePathYaml), zap.Error(err))
 			return err
 		}
 
@@ -82,6 +101,7 @@ func (p *Packer) realDel(uri string, cleanUp bool) error {
 		for _, entry := range p.Lock.Entries {
 			has, err := p.hasDepMap(entry, entries, make(map[string]bool))
 			if err != nil {
+				zap.L().Error("packer.del.hasDepMap", zap.String("entry", entry.Name), zap.Error(err))
 				return err
 			}
 			if has {
@@ -91,6 +111,7 @@ func (p *Packer) realDel(uri string, cleanUp bool) error {
 		}
 
 		if !safeToDelete {
+			zap.L().Info("packer.del.dependencyInUse", zap.String("repo", repoURL))
 			p.removeFromPackage(pkg)
 			return p.Package.Save(p.root)
 		}
@@ -98,6 +119,7 @@ func (p *Packer) realDel(uri string, cleanUp bool) error {
 		// Recursively delete nested dependencies
 		for _, dep := range entries {
 			if err := p.realDel(dep.Source, cleanUp); err != nil {
+				zap.L().Error("packer.del.recursive", zap.String("dep", dep.Name), zap.Error(err))
 				return err
 			}
 		}
@@ -106,19 +128,23 @@ func (p *Packer) realDel(uri string, cleanUp bool) error {
 	// Remove package from disk
 	if cleanUp {
 		if err := os.RemoveAll(rawSource); err != nil {
+			zap.L().Error("packer.del.cleanup", zap.String("path", rawSource), zap.Error(err))
 			return err
 		}
+		zap.L().Debug("packer.del.removedCache", zap.String("path", rawSource))
 	}
 
 	// Remove from metadata
 	p.removeFromPackage(pkg)
 	p.removeFromLock(lock)
+	zap.L().Info("packer.del.removed", zap.String("repo", repoURL))
 	return nil
 }
 
 func (p *Packer) countMap(lock *LockEntry, delEntry *LockEntry, visited map[string]bool) (int, error) {
 	cachePath, err := PackageDir()
 	if err != nil {
+		zap.L().Error("packer.del.countMap.packageDir", zap.Error(err))
 		return 0, err
 	}
 
@@ -127,6 +153,7 @@ func (p *Packer) countMap(lock *LockEntry, delEntry *LockEntry, visited map[stri
 		return 0, nil
 	}
 	visited[key] = true
+	zap.L().Debug("packer.del.countMap.visit", zap.String("key", key))
 
 	urlEntry, err := parseURI(lock.Source)
 	if err != nil {
@@ -143,11 +170,13 @@ func (p *Packer) countMap(lock *LockEntry, delEntry *LockEntry, visited map[stri
 		if os.IsNotExist(err) {
 			return 0, nil
 		}
+		zap.L().Error("packer.del.countMap.stat", zap.String("path", sourcePath), zap.Error(err))
 		return 0, err
 	}
 
 	entries, err := p.Load(sourcePath, cachePath)
 	if err != nil {
+		zap.L().Error("packer.del.countMap.load", zap.String("path", sourcePath), zap.Error(err))
 		return 0, err
 	}
 
@@ -160,6 +189,7 @@ func (p *Packer) countMap(lock *LockEntry, delEntry *LockEntry, visited map[stri
 
 		c, err := p.countMap(entry, delEntry, visited)
 		if err != nil {
+			zap.L().Error("packer.del.countMap.recursive", zap.String("entry", entry.Name), zap.Error(err))
 			return 0, err
 		}
 		count += c
@@ -171,6 +201,7 @@ func (p *Packer) countMap(lock *LockEntry, delEntry *LockEntry, visited map[stri
 func (p *Packer) hasDepMap(lock *LockEntry, dependencies []*LockEntry, visited map[string]bool) (bool, error) {
 	cachePath, err := PackageDir()
 	if err != nil {
+		zap.L().Error("packer.del.hasDepMap.packageDir", zap.Error(err))
 		return false, err
 	}
 
@@ -179,6 +210,7 @@ func (p *Packer) hasDepMap(lock *LockEntry, dependencies []*LockEntry, visited m
 		return false, nil
 	}
 	visited[key] = true
+	zap.L().Debug("packer.del.hasDepMap.visit", zap.String("key", key))
 
 	urlEntry, err := parseURI(lock.Source)
 	if err != nil {
@@ -195,11 +227,13 @@ func (p *Packer) hasDepMap(lock *LockEntry, dependencies []*LockEntry, visited m
 		if os.IsNotExist(err) {
 			return false, nil
 		}
+		zap.L().Error("packer.del.hasDepMap.stat", zap.String("path", sourcePath), zap.Error(err))
 		return false, err
 	}
 
 	entries, err := p.Load(sourcePath, cachePath)
 	if err != nil {
+		zap.L().Error("packer.del.hasDepMap.load", zap.String("path", sourcePath), zap.Error(err))
 		return false, err
 	}
 
@@ -211,6 +245,7 @@ func (p *Packer) hasDepMap(lock *LockEntry, dependencies []*LockEntry, visited m
 
 			has, err := p.hasDepMap(entry, dependencies, visited)
 			if err != nil {
+				zap.L().Error("packer.del.hasDepMap.recursive", zap.String("entry", entry.Name), zap.Error(err))
 				return false, err
 			}
 			if has {
@@ -226,6 +261,7 @@ func (p *Packer) removeFromPackage(pkg *Package) {
 	var newPkgs []*Package
 	for _, pck := range p.Package.Packages {
 		if pck.Source == pkg.Source && pck.CommitHashShort == pkg.CommitHashShort {
+			zap.L().Debug("packer.del.removePackageEntry", zap.String("name", pck.Name))
 			continue
 		}
 		newPkgs = append(newPkgs, pck)
@@ -237,6 +273,7 @@ func (p *Packer) removeFromLock(lock *LockEntry) {
 	var newEntries []*LockEntry
 	for _, entry := range p.Lock.Entries {
 		if entry.Source == lock.Source && entry.CommitHash == lock.CommitHash {
+			zap.L().Debug("packer.del.removeLockEntry", zap.String("name", entry.Name))
 			continue
 		}
 		newEntries = append(newEntries, entry)

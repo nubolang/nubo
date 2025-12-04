@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+
+	"go.uber.org/zap"
 )
 
 func hashDir(path string) (string, error) {
@@ -14,9 +16,17 @@ func hashDir(path string) (string, error) {
 	var files []string
 
 	err := filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
-		if err != nil || info.IsDir() {
+		if err != nil {
 			return err
 		}
+
+		if info.IsDir() && info.Name() == ".git" {
+			return filepath.SkipDir
+		}
+		if info.IsDir() {
+			return nil
+		}
+
 		files = append(files, p)
 		return nil
 	})
@@ -25,6 +35,7 @@ func hashDir(path string) (string, error) {
 	}
 
 	sort.Strings(files)
+	zap.L().Debug("packer.hashDir.walked", zap.String("path", path), zap.Int("fileCount", len(files)))
 
 	for _, file := range files {
 		f, err := os.Open(file)
@@ -38,5 +49,7 @@ func hashDir(path string) (string, error) {
 		}
 	}
 
-	return hex.EncodeToString(hasher.Sum(nil)), nil
+	sum := hex.EncodeToString(hasher.Sum(nil))
+	zap.L().Debug("packer.hashDir.complete", zap.String("path", path), zap.String("hash", sum))
+	return sum, nil
 }
