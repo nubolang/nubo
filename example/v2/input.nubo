@@ -1,0 +1,6 @@
+import io from "@std/io"
+
+println("Hello", "World", "xd")
+
+const data = io.read("Enter your input: ", false)
+println(data + "!", inspect(io.read))

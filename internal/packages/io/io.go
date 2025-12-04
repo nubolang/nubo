@@ -1,9 +1,11 @@
 package io
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/nubolang/nubo/internal/debug"
 	"github.com/nubolang/nubo/language"
@@ -23,7 +25,11 @@ func NewIO(dg *debug.Debug) language.Object {
 
 	ctx := context.Background()
 	proto.SetObject(ctx, "Stream", streamStruct)
-	proto.SetObject(ctx, "read", native.NewTypedFunction(ctx, native.OneArg("text", language.TypeString, language.NewString("", nil)), language.TypeString, readFn))
+	proto.SetObject(ctx, "read", native.NewTypedFunction(ctx, []language.FnArg{
+		&language.BasicFnArg{TypeVal: language.TypeString, NameVal: "text", DefaultVal: language.NewString("", nil)},
+		&language.BasicFnArg{TypeVal: language.TypeBool, NameVal: "trim", DefaultVal: language.NewBool(true, nil)},
+		&language.BasicFnArg{TypeVal: language.TypeChar, NameVal: "endln", DefaultVal: language.NewChar('\n', nil)},
+	}, language.TypeString, readFn))
 	proto.SetObject(ctx, "open", native.NewTypedFunction(ctx, []language.FnArg{
 		&language.BasicFnArg{TypeVal: language.TypeString, NameVal: "file"},
 		&language.BasicFnArg{TypeVal: language.TypeString, NameVal: "encoding", DefaultVal: language.NewString("utf-8", nil)},
@@ -39,9 +45,30 @@ func readFn(ctx native.FnCtx) (language.Object, error) {
 		return nil, err
 	}
 
-	fmt.Print(text.Value())
-	var value string
-	fmt.Scanln(&value)
+	endln, err := ctx.Get("endln")
+	if err != nil {
+		return nil, err
+	}
+
+	trim, err := ctx.Get("trim")
+	if err != nil {
+		return nil, err
+	}
+
+	end := endln.Value().(rune)
+
+	fmt.Print(text.String())
+	reader := bufio.NewReader(os.Stdin)
+	value, err := reader.ReadString(byte(end))
+	if err != nil {
+		return nil, err
+	}
+
+	value = strings.TrimSuffix(value, string(end))
+
+	if trim.Value().(bool) {
+		value = strings.TrimSpace(value)
+	}
 
 	return language.NewString(value, text.Debug()), nil
 }
