@@ -5,3 +5,4 @@ bin
 # nubo package files
 package.yaml
 lock.yaml
+_nubo.yaml

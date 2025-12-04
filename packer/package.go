@@ -11,20 +11,26 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const PackageYaml = "package.yaml"
+const PackageYaml = "_nubo.yaml"
 
 // Package represents a Packer package
 type Package struct {
-	Name            string `yaml:"name"`   // user/repo
+	Name            string `yaml:"-"`      // user/repo/etc
 	Source          string `yaml:"source"` // source repository
 	CommitHashShort string `yaml:"commit"` // commit hash
 }
 
-// PackageFile (package.yaml)
+type PackageAuthor struct {
+	Name    string `yaml:"name"`
+	Website string `yaml:"website"`
+}
+
+// PackageFile (_nubo.yaml)
 type PackageFile struct {
-	Name       string     `yaml:"name"`
-	Repository string     `yaml:"repository,omitempty"`
-	Packages   []*Package `yaml:"packages"`
+	Name       string        `yaml:"name"`
+	Author     PackageAuthor `yaml:"author"`
+	Repository string        `yaml:"repository,omitempty"`
+	Packages   []*Package    `yaml:"packages"`
 }
 
 func LoadPackageFile(root string, forceCreate bool) (*PackageFile, error) {
@@ -70,6 +76,13 @@ func getPackage() (*PackageFile, error) {
 		return nil
 	}
 
+	validateNotEmpty := func(input string) error {
+		if input == "" {
+			return fmt.Errorf("must not be empty")
+		}
+		return nil
+	}
+
 	validateURL := func(input string) error {
 		if input == "" {
 			return nil
@@ -81,20 +94,29 @@ func getPackage() (*PackageFile, error) {
 		return nil
 	}
 
-	authorPrompt := promptui.Prompt{
-		Label:    "Init: Author",
+	projectPrompt := promptui.Prompt{
+		Label:    "Init: Project Name",
 		Validate: validate,
+	}
+	project, err := projectPrompt.Run()
+	if err != nil {
+		return nil, err
+	}
+
+	authorPrompt := promptui.Prompt{
+		Label:    "Init: Author Name",
+		Validate: validateNotEmpty,
 	}
 	author, err := authorPrompt.Run()
 	if err != nil {
 		return nil, err
 	}
 
-	projectPrompt := promptui.Prompt{
-		Label:    "Init: Project",
-		Validate: validate,
+	websitePrompt := promptui.Prompt{
+		Label:    "Init: Author Website",
+		Validate: validateURL,
 	}
-	project, err := projectPrompt.Run()
+	website, err := websitePrompt.Run()
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +131,11 @@ func getPackage() (*PackageFile, error) {
 	}
 
 	return &PackageFile{
-		Name:       author + ":" + project,
+		Name: project,
+		Author: PackageAuthor{
+			Name:    author,
+			Website: website,
+		},
 		Repository: repository,
 	}, nil
 }

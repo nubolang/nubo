@@ -34,10 +34,16 @@ func (p *Packer) Add(uri string) error {
 }
 
 func (p *Packer) realAdd(uri string) error {
-	domain, user, repo, subpath, version, err := parseURI(uri)
+	urlEntry, err := parseURI(uri)
 	if err != nil {
 		return err
 	}
+
+	domain := urlEntry.domain
+	user := urlEntry.user
+	repo := urlEntry.repo
+	subpath := urlEntry.subpath
+	version := urlEntry.version
 
 	repoURL := fmt.Sprintf("https://%s/%s/%s.git", domain, user, repo)
 	cachePath, err := PackageDir()
@@ -86,7 +92,12 @@ func (p *Packer) realAdd(uri string) error {
 		if err == nil && headRef != nil {
 			version = headRef.Hash().String()
 		} else {
-			version = "main"
+			ref, err := r.Reference("refs/remotes/origin/HEAD", true)
+			if err == nil {
+				version = strings.TrimPrefix(ref.Target().String(), "refs/remotes/origin/")
+			} else {
+				version = "master" // final fallback
+			}
 		}
 	}
 
@@ -196,7 +207,15 @@ func (p *Packer) updatePackageFiles(user, repo, subpath, repoURL, hash, shortHas
 	return p.Lock.Save(p.root)
 }
 
-func parseURI(uri string) (string, string, string, string, string, error) {
+type parsedUrlEntry struct {
+	domain  string
+	user    string
+	repo    string
+	version string
+	subpath string
+}
+
+func parseURI(uri string) (*parsedUrlEntry, error) {
 	uri = strings.TrimPrefix(uri, "https://")
 	uri = strings.TrimPrefix(uri, "http://")
 	atIdx := strings.LastIndex(uri, "@")
@@ -215,7 +234,7 @@ func parseURI(uri string) (string, string, string, string, string, error) {
 
 	parts := strings.Split(source, "/")
 	if len(parts) < 3 {
-		return "", "", "", "", "", fmt.Errorf("invalid source format")
+		return nil, fmt.Errorf("invalid source format")
 	}
 	domain, user, repo := parts[0], parts[1], parts[2]
 	subpath := ""
@@ -223,5 +242,11 @@ func parseURI(uri string) (string, string, string, string, string, error) {
 		subpath = strings.Join(parts[3:], "/")
 	}
 
-	return domain, user, repo, version, subpath, nil
+	return &parsedUrlEntry{
+		domain:  domain,
+		user:    user,
+		repo:    repo,
+		version: version,
+		subpath: subpath,
+	}, nil
 }

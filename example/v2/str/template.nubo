@@ -1,4 +1,0 @@
-let name = "John"
-let s = `Hello ${name}!`
-
-println(s)

@@ -6,7 +6,7 @@ import (
 	"github.com/nubolang/nubo/internal/ast/astnode"
 )
 
-func parseTemplateLiteral(ctx context.Context, sn HTMLAttrValueParser, str *astnode.Node) (*astnode.Node, error) {
+func parseTemplateLiteral(_ context.Context, sn HTMLAttrValueParser, str *astnode.Node) (*astnode.Node, error) {
 	content := splitWithDynamic(str.Value.(string))
 
 	s := &astnode.Node{

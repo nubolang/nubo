@@ -28,12 +28,12 @@ func (p *Packer) Del(uri string, cleanUp bool) error {
 }
 
 func (p *Packer) realDel(uri string, cleanUp bool) error {
-	domain, user, repo, _, _, err := parseURI(uri)
+	urlEntry, err := parseURI(uri)
 	if err != nil {
 		return err
 	}
 
-	repoURL := fmt.Sprintf("https://%s/%s/%s.git", domain, user, repo)
+	repoURL := fmt.Sprintf("https://%s/%s/%s.git", urlEntry.domain, urlEntry.user, urlEntry.repo)
 	pkg, err := p.Package.Find(repoURL)
 	if err != nil {
 		return err
@@ -62,7 +62,7 @@ func (p *Packer) realDel(uri string, cleanUp bool) error {
 		return err
 	}
 
-	rawSource := filepath.Join(cachePath, domain, user, repo+"@"+lock.CommitHash)
+	rawSource := filepath.Join(cachePath, urlEntry.domain, urlEntry.user, urlEntry.repo+"@"+lock.CommitHash)
 
 	// If referenced, only remove from package metadata
 	if total > 0 {
@@ -128,14 +128,14 @@ func (p *Packer) countMap(lock *LockEntry, delEntry *LockEntry, visited map[stri
 	}
 	visited[key] = true
 
-	domain, user, repo, _, _, err := parseURI(lock.Source)
+	urlEntry, err := parseURI(lock.Source)
 	if err != nil {
 		return 0, err
 	}
 
-	sourcePath := filepath.Join(cachePath, domain, user, repo+"@"+lock.CommitHash)
-	if repo != lock.Name {
-		sourcePath = filepath.Join(sourcePath, strings.TrimPrefix(lock.Name, repo+"/"))
+	sourcePath := filepath.Join(cachePath, urlEntry.domain, urlEntry.user, urlEntry.repo+"@"+lock.CommitHash)
+	if urlEntry.repo != lock.Name {
+		sourcePath = filepath.Join(sourcePath, strings.TrimPrefix(lock.Name, urlEntry.repo+"/"))
 	}
 	sourcePath = filepath.Join(sourcePath, LockYaml)
 
@@ -180,14 +180,14 @@ func (p *Packer) hasDepMap(lock *LockEntry, dependencies []*LockEntry, visited m
 	}
 	visited[key] = true
 
-	domain, user, repo, _, _, err := parseURI(lock.Source)
+	urlEntry, err := parseURI(lock.Source)
 	if err != nil {
 		return false, err
 	}
 
-	sourcePath := filepath.Join(cachePath, domain, user, repo+"@"+lock.CommitHash)
-	if repo != lock.Name {
-		sourcePath = filepath.Join(sourcePath, strings.TrimPrefix(lock.Name, repo+"/"))
+	sourcePath := filepath.Join(cachePath, urlEntry.domain, urlEntry.user, urlEntry.repo+"@"+lock.CommitHash)
+	if urlEntry.repo != lock.Name {
+		sourcePath = filepath.Join(sourcePath, strings.TrimPrefix(lock.Name, urlEntry.repo+"/"))
 	}
 	sourcePath = filepath.Join(sourcePath, LockYaml)
 

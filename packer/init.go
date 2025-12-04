@@ -1,8 +1,6 @@
 package packer
 
-func (p *Packer) Init(name string) error {
-	p.Package.Name = name
-
+func (p *Packer) Init() error {
 	if err := p.Package.Save(p.root); err != nil {
 		return err
 	}

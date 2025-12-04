@@ -35,8 +35,13 @@ func Init(root string) (*Packer, error) {
 	}, nil
 }
 
-func New(root string) (*Packer, error) {
-	pkg, err := LoadPackageFile(root, false)
+func New(root string, force ...bool) (*Packer, error) {
+	var f bool
+	if len(force) > 0 {
+		f = force[0]
+	}
+
+	pkg, err := LoadPackageFile(root, f)
 	if err != nil {
 		return nil, err
 	}

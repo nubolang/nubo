@@ -14,6 +14,7 @@ var getCmd = &cobra.Command{
 
 func init() {
 	getCmd.Flags().BoolP("force", "f", false, "Keep going even if a package cannot be downloaded")
+	getCmd.Flags().BoolP("skip-init", "s", false, "Skip initializing the package information")
 	// Add the get command to the root command
 	rootCmd.AddCommand(getCmd)
 }
@@ -24,13 +25,14 @@ func execGet(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	p, err := packer.New(".")
+	force, _ := cmd.Flags().GetBool("force")
+	skipInit, _ := cmd.Flags().GetBool("skip-init")
+
+	p, err := packer.New(".", !skipInit)
 	if err != nil {
 		cmd.PrintErrln(err)
 		return
 	}
-
-	force, _ := cmd.Flags().GetBool("force")
 
 	for _, repo := range args {
 		if err := p.Add(repo); err != nil {
