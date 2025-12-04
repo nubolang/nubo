@@ -19,10 +19,16 @@ var errNotFound = errors.New("not found")
 // handleError handles the error
 func (s *Server) handleError(err error, w http.ResponseWriter, r *http.Request) {
 	var statusCode = http.StatusInternalServerError
+	fields := []zap.Field{
+		zap.String("method", r.Method),
+		zap.String("path", r.URL.Path),
+		zap.Error(err),
+	}
 
 	var exc *exception.Expection
 
 	if errors.As(err, &exc) {
+		zap.L().Error("server.request.exception", fields...)
 		htmlErr := exc.HTML()
 
 		if prefersJSON(r) {
@@ -44,6 +50,9 @@ func (s *Server) handleError(err error, w http.ResponseWriter, r *http.Request) 
 
 	if errors.Is(err, errNotFound) {
 		statusCode = http.StatusNotFound
+		zap.L().Warn("server.request.notFound", append(fields, zap.Int("status", statusCode))...)
+	} else {
+		zap.L().Error("server.request.error", append(fields, zap.Int("status", statusCode))...)
 	}
 
 	if s.isDir {
@@ -62,6 +71,7 @@ func (s *Server) handleError(err error, w http.ResponseWriter, r *http.Request) 
 
 func (s *Server) customError(nodes []*astnode.Node, status int, message string, w http.ResponseWriter, r *http.Request) error {
 	run := runtime.New(events.NewDefaultProvider())
+	zap.L().Debug("server.error.custom", zap.Int("status", status), zap.String("message", message))
 
 	// Bind the response object to the runtime
 	res := modules.NewResponse(w, r)

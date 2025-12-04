@@ -11,12 +11,12 @@ func (i *Interpreter) handleSpawn(node *astnode.Node) {
 	ir := NewWithParent(i, ScopeFunction, "nubo_concurrent")
 	ir.Declare("__concurrent__", language.NewBool(true, node.Debug), language.TypeBool, false)
 
-	zap.L().Info("[interpreter] running concurrent statements", zap.Uint("id", i.ID))
+	zap.L().Debug("interpreter.spawn.start", zap.Uint("id", i.ID))
 	for _, node := range node.Children {
 		if _, err := ir.eval(node); err != nil {
 			cmode := color.NoColor
 			color.NoColor = true
-			zap.L().Error("[interpreter] error in concurrent statement", zap.Error(err))
+			zap.L().Error("interpreter.spawn.error", zap.Uint("id", i.ID), zap.Error(err))
 			color.NoColor = cmode
 		}
 	}

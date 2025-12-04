@@ -24,7 +24,7 @@ func hashKey(key string) uint32 {
 }
 
 func (i *Interpreter) Declare(name string, value language.Object, typ *language.Type, mutable bool) error {
-	zap.L().Info("[interpreter] declaring variable", zap.Uint("id", i.ID), zap.String("name", name), zap.Bool("mutable", mutable))
+	zap.L().Debug("interpreter.objects.declare", zap.Uint("id", i.ID), zap.String("name", name), zap.Bool("mutable", mutable))
 
 	if strings.Contains(name, ".") {
 		return runExc("cannot declare nested variables").WithDebug(value.Debug())
@@ -33,7 +33,7 @@ func (i *Interpreter) Declare(name string, value language.Object, typ *language.
 }
 
 func (i *Interpreter) Assign(name string, value language.Object) error {
-	zap.L().Info("[interpreter] assigning value to variable", zap.Uint("id", i.ID), zap.String("name", name))
+	zap.L().Debug("interpreter.objects.assign", zap.Uint("id", i.ID), zap.String("name", name))
 
 	if strings.Contains(name, ".") {
 		return i.assignNested(name, value)
@@ -60,7 +60,7 @@ func (i *Interpreter) Assign(name string, value language.Object) error {
 }
 
 func (i *Interpreter) assignNested(name string, value language.Object) error {
-	zap.L().Info("[interpreter] assignNested assigment", zap.Uint("id", i.ID), zap.String("name", name))
+	zap.L().Debug("interpreter.objects.assignNested", zap.Uint("id", i.ID), zap.String("name", name))
 
 	parts := strings.Split(name, ".")
 	if len(parts) < 2 {
@@ -99,13 +99,13 @@ func (i *Interpreter) assignNested(name string, value language.Object) error {
 	// fallback: call set(name, value)
 	if setFn, ok := proto.GetObject(i.ctx, "__set__"); ok {
 		if callErr := i.callSetFunction(setFn, lastKey, value); callErr == nil {
-			zap.L().Info("[interpreter] assignNested prototype assignment", zap.Uint("id", i.ID), zap.String("name", name))
+			zap.L().Debug("interpreter.objects.assignNested.prototype", zap.Uint("id", i.ID), zap.String("name", name))
 			return nil
 		}
 	}
 
 	if err := proto.SetObject(i.ctx, lastKey, value); err == nil {
-		zap.L().Info("[interpreter] assignNested prototype assignment", zap.Uint("id", i.ID), zap.String("name", name))
+		zap.L().Debug("interpreter.objects.assignNested.prototype", zap.Uint("id", i.ID), zap.String("name", name))
 		return nil
 	}
 
@@ -113,7 +113,7 @@ func (i *Interpreter) assignNested(name string, value language.Object) error {
 }
 
 func (i *Interpreter) assignInCurrentScope(name string, value language.Object) error {
-	zap.L().Info("[interpreter] assignInCurrentScope assignment", zap.Uint("id", i.ID), zap.String("name", name))
+	zap.L().Debug("interpreter.objects.assignInScope", zap.Uint("id", i.ID), zap.String("name", name))
 
 	key := hashKey(name)
 
@@ -138,7 +138,7 @@ func (i *Interpreter) assignInCurrentScope(name string, value language.Object) e
 }
 
 func (i *Interpreter) declareInCurrentScope(name string, value language.Object, typ *language.Type, mutable bool) error {
-	zap.L().Info("[interpreter] declareInCurrentScope", zap.Uint("id", i.ID), zap.String("name", name))
+	zap.L().Debug("interpreter.objects.declareInScope", zap.Uint("id", i.ID), zap.String("name", name))
 
 	key := hashKey(name)
 

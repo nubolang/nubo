@@ -17,16 +17,16 @@ import (
 func (i *Interpreter) eval(node *astnode.Node) (language.Object, error) {
 	switch node.Type {
 	default:
-		zap.L().Info("[interpreter] evaluating expression node", zap.String("nodeType", fmt.Sprint(node.Type)))
+		zap.L().Debug("interpreter.eval.expression", zap.Uint("id", i.ID), zap.String("nodeType", fmt.Sprint(node.Type)))
 		return i.evaluateExpression(node)
 	case astnode.NodeTypeElement:
-		zap.L().Info("[interpreter] evaluating element node", zap.String("tagName", node.Content))
+		zap.L().Debug("interpreter.eval.element", zap.Uint("id", i.ID), zap.String("tagName", node.Content))
 		return i.evaluateElement(node)
 	case astnode.NodeTypeDict:
-		zap.L().Info("[interpreter] evaluating dict node")
+		zap.L().Debug("interpreter.eval.dict", zap.Uint("id", i.ID))
 		return i.evalDict(node, nil, nil)
 	case astnode.NodeTypeInclude:
-		zap.L().Info("[interpreter] evaluating include node")
+		zap.L().Debug("interpreter.eval.include", zap.Uint("id", i.ID))
 		return i.includeValue(node)
 	}
 }
@@ -403,6 +403,7 @@ func (i *Interpreter) evalDict(node *astnode.Node, keyType, valueType *language.
 }
 
 func (i *Interpreter) checkGetter(obj language.Object, node *astnode.Node) (language.Object, error) {
+	base := obj
 	for _, child := range node.ArrayAccess {
 		val, err := i.eval(child)
 		if err != nil {
@@ -432,7 +433,7 @@ func (i *Interpreter) checkGetter(obj language.Object, node *astnode.Node) (lang
 	}
 
 	if obj == nil {
-		return nil, cannotOperateOn(obj.Type()).WithDebug(obj.Debug())
+		return nil, cannotOperateOn(base.Type()).WithDebug(node.Debug)
 	}
 
 	return obj, nil

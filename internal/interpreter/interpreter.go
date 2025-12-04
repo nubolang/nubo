@@ -60,7 +60,7 @@ func New(ctx context.Context, currentFile string, runtime Runtime, dependent boo
 		deferred:    make([][]*astnode.Node, 0),
 	}
 
-	zap.L().Info("[interpreter] new interpreter", zap.Uint("id", ir.ID), zap.String("file", ir.currentFile))
+	zap.L().Debug("interpreter.new", zap.Uint("id", ir.ID), zap.String("file", ir.currentFile))
 
 	ir.Declare("__id__", language.NewInt(int64(ir.ID), nil), language.TypeInt, false)
 	ir.Declare("__entry__", language.NewBool(ir.ID == 1, nil), language.TypeBool, false)
@@ -77,7 +77,7 @@ func NewWithParent(parent *Interpreter, scope Scope, name ...string) *Interprete
 		n = name[0]
 	}
 
-	zap.L().Info("[interpreter] new parent interpreter", zap.Uint("for_id", parent.ID), zap.String("file", parent.currentFile), zap.String("name", n))
+	zap.L().Debug("interpreter.new.parent", zap.Uint("for_id", parent.ID), zap.String("file", parent.currentFile), zap.String("name", n))
 
 	return &Interpreter{
 		ctx:         parent.ctx,
@@ -98,26 +98,26 @@ func (i *Interpreter) Run(nodes []*astnode.Node) (language.Object, error) {
 		i.Detach()
 	}()
 
-	zap.L().Info("[interpreter] running nodes", zap.Uint("id", i.ID), zap.Int("count", len(nodes)))
+	zap.L().Debug("interpreter.run.start", zap.Uint("id", i.ID), zap.Int("count", len(nodes)))
 
 	for _, node := range nodes {
 		obj, err := i.handleNode(node)
 		if err != nil {
-			zap.L().Info("[interpreter] handleNode exception", zap.Uint("id", i.ID), zap.Error(err))
+			zap.L().Error("interpreter.run.handleNode", zap.Uint("id", i.ID), zap.Error(err))
 			return nil, exception.From(err, node.Debug, "failed to handle node: @err")
 		}
 		if obj != nil {
 			if i.parent != nil && node.Type == astnode.NodeTypeFunctionCall && i.scope == ScopeFunction {
-				zap.L().Info("[interpreter] handleNode continue", zap.Uint("id", i.ID))
+				zap.L().Debug("interpreter.run.continue", zap.Uint("id", i.ID))
 				continue
 			}
 
 			if i.parent == nil && obj.Type().Base() == language.ObjectTypeSignal {
-				zap.L().Info("[interpreter] empty return signal", zap.Uint("id", i.ID))
+				zap.L().Debug("interpreter.run.emptyReturn", zap.Uint("id", i.ID))
 				return nil, nil
 			}
 
-			zap.L().Info("[interpreter] object return signal", zap.Uint("id", i.ID))
+			zap.L().Debug("interpreter.run.return", zap.Uint("id", i.ID))
 			return obj, nil
 		}
 	}
@@ -126,7 +126,7 @@ func (i *Interpreter) Run(nodes []*astnode.Node) (language.Object, error) {
 }
 
 func (i *Interpreter) runDeferred() {
-	zap.L().Info("[interpreter] running deferred statements", zap.Uint("id", i.ID), zap.Int("count", len(i.deferred)))
+	zap.L().Debug("interpreter.deferred.run", zap.Uint("id", i.ID), zap.Int("count", len(i.deferred)))
 
 	for _, deferred := range i.deferred {
 		for _, node := range deferred {
@@ -136,7 +136,7 @@ func (i *Interpreter) runDeferred() {
 }
 
 func (i *Interpreter) Detach() {
-	zap.L().Info("[interpreter] detaching interpreter", zap.Uint("id", i.ID), zap.Bool("dependent", i.dependent))
+	zap.L().Debug("interpreter.detach", zap.Uint("id", i.ID), zap.Bool("dependent", i.dependent))
 
 	if i.dependent {
 		return
@@ -145,7 +145,7 @@ func (i *Interpreter) Detach() {
 }
 
 func (i *Interpreter) MustDetach() {
-	zap.L().Info("[interpreter] must detaching interpreter", zap.Uint("id", i.ID))
+	zap.L().Debug("interpreter.detach.must", zap.Uint("id", i.ID))
 
 	i.mu.Lock()
 	defer i.mu.Unlock()

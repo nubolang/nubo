@@ -5,11 +5,16 @@ import (
 	"github.com/nubolang/nubo/internal/exception"
 	"github.com/nubolang/nubo/language"
 	"github.com/nubolang/nubo/native/n"
+	"go.uber.org/zap"
 )
 
 func (i *Interpreter) handleTry(node *astnode.Node) (language.Object, error) {
+	zap.L().Debug("interpreter.try.start", zap.Uint("id", i.ID), zap.String("file", i.currentFile))
+
 	ret, err := i.Run(node.Body)
 	if err != nil {
+		zap.L().Error("interpreter.try.body.error", zap.Uint("id", i.ID), zap.Error(err))
+
 		excp, ok := exception.Unwrap(err)
 		var (
 			base              string
@@ -36,6 +41,7 @@ func (i *Interpreter) handleTry(node *astnode.Node) (language.Object, error) {
 					"columnEnd": frame.ColumnEnd,
 				})
 				if err != nil {
+					zap.L().Error("interpreter.try.stack.error", zap.Uint("id", i.ID), zap.Error(err))
 					return nil, wrapRunExc(err, node.Debug)
 				}
 				stack = append(stack, stackDict)
@@ -49,6 +55,7 @@ func (i *Interpreter) handleTry(node *astnode.Node) (language.Object, error) {
 			"columnEnd": columnEnd,
 		})
 		if err != nil {
+			zap.L().Error("interpreter.try.metadata.error", zap.Uint("id", i.ID), zap.Error(err))
 			return nil, wrapRunExc(err, node.Debug)
 		}
 
@@ -59,17 +66,22 @@ func (i *Interpreter) handleTry(node *astnode.Node) (language.Object, error) {
 			"stackTrace": language.NewList(stack, language.TypeAny, node.Debug),
 		}, node.Debug)
 		if err != nil {
+			zap.L().Error("interpreter.try.dict.error", zap.Uint("id", i.ID), zap.Error(err))
 			return nil, wrapRunExc(err, node.Debug)
 		}
 
 		if err := i.Declare(node.Content, dictErr, language.TypeAny, true); err != nil {
+			zap.L().Error("interpreter.try.declare.error", zap.Uint("id", i.ID), zap.Error(err))
 			return nil, wrapRunExc(err, node.Debug)
 		}
+		zap.L().Debug("interpreter.try.catch", zap.Uint("id", i.ID), zap.String("variable", node.Content))
 		return nil, nil
 	}
 
 	if err := i.Declare(node.Content, language.Nil, language.TypeAny, true); err != nil {
+		zap.L().Error("interpreter.try.declare.nil", zap.Uint("id", i.ID), zap.Error(err))
 		return nil, wrapRunExc(err, node.Debug)
 	}
+	zap.L().Debug("interpreter.try.success", zap.Uint("id", i.ID))
 	return ret, nil
 }

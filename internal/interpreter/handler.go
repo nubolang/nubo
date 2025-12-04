@@ -3,9 +3,12 @@ package interpreter
 import (
 	"github.com/nubolang/nubo/internal/ast/astnode"
 	"github.com/nubolang/nubo/language"
+	"go.uber.org/zap"
 )
 
 func (i *Interpreter) handleNode(node *astnode.Node) (language.Object, error) {
+	zap.L().Debug("interpreter.handler.node", zap.Uint("id", i.ID), zap.String("nodeType", string(node.Type)), zap.String("content", node.Content))
+
 	switch node.Type {
 	case astnode.NodeTypeImport:
 		return nil, i.handleImport(node)
@@ -46,18 +49,24 @@ func (i *Interpreter) handleNode(node *astnode.Node) (language.Object, error) {
 		return i.handleTry(node)
 	case astnode.NodeTypeDefer:
 		i.deferred = append(i.deferred, node.Children)
+		zap.L().Debug("interpreter.handler.defer", zap.Uint("id", i.ID), zap.Int("deferredCount", len(i.deferred)))
 		return nil, nil
 	case astnode.NodeTypeSpawn:
 		go i.handleSpawn(node)
+		zap.L().Debug("interpreter.handler.spawn", zap.Uint("id", i.ID))
 		return nil, nil
 	default:
 		if node.Type == astnode.NodeTypeSignal {
 			if i.isChildOf(ScopeBlock, "for") || i.isChildOf(ScopeBlock, "while") {
 				return language.NewSignal(node.Content, node.Debug), nil
 			} else {
-				return nil, runExc("%s(%s) can only be used within a for or while loop", node.Type, node.Content).WithDebug(node.Debug)
+				err := runExc("%s(%s) can only be used within a for or while loop", node.Type, node.Content).WithDebug(node.Debug)
+				zap.L().Error("interpreter.handler.signal.invalid", zap.Uint("id", i.ID), zap.String("nodeType", string(node.Type)), zap.String("content", node.Content), zap.Error(err))
+				return nil, err
 			}
 		}
-		return nil, runExc("unknown node %s", node.Type).WithDebug(node.Debug)
+		err := runExc("unknown node %s", node.Type).WithDebug(node.Debug)
+		zap.L().Error("interpreter.handler.unknownNode", zap.Uint("id", i.ID), zap.String("nodeType", string(node.Type)), zap.Error(err))
+		return nil, err
 	}
 }

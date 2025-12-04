@@ -29,18 +29,27 @@ func (s *Server) getCache(path string) ([]*astnode.Node, bool) {
 	cache, ok := s.cache[path]
 	s.mu.RUnlock()
 	if !ok {
+		zap.L().Debug("server.cache.miss", zap.String("path", path))
 		return nil, false
 	}
 
 	currentHash, err := s.hashFile(path)
-	if err != nil || currentHash != cache.Hash {
+	if err != nil {
+		zap.L().Debug("server.cache.hashError", zap.String("path", path), zap.Error(err))
+		return nil, false
+	}
+
+	if currentHash != cache.Hash {
+		zap.L().Debug("server.cache.hashMismatch", zap.String("path", path))
 		return nil, false
 	}
 
 	if time.Now().After(cache.Expiration) {
+		zap.L().Debug("server.cache.expired", zap.String("path", path))
 		return nil, false
 	}
 
+	zap.L().Debug("server.cache.hit", zap.String("path", path))
 	return cache.Nodes, true
 }
 
@@ -48,7 +57,7 @@ func (s *Server) getCache(path string) ([]*astnode.Node, bool) {
 func (s *Server) setCache(path string, nodes []*astnode.Node) {
 	hash, err := s.hashFile(path)
 	if err != nil {
-		zap.L().Warn("Failed to setCache", zap.String("path", path), zap.Error(err))
+		zap.L().Warn("server.cache.set.error", zap.String("path", path), zap.Error(err))
 		return
 	}
 
@@ -60,6 +69,7 @@ func (s *Server) setCache(path string, nodes []*astnode.Node) {
 		Hash:       hash,
 		Nodes:      nodes,
 	}
+	zap.L().Debug("server.cache.set", zap.String("path", path), zap.Int("nodeCount", len(nodes)))
 }
 
 func (s *Server) hashFile(path string) (uint64, error) {
@@ -79,21 +89,25 @@ func (s *Server) hashFile(path string) (uint64, error) {
 
 func (s *Server) getFile(path string) ([]*astnode.Node, bool, error) {
 	if nodes, ok := s.getCache(path); ok {
+		zap.L().Debug("server.cache.serve", zap.String("path", path))
 		return nodes, true, nil
 	}
 
 	file, err := os.Open(path)
 	if err != nil {
+		zap.L().Error("server.file.open", zap.String("path", path), zap.Error(err))
 		return nil, false, err
 	}
 	defer file.Close()
 
 	lx, err := lexer.New(file, path)
 	if err != nil {
+		zap.L().Error("server.file.lexer", zap.String("path", path), zap.Error(err))
 		return nil, false, err
 	}
 	tokens, err := lx.Parse()
 	if err != nil {
+		zap.L().Error("server.file.tokens", zap.String("path", path), zap.Error(err))
 		return nil, false, err
 	}
 
@@ -102,8 +116,10 @@ func (s *Server) getFile(path string) ([]*astnode.Node, bool, error) {
 	parser := ast.New(ctx, time.Second*5)
 	nodes, err := parser.Parse(tokens)
 	if err != nil {
+		zap.L().Error("server.file.parse", zap.String("path", path), zap.Error(err))
 		return nil, false, err
 	}
+	zap.L().Debug("server.file.ready", zap.String("path", path), zap.Int("nodes", len(nodes)), zap.Int("tokens", len(tokens)))
 
 	s.setCache(path, nodes)
 	return nodes, false, nil

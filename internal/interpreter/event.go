@@ -8,11 +8,15 @@ import (
 	"github.com/nubolang/nubo/internal/ast/astnode"
 	"github.com/nubolang/nubo/internal/debug"
 	"github.com/nubolang/nubo/language"
+	"go.uber.org/zap"
 )
 
 func (i *Interpreter) handleEventDecl(node *astnode.Node) (language.Object, error) {
+	zap.L().Debug("interpreter.event.declare.start", zap.Uint("id", i.ID), zap.String("event", node.Content))
+
 	name, iid, err := i.getEventByName(node.Content, node.Debug)
 	if err != nil {
+		zap.L().Error("interpreter.event.declare.lookup", zap.Uint("id", i.ID), zap.String("event", node.Content), zap.Error(err))
 		return nil, err
 	}
 
@@ -35,13 +39,17 @@ func (i *Interpreter) handleEventDecl(node *astnode.Node) (language.Object, erro
 	}
 
 	eventProvider.AddEvent(event)
+	zap.L().Debug("interpreter.event.declare.success", zap.Uint("id", i.ID), zap.String("event", node.Content))
 
 	return nil, nil
 }
 
 func (i *Interpreter) handleSubscribe(node *astnode.Node) (language.Object, error) {
+	zap.L().Debug("interpreter.event.subscribe.start", zap.Uint("id", i.ID), zap.String("event", node.Content))
+
 	name, iid, err := i.getEventByName(node.Content, node.Debug)
 	if err != nil {
+		zap.L().Error("interpreter.event.subscribe.lookup", zap.Uint("id", i.ID), zap.String("event", node.Content), zap.Error(err))
 		return nil, err
 	}
 
@@ -67,13 +75,17 @@ func (i *Interpreter) handleSubscribe(node *astnode.Node) (language.Object, erro
 	})
 
 	i.unsub = append(i.unsub, unsub)
+	zap.L().Debug("interpreter.event.subscribe.success", zap.Uint("id", i.ID), zap.String("event", node.Content))
 
 	return nil, err
 }
 
 func (i *Interpreter) handlePublish(node *astnode.Node) (language.Object, error) {
+	zap.L().Debug("interpreter.event.publish.start", zap.Uint("id", i.ID), zap.String("event", node.Content))
+
 	name, iid, err := i.getEventByName(node.Content, node.Debug)
 	if err != nil {
+		zap.L().Error("interpreter.event.publish.lookup", zap.Uint("id", i.ID), zap.String("event", node.Content), zap.Error(err))
 		return nil, err
 	}
 	eventID := fmt.Sprintf("%d_%s", iid, name)
@@ -82,34 +94,49 @@ func (i *Interpreter) handlePublish(node *astnode.Node) (language.Object, error)
 	event := eventProvider.GetEvent(eventID)
 
 	if len(event.Args) != len(node.Args) {
-		return nil, argError(len(event.Args), len(node.Args)).WithDebug(node.Debug)
+		err := argError(len(event.Args), len(node.Args)).WithDebug(node.Debug)
+		zap.L().Error("interpreter.event.publish.argCount", zap.Uint("id", i.ID), zap.String("event", node.Content), zap.Error(err))
+		return nil, err
 	}
 
 	args := make(events.TransportData, len(node.Args))
 	for j, arg := range node.Args {
 		value, err := i.eval(arg)
 		if err != nil {
+			zap.L().Error("interpreter.event.publish.argEval", zap.Uint("id", i.ID), zap.String("event", node.Content), zap.Int("index", j), zap.Error(err))
 			return nil, err
 		}
 
 		if !language.TypeCheck(event.Args[j].Type(), value.Type()) {
-			return nil, typeMismatch(event.Args[j].Type(), value.Type()).WithDebug(node.Debug)
+			err := typeMismatch(event.Args[j].Type(), value.Type()).WithDebug(node.Debug)
+			zap.L().Error("interpreter.event.publish.typeMismatch", zap.Uint("id", i.ID), zap.String("event", node.Content), zap.Int("index", j), zap.Error(err))
+			return nil, err
 		}
 		args[j] = value.Clone()
 	}
 
 	err = eventProvider.Publish(eventID, args)
+	if err != nil {
+		zap.L().Error("interpreter.event.publish.error", zap.Uint("id", i.ID), zap.String("event", node.Content), zap.Error(err))
+		return nil, err
+	}
+
+	zap.L().Debug("interpreter.event.publish.success", zap.Uint("id", i.ID), zap.String("event", node.Content))
 
 	return nil, err
 }
 
 func (i *Interpreter) getEventByName(name string, d *debug.Debug) (string, uint, error) {
+	zap.L().Debug("interpreter.event.lookup.start", zap.Uint("id", i.ID), zap.String("event", name))
+
 	var iid = i.ID
 
 	if strings.Contains(name, ".") {
 		parts := strings.Split(name, ".")
 		if len(parts) != 2 {
-			return "", 0, runExc("invalid event '%s'", name).WithDebug(d)
+			err := runExc("invalid event '%s'", name).WithDebug(d)
+			zap.L().Error("interpreter.event.lookup.invalid", zap.Uint("id", i.ID), zap.String("event", name), zap.Error(err))
+			return "", 0, err
 		}
 		imported := parts[0]
 		name = parts[1]
@@ -118,11 +145,14 @@ func (i *Interpreter) getEventByName(name string, d *debug.Debug) (string, uint,
 		ir, ok := i.imports[imported]
 		if !ok {
 			i.mu.RUnlock()
-			return "", 0, importError("not found '%s'", imported).WithDebug(d)
+			err := importError("not found '%s'", imported).WithDebug(d)
+			zap.L().Error("interpreter.event.lookup.importMissing", zap.Uint("id", i.ID), zap.String("import", imported), zap.Error(err))
+			return "", 0, err
 		}
 		iid = ir.ID
 		i.mu.RUnlock()
 	}
 
+	zap.L().Debug("interpreter.event.lookup.success", zap.Uint("id", i.ID), zap.String("event", name), zap.Uint("owner", iid))
 	return name, iid, nil
 }

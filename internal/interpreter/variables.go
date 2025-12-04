@@ -71,7 +71,7 @@ func (i *Interpreter) handleVariableDecl(parent *astnode.Node) error {
 		return typeError("expected %s, got %s", typ.String(), value.Type().String()).WithDebug(parent.Debug)
 	}
 
-	zap.L().Info("Variable Declaration", zap.String("variableName", variableName), zap.Any("value", value), zap.Bool("mutable", mutable))
+	zap.L().Debug("interpreter.variables.declare", zap.Uint("id", i.ID), zap.String("name", variableName), zap.Any("value", value), zap.Bool("mutable", mutable))
 
 	if err := i.Declare(variableName, value.Clone(), typ, mutable); err != nil {
 		return wrapRunExc(err, node.Debug)
@@ -94,7 +94,7 @@ func (i *Interpreter) handleAssignment(node *astnode.Node) error {
 		return wrapRunExc(err, node.Debug)
 	}
 
-	zap.L().Info("Variable Assignment", zap.String("variableName", variableName), zap.Any("value", value))
+	zap.L().Debug("interpreter.variables.assign", zap.Uint("id", i.ID), zap.String("name", variableName), zap.Any("value", value))
 
 	if len(arrayAccess) > 0 {
 		lookUp, ok := i.GetObject(variableName)

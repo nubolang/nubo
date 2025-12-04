@@ -7,22 +7,29 @@ import (
 	"github.com/nubolang/nubo/internal/ast/astnode"
 	"github.com/nubolang/nubo/language"
 	"github.com/nubolang/nubo/native"
+	"go.uber.org/zap"
 )
 
 func (ir *Interpreter) handleInclude(node *astnode.Node) error {
+	zap.L().Debug("interpreter.include.start", zap.Uint("id", ir.ID))
+
 	if _, err := ir.includeValue(node); err != nil {
+		zap.L().Error("interpreter.include.error", zap.Uint("id", ir.ID), zap.Error(err))
 		return wrapRunExc(err, node.Debug)
 	}
+	zap.L().Debug("interpreter.include.success", zap.Uint("id", ir.ID))
 	return nil
 }
 
 func (ir *Interpreter) includeValue(node *astnode.Node) (language.Object, error) {
 	value, err := ir.eval(node.Value.(*astnode.Node))
 	if err != nil {
+		zap.L().Error("interpreter.include.evalError", zap.Uint("id", ir.ID), zap.Error(err))
 		return nil, wrapRunExc(err, node.Debug)
 	}
 
 	fileName := value.String()
+	zap.L().Debug("interpreter.include.file", zap.Uint("id", ir.ID), zap.String("fileName", fileName))
 
 	var path string
 	if filepath.IsAbs(fileName) {
@@ -37,8 +44,11 @@ func (ir *Interpreter) includeValue(node *astnode.Node) (language.Object, error)
 		path += ".nubo"
 	}
 
+	zap.L().Debug("interpreter.include.path", zap.Uint("id", ir.ID), zap.String("path", path))
+
 	nodes, err := native.NodesFromFile(path, path)
 	if err != nil {
+		zap.L().Error("interpreter.include.parseError", zap.Uint("id", ir.ID), zap.String("path", path), zap.Error(err))
 		return nil, wrapRunExc(err, node.Debug, "failed to tokenize file")
 	}
 
@@ -55,8 +65,10 @@ func (ir *Interpreter) includeValue(node *astnode.Node) (language.Object, error)
 
 	ob, err := inc.Run(nodes)
 	if err != nil {
+		zap.L().Error("interpreter.include.runError", zap.Uint("id", ir.ID), zap.Error(err))
 		return nil, wrapRunExc(err, node.Debug, "failed to execute included file")
 	}
+	zap.L().Debug("interpreter.include.return", zap.Uint("id", ir.ID), zap.String("returnType", logObjectType(ob)))
 	return ob, nil
 }
 
@@ -80,6 +92,8 @@ func newInclude(file string, runtime Runtime, dependent bool, wd string) *Interp
 	ir.Declare("__entry__", language.NewBool(ir.ID == 1, nil), language.TypeBool, false)
 	ir.Declare("__dir__", language.NewString(filepath.Dir(ir.currentFile), nil), language.TypeString, false)
 	ir.Declare("__file__", language.NewString(ir.currentFile, nil), language.TypeString, false)
+
+	zap.L().Debug("interpreter.include.new", zap.Uint("id", ir.ID), zap.String("file", ir.currentFile))
 
 	return ir
 }
