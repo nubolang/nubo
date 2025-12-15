@@ -2,6 +2,7 @@ package os
 
 import (
 	"context"
+	"io"
 	"os"
 
 	"github.com/nubolang/nubo/internal/debug"
@@ -37,6 +38,35 @@ func NewOS(dg *debug.Debug) language.Object {
 
 	ctx := context.Background()
 	proto.SetObject(ctx, "readDir", n.Function(n.Describe(n.Arg("dir", n.TString)).Returns(n.TTList(dirEntry.Type())), readDir))
+
+	proto.SetObject(ctx, "copy", n.Function(
+		n.Describe(
+			n.Arg("src", n.TString),
+			n.Arg("dst", n.TString),
+		), copyFile,
+	))
+
+	proto.SetObject(ctx, "move", n.Function(
+		n.Describe(
+			n.Arg("src", n.TString),
+			n.Arg("dst", n.TString),
+		), movePath,
+	))
+
+	proto.SetObject(ctx, "remove", n.Function(
+		n.Describe(n.Arg("path", n.TString)),
+		removePath,
+	))
+
+	proto.SetObject(ctx, "exists", n.Function(
+		n.Describe(n.Arg("path", n.TString)).Returns(n.TBool),
+		existsPath,
+	))
+
+	proto.SetObject(ctx, "mkdir", n.Function(
+		n.Describe(n.Arg("path", n.TString)),
+		makeDir,
+	))
 
 	return instance
 }
@@ -96,4 +126,51 @@ func readDir(args *n.Args) (any, error) {
 	}
 
 	return language.NewList(result, dirEntry.Type(), nil), nil
+}
+
+// Copy file from src to dst
+func copyFile(args *n.Args) (any, error) {
+	src := args.Name("src").String()
+	dst := args.Name("dst").String()
+
+	in, err := os.Open(src)
+	if err != nil {
+		return nil, err
+	}
+	defer in.Close()
+
+	out, err := os.Create(dst)
+	if err != nil {
+		return nil, err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, in)
+	return nil, err
+}
+
+// Move file or directory
+func movePath(args *n.Args) (any, error) {
+	src := args.Name("src").String()
+	dst := args.Name("dst").String()
+	return nil, os.Rename(src, dst)
+}
+
+// Remove file or directory recursively
+func removePath(args *n.Args) (any, error) {
+	path := args.Name("path").String()
+	return nil, os.RemoveAll(path)
+}
+
+// Check if path exists
+func existsPath(args *n.Args) (any, error) {
+	path := args.Name("path").String()
+	_, err := os.Stat(path)
+	return n.Bool(err == nil, args.Name("path").Debug()), nil
+}
+
+// Create directory recursively
+func makeDir(args *n.Args) (any, error) {
+	path := args.Name("path").String()
+	return nil, os.MkdirAll(path, 0755)
 }
