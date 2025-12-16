@@ -1,0 +1,56 @@
+struct Trace {
+    file: string
+    line: int
+    column: int
+    columnEnd: int
+}
+
+impl Trace {
+    fn init(self: Trace, file: string, line: int, column: int, columnEnd: int) void {
+        self.file = file
+        self.line = line
+        self.column = column
+        self.columnEnd = columnEnd
+    }
+}
+
+struct Error {
+    message: string
+    base: Error?
+    metaData: Trace?
+    stackTrace: []Trace
+}
+
+impl Error {
+    fn init(self: Error, message: string, base: Error = nil, metaData: Trace = nil) void {
+        self.message = message
+        self.base = base
+        self.metaData = metaData
+    }
+
+    fn __string__(self: Error) string {
+        let result = "Error: " + self.message
+
+        if !isNil(self.metaData) {
+            let t = self.metaData
+            result = result + "\n  at " + t.file + ":" + string(t.line) + ":" + string(t.column) + "-" + string(t.columnEnd)
+        }
+
+        for trace in self.stackTrace {
+            result = result + "\n  at " + trace.file + ":" + string(trace.line) + ":" + string(trace.column) + "-" + string(trace.columnEnd)
+        }
+
+        if !isNil(self.base) {
+            result = result + "\nCaused by: " + string(self.base)
+        }
+
+        return result
+    }
+}
+
+if __entry__ {
+    println(Trace)
+    println(Error)
+    let e = Error("An error occurred", Error("Base error", Error("Root cause"), Trace("example.v2.nubo", 10, 5, 15)), Trace("example.v2.nubo", 10, 5, 15))
+    println(e)
+}

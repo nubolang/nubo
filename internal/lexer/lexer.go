@@ -271,6 +271,7 @@ func (lx *Lexer) lexSingleLineComment() error {
 	// newline token (kept for debug parity with old impl)
 	if lx.curr() == '\n' {
 		lx.add(TokenNewLine, "\n", nil)
+		lx.advance()
 	}
 	_ = startCol // col already correct due to advance
 	return nil

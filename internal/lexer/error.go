@@ -11,7 +11,7 @@ func newErr(base error, err string, d ...*debug.Debug) error {
 }
 
 var (
-	ErrReadFailed  = fmt.Errorf("Failed to read file content")
-	ErrSyntaxError = fmt.Errorf("Syntax error")
-	ErrHtmlBrace   = fmt.Errorf("Html brace content error")
+	ErrReadFailed  = fmt.Errorf("failed to read file content")
+	ErrSyntaxError = fmt.Errorf("syntax error")
+	ErrHtmlBrace   = fmt.Errorf("html brace content error")
 )

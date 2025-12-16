@@ -1,0 +1,8 @@
+println("hello")
+// prints hello
+
+catch err {
+    panic("Error occurred")
+}
+
+println(err)

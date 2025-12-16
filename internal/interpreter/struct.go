@@ -14,6 +14,13 @@ func (i *Interpreter) handleStruct(node *astnode.Node) error {
 	name := node.Content
 	body := make([]language.StructField, len(node.Body))
 
+	definition := language.NewStructBetter(name, node.Debug)
+
+	if err := i.Declare(name, definition, definition.Type(), false); err != nil {
+		zap.L().Error("interpreter.struct.declare.store", zap.Uint("id", i.ID), zap.String("name", name), zap.Error(err))
+		return wrapRunExc(err, node.Debug)
+	}
+
 	for inx, field := range node.Body {
 		typ, err := i.parseTypeNode(field.ValueType)
 		if err != nil {
@@ -29,12 +36,8 @@ func (i *Interpreter) handleStruct(node *astnode.Node) error {
 		}
 	}
 
-	definition := language.NewStruct(name, body, node.Debug)
+	definition.DefineFieldset(body)
 
-	if err := i.Declare(name, definition, definition.Type(), false); err != nil {
-		zap.L().Error("interpreter.struct.declare.store", zap.Uint("id", i.ID), zap.String("name", name), zap.Error(err))
-		return wrapRunExc(err, node.Debug)
-	}
 	zap.L().Debug("interpreter.struct.declare.success", zap.Uint("id", i.ID), zap.String("name", name))
 	return nil
 }
@@ -83,10 +86,24 @@ func (i *Interpreter) handleStructCreation(obj language.Object, node *astnode.No
 			args[j] = value.Clone()
 		}
 
-		inst, err := fn.Data(language.StructAllowPrivateCtx(i.ctx), args)
-		if err != nil {
-			zap.L().Error("interpreter.struct.create.initExec", zap.Uint("id", i.ID), zap.Error(err))
-			return nil, wrapRunExc(err, node.Debug)
+		var inst language.Object
+		if language.TypeCheck(instance.Type(), fn.ReturnType) {
+			inst, err = fn.Data(language.StructAllowPrivateCtx(i.ctx), args)
+			if err != nil {
+				zap.L().Error("interpreter.struct.create.initExec", zap.Uint("id", i.ID), zap.Error(err))
+				return nil, wrapRunExc(err, node.Debug)
+			}
+		} else if language.TypeCheck(language.TypeVoid, fn.ReturnType) {
+			_, err = fn.Data(language.StructAllowPrivateCtx(i.ctx), args)
+			if err != nil {
+				zap.L().Error("interpreter.struct.create.initExec", zap.Uint("id", i.ID), zap.Error(err))
+				return nil, wrapRunExc(err, node.Debug)
+			}
+			inst = instance
+		} else {
+			err := typeError("function return type %s does not match struct type %s|void", fn.ReturnType.String(), instance.Type().String()).WithDebug(node.Debug)
+			zap.L().Error("interpreter.struct.create.initReturnType", zap.Uint("id", i.ID), zap.Error(err))
+			return nil, err
 		}
 
 		if len(node.Children) == 1 {

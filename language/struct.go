@@ -53,6 +53,32 @@ func NewStruct(name string, fields []StructField, debug *debug.Debug) *Struct {
 	return s
 }
 
+func NewStructBetter(name string, debug *debug.Debug) *Struct {
+	structType := &Type{
+		BaseType: ObjectTypeStructDefinition,
+		Content:  name,
+	}
+
+	s := &Struct{
+		Name:       name,
+		structType: structType,
+		debug:      debug,
+	}
+	structType.ID = fmt.Sprintf("%p", s)
+
+	return s
+}
+
+func (s *Struct) DefineFieldset(fields []StructField) {
+	s.Data = fields
+	s.privateMap = make(map[string]struct{}, len(fields))
+	for _, field := range fields {
+		if field.Private {
+			s.privateMap[field.Name] = struct{}{}
+		}
+	}
+}
+
 func (s *Struct) NewInstance() (*StructInstance, error) {
 	if s.prototype == nil {
 		s.prototype = NewStructPrototype(s)

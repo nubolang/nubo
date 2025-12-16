@@ -104,4 +104,7 @@ type Object interface {
 
 	Debug() *debug.Debug
 	Clone() Object
+
+	// Size is an idea for memory profiling and limits
+	// Size() uint64
 }
