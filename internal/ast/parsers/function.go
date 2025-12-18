@@ -29,6 +29,7 @@ func fnCallParser(ctx context.Context, attrParser Parser_HTML, id string, tokens
 		braceCount    = 0
 		bracketCount  = 0
 		currentTokens []*lexer.Token
+		usingNamedArg = false
 	)
 
 loop:
@@ -47,12 +48,19 @@ loop:
 				parenCount--
 				if parenCount == 0 {
 					if len(currentTokens) != 0 {
-						tinx := 0
-
-						node, err := ValueParser(ctx, attrParser, currentTokens, &tinx)
+						node, err := fnParseArg(ctx, attrParser, currentTokens)
 						if err != nil {
 							return nil, err
 						}
+
+						if !usingNamedArg {
+							usingNamedArg = node.Kind == "NAMED_ARG"
+						}
+
+						if usingNamedArg && node.Kind != "NAMED_ARG" {
+							return nil, newErr(ErrInvalidFunctionArg, "positional argument cannot follow named argument", currentTokens[0].Debug)
+						}
+
 						fn.Args = append(fn.Args, node)
 						currentTokens = nil
 					}
@@ -82,11 +90,18 @@ loop:
 			}
 
 			if token.Type == lexer.TokenComma && parenCount == 1 && braceCount == 0 && bracketCount == 0 {
-				tinx := 0
-				node, err := ValueParser(ctx, attrParser, currentTokens, &tinx)
+				node, err := fnParseArg(ctx, attrParser, currentTokens)
 				if err != nil {
 					return nil, err
 				}
+
+				if !usingNamedArg {
+					usingNamedArg = node.Kind == "NAMED_ARG"
+				}
+				if usingNamedArg && node.Kind != "NAMED_ARG" {
+					return nil, newErr(ErrInvalidFunctionArg, "positional argument cannot follow named argument", currentTokens[0].Debug)
+				}
+
 				fn.Args = append(fn.Args, node)
 				currentTokens = nil
 
@@ -165,4 +180,27 @@ func fnChildParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, i
 		Kind:    "IDENTIFIER",
 		Debug:   debug,
 	}, nil
+}
+
+func fnParseArg(ctx context.Context, attrParser Parser_HTML, tokens []*lexer.Token) (*astnode.Node, error) {
+	var argName string
+
+	if len(tokens) > 1 && tokens[0].Type == lexer.TokenIdentifier && tokens[1].Type == lexer.TokenColon {
+		// Named argument
+		argName = tokens[0].Value
+		tokens = tokens[2:] // Remove name and colon
+	}
+
+	tinx := 0
+	node, err := ValueParser(ctx, attrParser, tokens, &tinx)
+	if err != nil {
+		return nil, err
+	}
+
+	if argName != "" {
+		node.Kind = "NAMED_ARG"
+		node.ArgName = argName
+	}
+
+	return node, err
 }

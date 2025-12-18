@@ -2,6 +2,7 @@ package language
 
 import (
 	"context"
+	"fmt"
 	"sync"
 )
 
@@ -77,11 +78,14 @@ func NewFunctionPrototype(base *Function) *FunctionPrototype {
 
 	fp.SetObject(ctx, "init", NewTypedFunction(base.ArgTypes, NewFunctionType(base.ReturnType), func(ctx context.Context, args []Object) (Object, error) {
 		return NewTypedFunction(nil, base.ReturnType, func(ctx context.Context, _ []Object) (Object, error) {
-			return base.Data(ctx, args)
+			return base.Data(context.WithValue(ctx, "initialized", true), args)
 		}, base.debug), nil
 	}, base.debug))
 
 	fp.SetObject(ctx, "call", NewTypedFunction(base.ArgTypes, NewFunctionType(base.ReturnType), func(ctx context.Context, args []Object) (Object, error) {
+		if initialized, ok := ctx.Value("initialized").(bool); !ok || !initialized {
+			return nil, fmt.Errorf("'init' should be used before the 'call' method")
+		}
 		return base.Data(ctx, args)
 	}, base.debug))
 

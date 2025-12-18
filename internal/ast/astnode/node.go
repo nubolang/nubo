@@ -12,8 +12,9 @@ type ForValue struct {
 }
 
 type Node struct {
-	Type NodeType `yaml:"type"`
-	Kind string   `yaml:"kind,omitempty"`
+	Type    NodeType `yaml:"type"`
+	Kind    string   `yaml:"kind,omitempty"`
+	ArgName string   `yaml:"arg,omitempty"`
 
 	Content       string `yaml:"content,omitempty"`
 	Value         any    `yaml:"value,omitempty"`

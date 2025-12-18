@@ -32,6 +32,13 @@ func (b *BasicFnArg) Default() Object {
 	return b.DefaultVal
 }
 
+type fnVersion int
+
+const (
+	fnVersionBase fnVersion = iota
+	fnVersionTyped
+)
+
 type Function struct {
 	Data       func(ctx context.Context, args []Object) (Object, error)
 	ArgTypes   []FnArg
@@ -39,6 +46,7 @@ type Function struct {
 	typ        *Type
 	debug      *debug.Debug
 	proto      *FunctionPrototype
+	ver        fnVersion
 }
 
 func NewFunction(data func(context.Context, []Object) (Object, error), debug *debug.Debug) *Function {
@@ -46,6 +54,7 @@ func NewFunction(data func(context.Context, []Object) (Object, error), debug *de
 		Data:  data,
 		debug: debug,
 		typ:   &Type{BaseType: ObjectTypeFunction},
+		ver:   fnVersionBase,
 	}
 }
 
@@ -116,7 +125,37 @@ func NewTypedFunction(argTypes []FnArg, returnType *Type, data func(context.Cont
 		ReturnType: returnType,
 		typ:        typ,
 		debug:      debug,
+		ver:        fnVersionTyped,
 	}
+}
+
+func (i *Function) Call(ctx context.Context, args []Object, namedArgs ...map[string]Object) (Object, error) {
+	if i.ver == fnVersionBase {
+		return i.Data(ctx, args)
+	}
+
+	var realArgs = make([]Object, len(i.ArgTypes))
+
+	copy(realArgs, args)
+
+	if len(namedArgs) > 0 {
+		for name, arg := range namedArgs[0] {
+			for inx, argType := range i.ArgTypes {
+				if argType.Name() == name {
+					realArgs[inx] = arg
+					break
+				}
+			}
+		}
+	}
+
+	for inx, argType := range i.ArgTypes {
+		if realArgs[inx] == nil {
+			realArgs[inx] = argType.Default()
+		}
+	}
+
+	return i.Data(ctx, realArgs)
 }
 
 func (i *Function) ID() string {

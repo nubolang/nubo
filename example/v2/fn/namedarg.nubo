@@ -1,5 +1,8 @@
-fn greet(.name: string = "John") void {
-    println("Hello, {name}!")
+fn greet(name: string = "John", age: int = 10, greeting: string = "Hello") void {
+    println(`${greeting}, ${name}! You are ${age > 18 ? 'an adult' : 'a minor'}.`)
 }
 
-greet(name: "Alice")
+greet("Bob", 17, "Hey")
+
+const greeter = greet.init(greeting: "Hi", name: "Alice", age: 25)
+greeter()

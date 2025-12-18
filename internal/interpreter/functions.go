@@ -135,7 +135,10 @@ func (i *Interpreter) handleFunctionCall(node *astnode.Node) (language.Object, e
 		return nil, err
 	}
 
-	var args = make([]language.Object, len(node.Args))
+	var (
+		args      = make([]language.Object, 0, len(node.Args))
+		namedArgs = make(map[string]language.Object)
+	)
 	for j, arg := range node.Args {
 		value, err := i.eval(arg)
 		if err != nil {
@@ -149,7 +152,11 @@ func (i *Interpreter) handleFunctionCall(node *astnode.Node) (language.Object, e
 			return nil, err
 		}
 
-		args[j] = value.Clone()
+		if arg.Kind == "NAMED_ARG" {
+			namedArgs[arg.ArgName] = value.Clone()
+		} else {
+			args = append(args, value.Clone())
+		}
 	}
 
 	okFn, ok := fn.(*language.Function)
@@ -159,7 +166,7 @@ func (i *Interpreter) handleFunctionCall(node *astnode.Node) (language.Object, e
 		return nil, err
 	}
 
-	value, err := okFn.Data(i.ctx, args)
+	value, err := okFn.Call(i.ctx, args, namedArgs)
 	if err != nil {
 		zap.L().Error("interpreter.function.call.execError", zap.Uint("id", i.ID), zap.String("name", node.Content), zap.Error(err))
 		return nil, exception.From(err, node.Debug, fmt.Sprintf("error calling function %s: @err", node.Content))

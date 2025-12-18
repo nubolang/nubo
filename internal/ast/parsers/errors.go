@@ -11,9 +11,10 @@ func newErr(base error, err string, d ...*debug.Debug) error {
 }
 
 var (
-	ErrSyntaxError     = fmt.Errorf("Syntax error")
-	ErrUnexpectedToken = fmt.Errorf("Unexpected token")
-	ErrValueError      = fmt.Errorf("Value error")
-	ErrUnexpectedEOF   = fmt.Errorf("Unexpected end of tokens")
-	ErrInvalidEventID  = fmt.Errorf("Invalid event ID")
+	ErrSyntaxError        = fmt.Errorf("Syntax error")
+	ErrUnexpectedToken    = fmt.Errorf("Unexpected token")
+	ErrValueError         = fmt.Errorf("Value error")
+	ErrUnexpectedEOF      = fmt.Errorf("Unexpected end of tokens")
+	ErrInvalidEventID     = fmt.Errorf("Invalid event ID")
+	ErrInvalidFunctionArg = fmt.Errorf("Invalid function argument")
 )
