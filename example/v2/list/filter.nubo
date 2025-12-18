@@ -1,0 +1,12 @@
+let li: []string = [
+    "apple",
+    "banana",
+    "avocado",
+    "cherry",
+    "apricot"
+]
+
+li = li.filter(fn(item: string) bool => item != "apple" && item.startsWith("a"))
+
+println(li) // Output: ["avocado", "apricot"]
+println(len(li))

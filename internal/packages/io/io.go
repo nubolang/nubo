@@ -32,6 +32,8 @@ func NewIO(dg *debug.Debug) language.Object {
 	}, language.TypeString, readFn))
 	proto.SetObject(ctx, "open", native.NewTypedFunction(ctx, []language.FnArg{
 		&language.BasicFnArg{TypeVal: language.TypeString, NameVal: "file"},
+		&language.BasicFnArg{TypeVal: language.TypeString, NameVal: "mode", DefaultVal: language.NewString("r", nil)},
+		&language.BasicFnArg{TypeVal: language.TypeInt, NameVal: "perm", DefaultVal: language.NewInt(int64(os.ModePerm), nil)},
 		&language.BasicFnArg{TypeVal: language.TypeString, NameVal: "encoding", DefaultVal: language.NewString("utf-8", nil)},
 	}, streamStruct.Type(), openFn))
 	proto.SetObject(ctx, "writeFile", n.Function(n.Describe(n.Arg("file", n.TString), n.Arg("data", n.TAny), n.Arg("perm", n.TInt, n.Int(int(os.ModePerm), nil))), writeFile))

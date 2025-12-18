@@ -1,0 +1,8 @@
+import io from "@std/io"
+
+const file = io.open(__dir__ + "/other.txt", mode: "rw+")
+defer file.close()
+
+println("Content before:", file.readAll())
+
+file.write("Hello, Nubo!")

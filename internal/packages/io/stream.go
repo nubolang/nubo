@@ -12,7 +12,26 @@ import (
 	"github.com/nubolang/nubo/native/n"
 )
 
-func NewIOStream(r io.Reader) language.Object {
+type multiCloser struct {
+	closers []io.Closer
+}
+
+func (mc *multiCloser) Close() error {
+	var firstErr error
+	for _, c := range mc.closers {
+		if err := c.Close(); err != nil && firstErr == nil {
+			firstErr = err
+		}
+	}
+	return firstErr
+}
+
+func NewIOStream(r io.Reader, optWriter ...io.Writer) language.Object {
+	var w io.Writer
+	if len(optWriter) > 0 {
+		w = optWriter[0]
+	}
+
 	instance, err := streamStruct.NewInstance()
 	if err != nil {
 		return nil
@@ -28,9 +47,26 @@ func NewIOStream(r io.Reader) language.Object {
 	proto.SetObject(ctx, "readByte", native.NewTypedFunction(ctx, nil, language.TypeInt, streamReadByteFn(r)))
 	proto.SetObject(ctx, "readLine", native.NewTypedFunction(ctx, nil, language.TypeString, streamReadLineFn(r)))
 	proto.SetObject(ctx, "readLines", native.NewTypedFunction(ctx, nil, n.TTList(n.TString), streamReadLinesFn(r)))
+
+	mc := &multiCloser{}
 	if rc, ok := r.(io.Closer); ok {
-		proto.SetObject(ctx, "close", native.NewTypedFunction(ctx, nil, language.TypeVoid, streamCloseFn(rc)))
+		mc.closers = append(mc.closers, rc)
 	}
+
+	if w != nil {
+		proto.SetObject(ctx, "write", native.NewTypedFunction(ctx, []language.FnArg{
+			&language.BasicFnArg{TypeVal: language.TypeString, NameVal: "content"},
+		}, language.TypeInt, streamWriteStringFn(w)))
+		proto.SetObject(ctx, "writeByte", native.NewTypedFunction(ctx, []language.FnArg{
+			&language.BasicFnArg{TypeVal: language.TypeByte, NameVal: "content"},
+		}, language.TypeInt, streamWriteByteFn(w)))
+
+		if wc, ok := w.(io.Closer); ok {
+			mc.closers = append(mc.closers, wc)
+		}
+	}
+
+	proto.SetObject(ctx, "close", native.NewTypedFunction(ctx, nil, language.TypeVoid, streamCloseFn(mc)))
 
 	return instance
 }
@@ -105,5 +141,36 @@ func streamReadLinesFn(r io.Reader) native.FunctionWrapper {
 func streamCloseFn(rc io.Closer) native.FunctionWrapper {
 	return func(ctx native.FnCtx) (language.Object, error) {
 		return nil, rc.Close()
+	}
+}
+
+func streamWriteStringFn(w io.Writer) native.FunctionWrapper {
+	return func(ctx native.FnCtx) (language.Object, error) {
+		content, err := ctx.Get("content")
+		if err != nil {
+			return nil, err
+		}
+		str := content.String()
+		n, err := w.Write([]byte(str))
+		if err != nil {
+			return nil, err
+		}
+		return language.NewInt(int64(n), nil), nil
+	}
+}
+
+func streamWriteByteFn(w io.Writer) native.FunctionWrapper {
+	return func(ctx native.FnCtx) (language.Object, error) {
+		content, err := ctx.Get("content")
+		if err != nil {
+			return nil, err
+		}
+
+		b := content.Value().(byte)
+		n, err := w.Write([]byte{b})
+		if err != nil {
+			return nil, err
+		}
+		return language.NewInt(int64(n), nil), nil
 	}
 }

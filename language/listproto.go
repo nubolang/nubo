@@ -101,6 +101,38 @@ func NewListPrototype(base *List) *ListPrototype {
 		return NewList(newItems, fn.ReturnType, fn.Debug()), nil
 	}, base.Debug()))
 
+	lp.SetObject(ctx, "filter", NewTypedFunction([]FnArg{
+		&BasicFnArg{TypeVal: NewFunctionType(TypeBool, base.ItemType), NameVal: "filterFunc"},
+	}, TypeList, func(ctx context.Context, o []Object) (Object, error) {
+		fn := o[0].(*Function)
+
+		lp.mu.RLock()
+		defer lp.mu.RUnlock()
+
+		newItems := make([]Object, 0, len(lp.base.Data))
+		for _, item := range lp.base.Data {
+			// Call the predicate function
+			result, err := fn.Data(ctx, []Object{item})
+			if err != nil {
+				return nil, err
+			}
+
+			// Keep only if result is true
+			keep := false
+			if b, ok := result.(*Bool); ok {
+				keep = b.Data
+			} else {
+				return nil, fmt.Errorf("filter function must return a boolean, got %T", result)
+			}
+
+			if keep {
+				newItems = append(newItems, item)
+			}
+		}
+
+		return NewList(newItems, base.ItemType, nil), nil
+	}, base.Debug()))
+
 	lp.SetObject(ctx, "includes", NewTypedFunction([]FnArg{&BasicFnArg{TypeVal: TypeAny, NameVal: "search"}}, TypeBool,
 		func(ctx context.Context, o []Object) (Object, error) {
 			lp.mu.RLock()

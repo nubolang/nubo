@@ -37,6 +37,7 @@ func GetBuiltins() map[string]language.Object {
 		"range":   getRangeStruct(),
 		"env":     n.Function(n.Describe(n.Arg("name", n.TString), n.Arg("value", n.Nullable(n.TString), language.Nil)).Returns(n.Nullable(n.TString)), envFn),
 		"concat":  native.NewFunction(concatFn),
+		"len":     n.Function(n.Describe(n.Arg("object", n.TAny)).Returns(n.TInt), lenFn),
 
 		// Errors
 		"panic": n.Function(n.Describe(n.Arg("message", n.TString)), failFn),
@@ -548,4 +549,30 @@ func hlFn(ctx *n.Args) (any, error) {
 		return nil, err
 	}
 	return n.String(highlighted), nil
+}
+
+func lenFn(args *n.Args) (any, error) {
+	obj := args.Name("object")
+
+	proto := obj.GetPrototype()
+	if proto == nil {
+		return nil, fmt.Errorf("object of type %s has no prototype", obj.Type().String())
+	}
+
+	fnCtx := context.Background()
+	len, ok := proto.GetObject(fnCtx, "length")
+	if !ok {
+		return nil, fmt.Errorf("object of type %s has no length method", obj.Type().String())
+	}
+
+	lenFunc, ok := len.(*language.Function)
+	if !ok {
+		return nil, fmt.Errorf("length property of type %s is not a function", obj.Type().String())
+	}
+
+	if !language.TypeCheck(language.NewFunctionType(n.TInt), lenFunc.Type()) {
+		return nil, fmt.Errorf("length method of type %s has invalid signature", obj.Type().String())
+	}
+
+	return lenFunc.Data(fnCtx, nil)
 }
