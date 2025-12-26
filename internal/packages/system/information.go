@@ -5,7 +5,7 @@ import (
 	"runtime"
 
 	"github.com/nubolang/nubo/native/n"
-	"github.com/shirou/gopsutil/host"
+	"github.com/shirou/gopsutil/v3/host"
 	"golang.org/x/term"
 )
 

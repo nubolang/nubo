@@ -1,0 +1,16 @@
+import { Pool } from "./worker"
+
+fn main() {
+    const task = fn() void {
+        for i in range(10000) {
+            println(`Counting ${i}`)
+        }
+    }
+
+    const pool = Pool()
+    const taskID = pool.add(task)
+
+    while !pool.finished(taskID) {}
+}
+
+if __entry__ { main() }

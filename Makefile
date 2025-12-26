@@ -5,7 +5,7 @@ build:
 	@echo "🚀 Build complete"
 
 run: build
-	@./bin/nubo ./example/v2/$(FILE).nubo --dev --loglevel=WARN
+	@./bin/nubo ./example/v2/$(FILE).nubo --dev --loglevel=WARN --nocolor
 
 runinfo: build
 	@./bin/nubo ./example/v2/$(FILE).nubo --dev --loglevel=INFO

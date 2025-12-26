@@ -1,0 +1,59 @@
+import log from "@std/log"
+
+struct Pool {
+    jobs: []fn() -> void
+    maxWorkers: int
+    private stopSig: bool
+    finishedJobs: []int
+}
+
+impl Pool {
+    fn init(self: Pool, maxWorkers: int = 5) void {
+        self.maxWorkers = maxWorkers
+        spawn self.work()
+    }
+
+    fn add(self: Pool, job: fn() -> void) int {
+        self.jobs.push(job)
+        return len(self.jobs) - 1
+    }
+
+    fn finished(self: Pool, jobID: int) bool {
+        return self.finishedJobs.includes(jobID)
+    }
+    
+    fn stop(self: Pool) {
+        self.stopSig = true
+    }
+
+    private fn work(self: Pool) {
+        let workers = 0
+
+        while !self.stopSig {
+            if workers >= self.maxWorkers {
+                while workers < self.maxWorkers { sleep(1) }
+            }
+
+            for inx, job in self.jobs {
+                if job == nil { continue }
+
+                workers++
+                spawn fn() {    
+                    self.doJob(job)
+                    self.jobs[inx] = nil
+                    self.finishedJobs.push(inx)
+                    workers--
+                }
+            }
+        }
+    }
+
+    private fn doJob(job: fn() -> void) void {
+        catch err {
+            job()
+        }
+        if err != nil {
+            log.error(`Failed to execute job: ${err.message}`)
+        }
+    }
+}
