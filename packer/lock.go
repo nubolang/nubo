@@ -79,26 +79,26 @@ func (lf *LockFile) Save(root string) error {
 	return nil
 }
 
-func (le *LockEntry) Download(baseCacheDir string) (string, error) {
+func (le *LockEntry) Download(baseCacheDir string) (string, bool, error) {
 	parts := strings.Split(le.Name, "/")
 	if len(parts) < 2 {
 		err := fmt.Errorf("invalid package name: %s", le.Name)
 		zap.L().Error("packer.lock.download.invalidName", zap.String("name", le.Name))
-		return "", err
+		return "", false, err
 	}
 	user, repo := parts[0], parts[1]
 
 	if le.CommitHash == "" {
 		err := fmt.Errorf("missing hash for package %s", le.Name)
 		zap.L().Error("packer.lock.download.noHash", zap.String("name", le.Name))
-		return "", err
+		return "", false, err
 	}
 
 	dest := filepath.Join(baseCacheDir, le.Domain(), user, repo+"@"+le.CommitHash)
 	if _, err := os.Stat(dest); err == nil {
 		// Already exists
 		zap.L().Debug("packer.lock.download.cached", zap.String("name", le.Name), zap.String("dest", dest))
-		return dest, nil
+		return dest, true, nil
 	}
 
 	r, err := git.PlainClone(dest, false, &git.CloneOptions{
@@ -109,24 +109,24 @@ func (le *LockEntry) Download(baseCacheDir string) (string, error) {
 	if err != nil {
 		err = fmt.Errorf("failed to clone repo: %w", err)
 		zap.L().Error("packer.lock.download.clone", zap.String("source", le.Source), zap.Error(err))
-		return "", err
+		return "", false, err
 	}
 
 	w, err := r.Worktree()
 	if err != nil {
 		zap.L().Error("packer.lock.download.worktree", zap.String("source", le.Source), zap.Error(err))
-		return "", err
+		return "", false, err
 	}
 
 	hash := plumbing.NewHash(le.CommitHash)
 	if err := w.Checkout(&git.CheckoutOptions{Hash: hash}); err != nil {
 		err = fmt.Errorf("failed to checkout hash: %w", err)
 		zap.L().Error("packer.lock.download.checkout", zap.String("source", le.Source), zap.Error(err))
-		return "", err
+		return "", false, err
 	}
 
 	zap.L().Debug("packer.lock.download.success", zap.String("name", le.Name), zap.String("dest", dest))
-	return dest, nil
+	return dest, false, nil
 }
 
 func (le *LockEntry) Domain() string {

@@ -174,7 +174,28 @@ func (p *Packer) realAdd(uri string) error {
 		return err
 	}
 
-	p.Lock.Entries = append(p.Lock.Entries, entries...)
+	// Merge nested lock entries: update existing by Name or Source, otherwise append.
+	for _, newE := range entries {
+		merged := false
+		for _, exist := range p.Lock.Entries {
+			if exist.Name == newE.Name || exist.Source == newE.Source {
+				// update existing entry if anything differs
+				if exist.CommitHash != newE.CommitHash || exist.Hash != newE.Hash || exist.Source != newE.Source {
+					exist.Source = newE.Source
+					exist.CommitHash = newE.CommitHash
+					exist.Hash = newE.Hash
+					zap.L().Debug("packer.add.mergeLockEntryUpdated", zap.String("name", exist.Name))
+				}
+				merged = true
+				break
+			}
+		}
+		if !merged {
+			p.Lock.Entries = append(p.Lock.Entries, newE)
+			zap.L().Debug("packer.add.mergeLockEntryAdded", zap.String("name", newE.Name))
+		}
+	}
+
 	if err := p.Lock.Save(p.root); err != nil {
 		zap.L().Error("packer.add.saveLock", zap.Error(err))
 		return err
@@ -190,11 +211,16 @@ func (p *Packer) updatePackageFiles(user, repo, subpath, repoURL, hash, shortHas
 		pkgName += "/" + subpath
 	}
 
+	// Ensure we don't add duplicate Package entries by Name or by Source.
 	found := false
 	for _, pkg := range p.Package.Packages {
-		if pkg.Name == pkgName {
+		if pkg.Name == pkgName || pkg.Source == repoURL {
+			// update existing entry (if name differs but source matches, update name to reflect subpath)
+			pkg.Name = pkgName
 			pkg.CommitHashShort = shortHash
+			pkg.Source = repoURL
 			found = true
+			zap.L().Debug("packer.add.updatedPackageEntry", zap.String("name", pkgName))
 			break
 		}
 	}
@@ -218,9 +244,10 @@ func (p *Packer) updatePackageFiles(user, repo, subpath, repoURL, hash, shortHas
 	}
 	zap.L().Debug("packer.add.folderHash", zap.String("name", pkgName), zap.String("hash", folderHash))
 
+	// Update or append lock entry matching by Name or by Source.
 	foundLock := false
 	for _, entry := range p.Lock.Entries {
-		if entry.Name == pkgName {
+		if entry.Name == pkgName || entry.Source == repoURL {
 			entry.Source = repoURL
 			entry.CommitHash = hash
 			entry.Hash = "sha256:" + folderHash

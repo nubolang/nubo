@@ -89,7 +89,7 @@ func (p *Packer) downloadEntry(entry *LockEntry, baseDir string) (string, error)
 	cancel := spin.Start(context.Background())
 	defer cancel()
 
-	dir, err := entry.Download(baseDir)
+	dir, local, err := entry.Download(baseDir)
 	if err != nil {
 		zap.L().Error("packer.download.cloneFailed", zap.String("name", entry.Name), zap.Error(err))
 		return "", err
@@ -110,7 +110,12 @@ func (p *Packer) downloadEntry(entry *LockEntry, baseDir string) (string, error)
 		return "", fmt.Errorf("invalid hash for %s", entry.Name)
 	}
 
-	spin.Stop(fmt.Sprintf("Done %s ✅", entry.Name))
+	var emoji string = " ✅"
+	if local {
+		emoji = color.New(color.FgHiCyan).Sprint(" (cached) 📦")
+	}
+
+	spin.Stop(fmt.Sprintf("Done %s%s", entry.Name, emoji))
 	zap.L().Debug("packer.download.entryDone", zap.String("name", entry.Name))
 	return dir, nil
 }
