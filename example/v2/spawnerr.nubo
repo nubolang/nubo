@@ -1,0 +1,5 @@
+spawn fn() {
+    panic("error message")
+} ()
+
+sleep(10000)

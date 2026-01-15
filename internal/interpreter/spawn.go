@@ -1,7 +1,8 @@
 package interpreter
 
 import (
-	"github.com/fatih/color"
+	"log"
+
 	"github.com/nubolang/nubo/internal/ast/astnode"
 	"github.com/nubolang/nubo/language"
 	"go.uber.org/zap"
@@ -14,10 +15,9 @@ func (i *Interpreter) handleSpawn(node *astnode.Node) {
 	zap.L().Debug("interpreter.spawn.start", zap.Uint("id", i.ID))
 	for _, node := range node.Children {
 		if _, err := ir.eval(node); err != nil {
-			cmode := color.NoColor
-			color.NoColor = true
 			zap.L().Error("interpreter.spawn.error", zap.Uint("id", i.ID), zap.Error(err))
-			color.NoColor = cmode
+			i.Detach()
+			log.Fatal(err)
 		}
 	}
 }
