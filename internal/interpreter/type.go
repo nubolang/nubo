@@ -31,6 +31,8 @@ func (i *Interpreter) stringToType(s string, dg *debug.Debug) (*language.Type, e
 		return language.TypeHtml, nil
 	case "nil":
 		return language.TypeNil, nil
+	case "number":
+		return language.TypeNumber, nil
 	default:
 		return nil, typeError("invalid type '%s'", s).WithDebug(dg)
 	}

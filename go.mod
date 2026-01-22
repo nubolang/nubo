@@ -12,6 +12,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/yarlson/pin v0.9.1
 	github.com/zeebo/blake3 v0.2.4
+	go.bug.st/serial v1.6.4
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.37.0
 	golang.org/x/term v0.34.0
@@ -26,6 +27,7 @@ require (
 	github.com/ProtonMail/go-crypto v1.1.6 // indirect
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e // indirect
 	github.com/cloudflare/circl v1.6.1 // indirect
+	github.com/creack/goselect v0.1.2 // indirect
 	github.com/cyphar/filepath-securejoin v0.4.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect

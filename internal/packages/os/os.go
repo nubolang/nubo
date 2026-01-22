@@ -37,6 +37,10 @@ func NewOS(dg *debug.Debug) language.Object {
 	}
 
 	ctx := context.Background()
+
+	proto.SetObject(ctx, "FileInfo", fileInfo)
+	proto.SetObject(ctx, "DirEntry", dirEntry)
+
 	proto.SetObject(ctx, "readDir", n.Function(n.Describe(n.Arg("dir", n.TString)).Returns(n.TTList(dirEntry.Type())), readDir))
 
 	proto.SetObject(ctx, "copy", n.Function(

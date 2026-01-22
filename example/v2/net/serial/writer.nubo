@@ -1,0 +1,10 @@
+import serial from "@std/net/serial"
+
+const writer = serial.Port("/dev/pts/1", 9600)
+defer writer.close()
+
+while true {
+    writer.write("hello from writer\r")
+    println("Writer sent: hello from writer")
+    sleep(1000) // sleep 1 second
+}

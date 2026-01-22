@@ -1,0 +1,17 @@
+import ssh from "@std/net/ssh"
+
+// shell: false for testing purposes
+const conn = ssh.SSH("127.0.0.1", 2222, "testuser", shell: false)
+
+// Connect using password
+conn.connect(password: "password")
+defer conn.close()
+
+while true {
+    const out = conn.read(2000) // wait up to 2s
+    if out != "" {
+        println("SSH got:", out)
+    }
+    conn.write("ping\n") // optional, send something
+    sleep(1000) // sleep 1 second
+}

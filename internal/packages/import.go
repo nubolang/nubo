@@ -15,6 +15,9 @@ import (
 	"github.com/nubolang/nubo/internal/packages/json"
 	"github.com/nubolang/nubo/internal/packages/log"
 	"github.com/nubolang/nubo/internal/packages/math"
+	"github.com/nubolang/nubo/internal/packages/net/serial"
+	"github.com/nubolang/nubo/internal/packages/net/ssh"
+	"github.com/nubolang/nubo/internal/packages/net/telnet"
 	"github.com/nubolang/nubo/internal/packages/os"
 	"github.com/nubolang/nubo/internal/packages/process"
 	"github.com/nubolang/nubo/internal/packages/random"
@@ -34,6 +37,7 @@ var packageList = []string{
 	"io", "math", "json", "log", "thread", "random",
 	"process", "sql", "time", "http", "system",
 	"hash", "component", "os", "iter",
+	"net/serial", "net/telnet", "net/ssh",
 }
 
 var (
@@ -121,6 +125,12 @@ func ImportPackage(name string, dg *debug.Debug) (language.Object, bool) {
 		return os.NewOS(dg), true
 	case "iter":
 		return iter.NewIter(dg), true
+	case "net/serial":
+		return serial.NewSerial(dg), true
+	case "net/telnet":
+		return telnet.NewTelnet(dg), true
+	case "net/ssh":
+		return ssh.NewSSH(dg), true
 	}
 
 	return nil, false

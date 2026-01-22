@@ -1,0 +1,12 @@
+import serial from "@std/net/serial"
+
+const reader = serial.Port("/dev/pts/4", 9600)
+defer reader.close()
+
+while true {
+    const out = reader.read(2000) // wait up to 2s
+    if out != "" {
+        println("Reader got:", out)
+    }
+    sleep(1000) // sleep 1 second
+}
