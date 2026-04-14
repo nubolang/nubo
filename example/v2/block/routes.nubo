@@ -1,0 +1,32 @@
+struct router {
+    private _group: router
+    routes: [][]string
+}
+
+impl router {
+    fn init(self: router, group: router|nil = nil) void {
+        if !isNil(group) {
+            self._group = group
+        }
+    }
+
+    fn add(self: router, method: string, path: string, handler: fn(any) -> any) void {
+        self.routes.push([method, path])
+    }
+
+    fn group(self: router, prefix: string) {
+        return router(self)
+    }
+}
+
+const r = router()
+r.add("GET", "/users", fn(ctx: any) any {
+    return "GET /users"
+})
+
+const g = r.group("/api")
+{
+    g.add("GET", "/users", fn(ctx: any) any {
+        return "GET /api/users"
+    })
+}

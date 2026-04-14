@@ -1,9 +1,12 @@
 package parsers
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 	"runtime"
 	"slices"
+	"strconv"
 
 	"github.com/nubolang/nubo/internal/ast/astnode"
 	"github.com/nubolang/nubo/internal/debug"
@@ -36,14 +39,29 @@ func inxPP(tokens []*lexer.Token, inx *int) error {
 			return "unknown caller"
 		}
 		fn := runtime.FuncForPC(pc)
-		return fmt.Sprintf("called from %s (%s:%d)", fn.Name(), file, line)
+
+		start := max(0, *inx-5)
+		end := min(len(tokens), *inx+1)
+
+		var shortContext string
+		b, err := json.Marshal(tokens[start:end]) // ignore error if safe
+		if err != nil {
+			shortContext = fmt.Sprintf("%v", tokens[start:end])
+		} else {
+			shortContext = string(b)
+		}
+		return fmt.Sprintf("(nubo internal ast package misfunction, go function causing the error: %s)\nexact bug produced here: %s:%d\nBug context: %s", fn.Name(), file, line, shortContext)
 	}
 
 	if *inx >= len(tokens) {
-		msg := fmt.Sprintf("unexpected end of input [%s]", reportCaller())
+		if os.Getenv("NUBO_DEV") == strconv.FormatBool(true) {
+			msg := fmt.Sprintf("unexpected end of input %s", reportCaller())
+			return debug.NewError(ErrSyntaxError, msg, tokens[*inx-1].Debug)
+		}
+
+		msg := fmt.Sprintf("language specific error (nubo internal ast package misfunction [use flag --dev for more details]) (RECOMMENDED: use other syntax as this is not supported yet)")
 		return debug.NewError(ErrSyntaxError, msg, tokens[*inx-1].Debug)
 	}
-
 	*inx++
 
 	for *inx < len(tokens) && slices.Contains(white, tokens[*inx].Type) {

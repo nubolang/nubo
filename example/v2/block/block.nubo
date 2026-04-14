@@ -1,0 +1,9 @@
+fn x() int {
+    {
+        println("Hello")
+        return 5
+    }
+}
+
+let z = x()
+println(z)

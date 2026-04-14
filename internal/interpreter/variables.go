@@ -59,7 +59,7 @@ func (i *Interpreter) handleVariableDecl(parent *astnode.Node) error {
 		return wrapRunExc(err, node.Debug)
 	}
 
-	if value == nil {
+	if value == nil || value.Type().BaseType == language.ObjectTypeSignal {
 		return valueExc("void is not assignable to a variable").WithDebug(node.Debug)
 	}
 

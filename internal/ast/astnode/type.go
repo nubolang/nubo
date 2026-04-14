@@ -54,4 +54,6 @@ const (
 
 	NodeTypeDefer NodeType = "defer"
 	NodeTypeSpawn NodeType = "spawn"
+
+	NodeTypeBlock NodeType = "block"
 )

@@ -43,6 +43,10 @@ loop:
 				braceCount--
 			}
 
+			if token.Type == lexer.TokenColon && braceCount == 0 {
+				break loop
+			}
+
 			conditionTokens = append(conditionTokens, token)
 		}
 	}
@@ -56,49 +60,11 @@ loop:
 	node.Args = append(node.Args, condition)
 	token := tokens[*inx]
 
-	if token.Type != lexer.TokenOpenBrace {
-		return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("expected '{', got %s", token.Type), token.Debug)
+	if token.Type != lexer.TokenOpenBrace && token.Type != lexer.TokenColon {
+		return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("expected '{' or ':', got %s", token.Type), token.Debug)
 	}
 
-	var (
-		body []*lexer.Token
-	)
-
-	braceCount = 1
-
-bodyloop:
-	for {
-		select {
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		default:
-			*inx++
-
-			if *inx >= len(tokens) {
-				return nil, newErr(ErrUnexpectedToken, "unexpected end of input", token.Debug)
-			}
-
-			token = tokens[*inx]
-
-			if token.Type == lexer.TokenCloseBrace {
-				braceCount--
-				if braceCount == 0 {
-					*inx++
-					break bodyloop
-				}
-			} else if token.Type == lexer.TokenOpenBrace || token.Type == lexer.TokenUnescapedBrace {
-				braceCount++
-			}
-
-			body = append(body, token)
-		}
-	}
-
-	if braceCount != 0 {
-		return nil, newErr(ErrUnexpectedToken, "unbalanced braces", token.Debug)
-	}
-
-	bodyNodes, err := p.Parse(body)
+	bodyNodes, err := getParsedBodyNodes(ctx, tokens, inx, p, p)
 	if err != nil {
 		return nil, err
 	}

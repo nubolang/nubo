@@ -55,6 +55,8 @@ func (i *Interpreter) handleNode(node *astnode.Node) (language.Object, error) {
 		go i.handleSpawn(node)
 		zap.L().Debug("interpreter.handler.spawn", zap.Uint("id", i.ID))
 		return nil, nil
+	case astnode.NodeTypeBlock:
+		return i.handleBlock(node)
 	default:
 		if node.Type == astnode.NodeTypeSignal {
 			if i.isChildOf(ScopeBlock, "for") || i.isChildOf(ScopeBlock, "while") {

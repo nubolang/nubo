@@ -141,6 +141,8 @@ func (a *Ast) handleToken(tokens []*lexer.Token, inx *int) (*astnode.Node, error
 		return parsers.DeferParser(a.ctx, a, tokens, inx)
 	case lexer.TokenSpawn:
 		return parsers.SpawnParser(a.ctx, a, tokens, inx)
+	case lexer.TokenOpenBrace:
+		return parsers.BlockParser(a.ctx, a, tokens, inx, a)
 	}
 
 	if token.Type == lexer.TokenWhiteSpace || token.Type == lexer.TokenNewLine || token.Type == lexer.TokenSingleLineComment || token.Type == lexer.TokenMultiLineComment || token.Type == lexer.TokenSemicolon {
