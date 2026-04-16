@@ -7,6 +7,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/nubolang/nubo/cmd/nubo/logger"
 	"github.com/nubolang/nubo/config"
+	"github.com/nubolang/nubo/plug"
 	"github.com/nubolang/nubo/version"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -44,5 +45,6 @@ func init() {
 }
 
 func Execute() error {
+	defer plug.GetManager().StopAll()
 	return rootCmd.Execute()
 }
