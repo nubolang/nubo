@@ -1,8 +1,8 @@
 package language
 
 import (
-	"context"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/nubolang/nubo/internal/debug"
@@ -17,6 +17,7 @@ func FromValue(data any, voidNil bool, dg ...*debug.Debug) (Object, error) {
 	switch value := data.(type) {
 	case Object:
 		return value, nil
+
 	case map[string]any:
 		var (
 			keys []Object
@@ -38,6 +39,7 @@ func FromValue(data any, voidNil bool, dg ...*debug.Debug) (Object, error) {
 		}
 
 		return NewDict(keys, vals, TypeString, TypeAny, dbg)
+
 	case map[any]any:
 		var (
 			keys []Object
@@ -59,28 +61,55 @@ func FromValue(data any, voidNil bool, dg ...*debug.Debug) (Object, error) {
 		}
 
 		return NewDict(keys, vals, TypeAny, TypeAny, dbg)
+
 	case []any:
-		var li = make([]Object, len(value))
-		for i, val := range value {
-			value, err := FromValue(val, voidNil, dbg)
-			if err != nil {
-				return nil, err
-			}
+		return fromSlice(value, voidNil, dbg)
 
-			li[i] = value
-		}
-		return NewList(li, TypeAny, dbg), nil
 	case []string:
-		var li = make([]Object, len(value))
-		for i, val := range value {
-			value, err := FromValue(val, voidNil, dbg)
-			if err != nil {
-				return nil, err
-			}
+		return fromSlice(value, voidNil, dbg)
 
-			li[i] = value
-		}
-		return NewList(li, TypeAny, dbg), nil
+	case []int:
+		return fromSlice(value, voidNil, dbg)
+
+	case []int8:
+		return fromSlice(value, voidNil, dbg)
+
+	case []int16:
+		return fromSlice(value, voidNil, dbg)
+
+	case []int32:
+		return fromSlice(value, voidNil, dbg)
+
+	case []int64:
+		return fromSlice(value, voidNil, dbg)
+
+	case []uint:
+		return fromSlice(value, voidNil, dbg)
+
+	case []uint8:
+		return fromSlice(value, voidNil, dbg)
+
+	case []uint16:
+		return fromSlice(value, voidNil, dbg)
+
+	case []uint32:
+		return fromSlice(value, voidNil, dbg)
+
+	case []uint64:
+		return fromSlice(value, voidNil, dbg)
+
+	case []float32:
+		return fromSlice(value, voidNil, dbg)
+
+	case []float64:
+		return fromSlice(value, voidNil, dbg)
+
+	case []bool:
+		return fromSlice(value, voidNil, dbg)
+
+	case []time.Time:
+		return fromSlice(value, voidNil, dbg)
+
 	case int:
 		return NewInt(int64(value), dbg), nil
 	case int8:
@@ -91,10 +120,12 @@ func FromValue(data any, voidNil bool, dg ...*debug.Debug) (Object, error) {
 		return NewInt(int64(value), dbg), nil
 	case int64:
 		return NewInt(value, dbg), nil
+
 	case float32:
 		return NewFloat(float64(value), dbg), nil
 	case float64:
 		return NewFloat(value, dbg), nil
+
 	case uint:
 		return NewInt(int64(value), dbg), nil
 	case uint8:
@@ -107,92 +138,89 @@ func FromValue(data any, voidNil bool, dg ...*debug.Debug) (Object, error) {
 		return NewInt(int64(value), dbg), nil
 	case uintptr:
 		return NewInt(int64(value), dbg), nil
+
 	case string:
 		return NewString(value, dbg), nil
 	case bool:
 		return NewBool(value, dbg), nil
+
 	case nil:
 		if voidNil {
 			return nil, nil
 		}
 		return Nil, nil
+
 	case time.Time:
 		return NewString(value.Format("2006-01-02T15:04:05-07:00"), dbg), nil
+	}
+
+	// Fallback for any slice/array type not covered above.
+	rv := reflect.ValueOf(data)
+	if rv.IsValid() {
+		switch rv.Kind() {
+		case reflect.Slice, reflect.Array:
+			return fromReflectSlice(rv, voidNil, dbg)
+		}
 	}
 
 	return nil, fmt.Errorf("unsupported type %T", data)
 }
 
-func ToValue(obj Object, json ...bool) (any, error) {
-	jsonMode := len(json) > 0 && json[0]
+// fromSlice converts a typed Go slice into a runtime list.
+func fromSlice[T any](src []T, voidNil bool, dbg *debug.Debug) (Object, error) {
+	items := make([]Object, len(src))
 
-	switch v := obj.(type) {
-	case *Int:
-		return v.Data, nil
-	case *Float:
-		return v.Data, nil
-	case *String:
-		return v.Data, nil
-	case *Bool:
-		return v.Data, nil
-	case *List:
-		out := make([]any, len(v.Data))
-		for i, elem := range v.Data {
-			val, err := ToValue(elem, jsonMode)
-			if err != nil {
-				return nil, err
-			}
-			out[i] = val
-		}
-		return out, nil
-	case *Dict:
-		if v.KeyType == TypeString || jsonMode {
-			out := make(map[string]any)
-			err := v.Data.IterateErr(func(key Object, value Object) error {
-				val, err := ToValue(value, jsonMode)
-				if err != nil {
-					return err
-				}
-				out[key.String()] = val
-				return nil
-			})
-			if err != nil {
-				return nil, err
-			}
-			return out, nil
-		}
-
-		out := make(map[any]any)
-		err := v.Data.IterateErr(func(key Object, value Object) error {
-			val, err := ToValue(value, jsonMode)
-			if err != nil {
-				return err
-			}
-			out[key.Value()] = val
-			return nil
-		})
+	for i, val := range src {
+		obj, err := FromValue(val, voidNil, dbg)
 		if err != nil {
 			return nil, err
 		}
-		return out, nil
-	case *StructInstance:
-		proto := obj.GetPrototype()
-		ctx := StructAllowPrivateCtx(context.Background())
-		fn, ok := proto.GetObject(ctx, "$convout")
-		if !ok {
-			return nil, fmt.Errorf("struct instance missing $conv method")
-		}
-
-		obj, err := fn.(*Function).Data(ctx, nil)
-		if err != nil {
-			return nil, err
-		}
-
-		return ToValue(obj, jsonMode)
-	default:
-		if val, ok := obj.(Object); ok {
-			return ToValue(val, jsonMode)
-		}
-		return nil, fmt.Errorf("unsupported object type %T", obj)
+		items[i] = obj
 	}
+
+	return NewList(items, inferListType(items), dbg), nil
+}
+
+// fromReflectSlice converts any slice/array via reflection.
+func fromReflectSlice(rv reflect.Value, voidNil bool, dbg *debug.Debug) (Object, error) {
+	items := make([]Object, rv.Len())
+
+	for i := range rv.Len() {
+		obj, err := FromValue(rv.Index(i).Interface(), voidNil, dbg)
+		if err != nil {
+			return nil, err
+		}
+		items[i] = obj
+	}
+
+	return NewList(items, inferListType(items), dbg), nil
+}
+
+// inferListType returns the common item type, or TypeAny if mixed.
+func inferListType(items []Object) *Type {
+	if len(items) == 0 {
+		return TypeAny
+	}
+
+	var first *Type
+	found := false
+
+	for _, item := range items {
+		if item == nil {
+			return TypeAny
+		}
+
+		t := item.Type()
+		if !found {
+			first = t
+			found = true
+			continue
+		}
+
+		if t != first {
+			return TypeAny
+		}
+	}
+
+	return first
 }

@@ -14,7 +14,7 @@ import (
 
 // rootCmd is the root command for the CLI
 var rootCmd = &cobra.Command{
-	Use:     "nubo [file|command]",
+	Use:     "nubo <file|command>",
 	Short:   "Nubo ☁️ A programming language built for real-time web development.",
 	Long:    "Nubo can run a file directly or execute specific commands.",
 	Version: version.Version,

@@ -10,7 +10,7 @@ import (
 
 // prepareCmd represents the prepare command
 var prepareCmd = &cobra.Command{
-	Use:   "prepare <file.nubo>",
+	Use:   "prepare <file|folder>",
 	Short: "Prepare Nubo files for faster execution",
 	Run:   execPrepare,
 }

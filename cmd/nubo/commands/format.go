@@ -15,7 +15,7 @@ import (
 
 // formatCmd represents the format command
 var formatCmd = &cobra.Command{
-	Use:   "format <file.nubo>|<directory>",
+	Use:   "format <file|directory>",
 	Short: "Format Nubo files for better readability",
 	Run:   execFormat,
 }

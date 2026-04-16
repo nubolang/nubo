@@ -19,6 +19,7 @@ import (
 	"github.com/nubolang/nubo/internal/packages/net/ssh"
 	"github.com/nubolang/nubo/internal/packages/net/telnet"
 	"github.com/nubolang/nubo/internal/packages/os"
+	"github.com/nubolang/nubo/internal/packages/plugp"
 	"github.com/nubolang/nubo/internal/packages/process"
 	"github.com/nubolang/nubo/internal/packages/random"
 	"github.com/nubolang/nubo/internal/packages/sql"
@@ -38,6 +39,7 @@ var packageList = []string{
 	"process", "sql", "time", "http", "system",
 	"hash", "component", "os", "iter",
 	"net/serial", "net/telnet", "net/ssh",
+	"plug",
 }
 
 var (
@@ -131,6 +133,8 @@ func ImportPackage(name string, dg *debug.Debug) (language.Object, bool) {
 		return telnet.NewTelnet(dg), true
 	case "net/ssh":
 		return ssh.NewSSH(dg), true
+	case "plug":
+		return plugp.NewPlug(dg), true
 	}
 
 	return nil, false

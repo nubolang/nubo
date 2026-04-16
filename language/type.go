@@ -175,16 +175,21 @@ func (t *Type) Compare(other *Type) bool {
 		if len(t.Args) != len(other.Args) {
 			return t.NextMatch(other)
 		}
+
+		// Parameter types are checked in reverse direction.
 		for i := range t.Args {
-			if !t.Args[i].Compare(other.Args[i]) {
+			if !other.Args[i].Compare(t.Args[i]) {
 				return t.NextMatch(other)
 			}
 		}
+
+		// Return type is checked in normal direction.
 		ok := t.Value.Compare(other.Value)
 		if !ok {
 			return t.NextMatch(other)
 		}
 		return ok
+
 	case ObjectTypeStructDefinition, ObjectTypeStructInstance:
 		return t.ID == other.ID
 	}

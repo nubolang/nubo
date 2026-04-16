@@ -8,7 +8,7 @@ import (
 
 // serveCmd represents the serve command
 var serveCmd = &cobra.Command{
-	Use:   "serve <directory>/<file.nubo>",
+	Use:   "serve <file|folder>",
 	Short: "Start an HTTP server to serve Nubo files",
 	Run:   execServe,
 }
