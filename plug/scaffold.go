@@ -109,6 +109,7 @@ var supportedArchitectures = []string{
 	"linux",
 	"windows",
 	"darwin",
+	"android",
 }
 
 // Scaffold interactively creates a new plugin project at path.
