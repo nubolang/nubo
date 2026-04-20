@@ -9,3 +9,6 @@ _nubo.yaml
 
 # log files
 nubo.log
+
+# OS files
+.DS_Store
