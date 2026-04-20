@@ -30,7 +30,7 @@ func (n *NilObj) Type() *Type {
 }
 
 func (n *NilObj) Inspect() string {
-	return fmt.Sprintf("(nil) {}")
+	return "(nil) {}"
 }
 
 func (n *NilObj) TypeString() string {

@@ -197,6 +197,8 @@ func (ir *Interpreter) stdImport(node *astnode.Node, fileName string) error {
 
 				zap.L().Debug("interpreter.import.std.multipleEntry", zap.Uint("id", ir.ID), zap.String("alias", name), zap.String("source", child.Content))
 			}
+
+			return nil
 		}
 	}
 	err := runExc("failed to import %s from @std", strings.TrimPrefix(fileName, "@std/")).WithDebug(node.Debug)
