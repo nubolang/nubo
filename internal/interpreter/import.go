@@ -68,8 +68,8 @@ func (ir *Interpreter) handleImport(node *astnode.Node) error {
 	} else {
 		path = fileName
 		for oldPrefix, newPrefix := range config.Current.Runtime.Interpreter.Import.Prefix {
-			if strings.HasPrefix(fileName, oldPrefix) {
-				path = filepath.Join(newPrefix, strings.TrimPrefix(fileName, oldPrefix))
+			if rest, ok := strings.CutPrefix(fileName, oldPrefix); ok {
+				path = filepath.Join(newPrefix, rest)
 				break // allow only one match (not replacing replaced paths)
 			}
 		}
@@ -196,8 +196,6 @@ func (ir *Interpreter) stdImport(node *astnode.Node, fileName string) error {
 				}
 
 				zap.L().Debug("interpreter.import.std.multipleEntry", zap.Uint("id", ir.ID), zap.String("alias", name), zap.String("source", child.Content))
-
-				return nil
 			}
 		}
 	}

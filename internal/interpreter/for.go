@@ -110,7 +110,6 @@ func (i *Interpreter) handleFor(node *astnode.Node) (language.Object, error) {
 				switch ob.String() {
 				case "break":
 					zap.L().Debug("interpreter.for.break", zap.Uint("id", i.ID), zap.Int("iteration", iterations))
-					break
 				case "continue":
 					zap.L().Debug("interpreter.for.continue", zap.Uint("id", i.ID), zap.Int("iteration", iterations))
 					continue

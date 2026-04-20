@@ -52,7 +52,7 @@ func (ir *Interpreter) includeValue(node *astnode.Node) (language.Object, error)
 		return nil, wrapRunExc(err, node.Debug, "failed to tokenize file")
 	}
 
-	inc := newInclude(resolveIncludePath(ir.currentFile, fileName, ir.workdir), ir.runtime, ir.dependent, ir.workdir)
+	inc := newInclude(ir, resolveIncludePath(ir.currentFile, fileName, ir.workdir), ir.runtime, ir.dependent, ir.workdir)
 
 	var interp = ir
 	for interp.parent != nil {
@@ -72,8 +72,9 @@ func (ir *Interpreter) includeValue(node *astnode.Node) (language.Object, error)
 	return ob, nil
 }
 
-func newInclude(file string, runtime Runtime, dependent bool, wd string) *Interpreter {
+func newInclude(parent *Interpreter, file string, runtime Runtime, dependent bool, wd string) *Interpreter {
 	ir := &Interpreter{
+		parent:      parent,
 		name:        "include",
 		ID:          runtime.NewID(),
 		currentFile: filepath.Clean(file),
