@@ -9,6 +9,8 @@ import (
 	"go.uber.org/zap"
 )
 
+const maxScopeDepth = 64
+
 type entry struct {
 	key     string
 	value   language.Object
@@ -36,7 +38,7 @@ func (i *Interpreter) Assign(name string, value language.Object) error {
 	zap.L().Debug("interpreter.objects.assign", zap.Uint("id", i.ID), zap.String("name", name))
 
 	if strings.Contains(name, ".") {
-		return i.assignNested(name, value)
+		return i.assignNested(name, value, 0)
 	}
 
 	assignErr := i.assignInCurrentScope(name, value)
@@ -52,14 +54,43 @@ func (i *Interpreter) Assign(name string, value language.Object) error {
 		if i.isConstInParent(name) {
 			return runExc("cannot reassign constant %q", name).WithDebug(value.Debug())
 		}
-
-		return i.parent.Assign(name, value)
+		return i.assignViaParent(name, value, 0)
 	}
 
 	return wrapRunExc(assignErr, value.Debug())
 }
 
-func (i *Interpreter) assignNested(name string, value language.Object) error {
+// assignViaParent walks the parent chain with a depth guard.
+func (i *Interpreter) assignViaParent(name string, value language.Object, depth int) error {
+	if depth > maxScopeDepth {
+		return runExc("scope depth limit exceeded while assigning %q", name).WithDebug(value.Debug())
+	}
+	if i.parent == nil {
+		return runExc("assignment: %q not found in any parent scope", name).WithDebug(value.Debug())
+	}
+
+	err := i.parent.assignInCurrentScope(name, value)
+	if err == nil {
+		return nil
+	}
+	if isTypeErr(err) {
+		return err
+	}
+
+	if (i.parent.scope == ScopeBlock || i.parent.scope == ScopeFunction) && i.parent.parent != nil {
+		if i.parent.isConstInParent(name) {
+			return runExc("cannot reassign constant %q", name).WithDebug(value.Debug())
+		}
+		return i.parent.assignViaParent(name, value, depth+1)
+	}
+
+	return wrapRunExc(err, value.Debug())
+}
+
+func (i *Interpreter) assignNested(name string, value language.Object, depth int) error {
+	if depth > maxScopeDepth {
+		return runExc("scope depth limit exceeded while assigning nested %q", name).WithDebug(value.Debug())
+	}
 	zap.L().Debug("interpreter.objects.assignNested", zap.Uint("id", i.ID), zap.String("name", name))
 
 	parts := strings.Split(name, ".")
@@ -72,7 +103,7 @@ func (i *Interpreter) assignNested(name string, value language.Object) error {
 	i.mu.RUnlock()
 	if !ok || obj.value == nil {
 		if i.parent != nil {
-			return i.parent.assignNested(name, value)
+			return i.parent.assignNested(name, value, depth+1)
 		}
 		return runExc("undefined variable %q", parts[0]).WithDebug(value.Debug())
 	}
@@ -96,7 +127,6 @@ func (i *Interpreter) assignNested(name string, value language.Object) error {
 		return runExc("no prototype for %q", name).WithDebug(value.Debug())
 	}
 
-	// fallback: call set(name, value)
 	if setFn, ok := proto.GetObject(i.ctx, "__set__"); ok {
 		if callErr := i.callSetFunction(setFn, lastKey, value); callErr == nil {
 			zap.L().Debug("interpreter.objects.assignNested.prototype", zap.Uint("id", i.ID), zap.String("name", name))
@@ -165,6 +195,14 @@ func (i *Interpreter) isConstInParent(name string) bool {
 }
 
 func (i *Interpreter) GetObject(name string) (language.Object, bool) {
+	return i.getObject(name, 0)
+}
+
+func (i *Interpreter) getObject(name string, depth int) (language.Object, bool) {
+	if depth > maxScopeDepth {
+		return nil, false
+	}
+
 	if strings.Contains(name, ".") {
 		parts := strings.Split(name, ".")
 
@@ -172,7 +210,7 @@ func (i *Interpreter) GetObject(name string) (language.Object, bool) {
 		imp, ok := i.imports[parts[0]]
 		i.mu.RUnlock()
 		if ok {
-			if ob, ok := imp.GetObject(strings.Join(parts[1:], ".")); ok {
+			if ob, ok := imp.getObject(strings.Join(parts[1:], "."), depth+1); ok {
 				return ob, true
 			}
 		}
@@ -181,33 +219,33 @@ func (i *Interpreter) GetObject(name string) (language.Object, bool) {
 		obj, ok := i.objects[hashKey(parts[0])]
 		i.mu.RUnlock()
 		if !ok || obj == nil || obj.value == nil {
-			return i.parentGetObject(name)
+			return i.parentGetObject(name, depth+1)
 		}
 
 		current := obj.value
 		for _, part := range parts[1 : len(parts)-1] {
 			if current == nil {
-				return i.parentGetObject(name)
+				return i.parentGetObject(name, depth+1)
 			}
 			proto := current.GetPrototype()
 			if proto == nil {
-				return i.parentGetObject(name)
+				return i.parentGetObject(name, depth+1)
 			}
 			var ok bool
 			current, ok = proto.GetObject(i.ctx, part)
 			if !ok {
-				return i.parentGetObject(name)
+				return i.parentGetObject(name, depth+1)
 			}
 		}
 
 		last := parts[len(parts)-1]
 		if current == nil {
-			return i.parentGetObject(name)
+			return i.parentGetObject(name, depth+1)
 		}
 
 		proto := current.GetPrototype()
 		if proto == nil {
-			return i.parentGetObject(name)
+			return i.parentGetObject(name, depth+1)
 		}
 
 		val, ok := proto.GetObject(i.ctx, last)
@@ -215,14 +253,13 @@ func (i *Interpreter) GetObject(name string) (language.Object, bool) {
 			return val, true
 		}
 
-		// fallback: try get(name)
 		if getFn, ok := proto.GetObject(i.ctx, "__get__"); ok {
 			if res, err := i.callGetFunction(getFn, last); err == nil {
 				return res, true
 			}
 		}
 
-		return i.parentGetObject(name)
+		return i.parentGetObject(name, depth+1)
 	}
 
 	// normal (non-nested) lookup
@@ -241,21 +278,24 @@ func (i *Interpreter) GetObject(name string) (language.Object, bool) {
 		}
 	}
 
-	return i.parentGetObject(name)
+	return i.parentGetObject(name, depth+1)
 }
 
-func (i *Interpreter) parentGetObject(name string) (language.Object, bool) {
-	if i.parent == nil {
-		for _, inc := range i.includes {
-			if obj, ok := inc.GetObject(name); ok {
-				return obj, true
-			}
-		}
-
+func (i *Interpreter) parentGetObject(name string, depth int) (language.Object, bool) {
+	if depth > maxScopeDepth {
 		return nil, false
 	}
 
-	return i.parent.GetObject(name)
+	if i.parent == nil {
+		for _, inc := range i.includes {
+			if obj, ok := inc.getObject(name, depth+1); ok {
+				return obj, true
+			}
+		}
+		return nil, false
+	}
+
+	return i.parent.getObject(name, depth+1)
 }
 
 func (i *Interpreter) callGetFunction(fn language.Object, key string) (language.Object, error) {
