@@ -51,10 +51,10 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 	}
 
 	for _, child := range node.Body {
-		if child.Type == astnode.NodeTypeValue || child.Type == astnode.NodeTypeFunctionArgument {
+		switch child.Type {
+		case astnode.NodeTypeValue, astnode.NodeTypeFunctionArgument:
 			id := "var_" + fmt.Sprintf("%d", inx)
 			inx++
-
 			if child.IsReference {
 				sb.WriteString(id + "()")
 				obFn := func() (any, error) {
@@ -62,7 +62,6 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 					if !ok {
 						return nil, undefinedVariable(child.Value.(string)).WithDebug(node.Debug)
 					}
-
 					if len(node.Body) == 1 {
 						if len(node.Body[0].ArrayAccess) > 0 {
 							if ob, err := i.checkGetter(obj, child); err != nil {
@@ -71,17 +70,14 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 								obj = ob
 							}
 						}
-
 						return obj, nil
 					}
-
 					if obj.Type().Base() == language.ObjectTypeStructDefinition {
 						if len(node.Body) == 1 {
 							return obj, nil
 						}
 						return nil, cannotOperateOn("(struct) " + obj.Type().Content).WithDebug(obj.Debug())
 					}
-
 					if obj.Type().Base() == language.ObjectTypeStructInstance {
 						value, ok := obj.GetPrototype().GetObject(i.ctx, "__value__")
 						if ok && language.NewFunctionType(language.TypeAny).Compare(value.Type()) {
@@ -95,7 +91,6 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 							}
 						}
 					}
-
 					if len(child.ArrayAccess) > 0 {
 						if ob, err := i.checkGetter(obj, child); err != nil {
 							return nil, exception.From(err, child.Debug, "accessing getter failed")
@@ -103,50 +98,46 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 							obj = ob
 						}
 					}
-
 					if isNotEvaluable(obj.Type().Base()) {
 						return nil, cannotOperateOn(obj.Type()).WithDebug(obj.Debug())
 					}
-
 					return obj.Value(), nil
 				}
-
 				env[id] = obFn
 			} else {
 				sb.WriteString(id)
 				env[id] = child.Value
 			}
-		} else if child.Type == astnode.NodeTypeOperator {
+
+		case astnode.NodeTypeOperator:
 			sb.WriteString(child.Kind)
-		} else if child.Type == astnode.NodeTypeFunctionCall {
+
+		case astnode.NodeTypeFunctionCall:
 			valueFn := func() (any, error) {
 				value, err := i.handleFunctionCall(child)
 				if err != nil {
 					return nil, exception.From(err, child.Debug, "function call failed: @err")
 				}
-
 				if len(node.Body) == 1 {
 					return value, nil
 				}
-
 				if isNotEvaluable(value.Type().Base()) {
 					return nil, cannotOperateOn(value.Type()).WithDebug(value.Debug())
 				}
-
 				return value.Value(), nil
 			}
-
 			id := "var_" + fmt.Sprintf("%d", inx)
 			inx++
 			sb.WriteString(id + "()")
 			env[id] = valueFn
-		} else if child.Type == astnode.NodeTypeInlineFunction {
+
+		case astnode.NodeTypeInlineFunction:
 			if len(node.Body) != 1 {
 				return nil, cannotOperateOn("<inline function>").WithDebug(node.Debug)
 			}
-
 			return i.createInlineFunction(child)
-		} else if child.Type == astnode.NodeTypeElement {
+
+		case astnode.NodeTypeElement:
 			if len(node.Body) != 1 {
 				return nil, cannotOperateOn("<element>").WithDebug(node.Debug)
 			}
@@ -155,7 +146,8 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 				return nil, exception.From(err, child.Debug, "element evaluation failed: @err")
 			}
 			return ret, nil
-		} else if child.Type == astnode.NodeTypeTemplateLiteral {
+
+		case astnode.NodeTypeTemplateLiteral:
 			stFn := func() (string, error) {
 				var st strings.Builder
 				for _, ch := range child.Children {
@@ -175,7 +167,8 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 			inx++
 			sb.WriteString(id + "()")
 			env[id] = stFn
-		} else {
+
+		default:
 			sb.WriteString(child.Value.(string))
 		}
 	}

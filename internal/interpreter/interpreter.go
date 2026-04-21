@@ -92,6 +92,34 @@ func NewWithParent(parent *Interpreter, scope Scope, name ...string) *Interprete
 	}
 }
 
+func NewWithCustomFileParent(parent *Interpreter, scope Scope, file string, name ...string) *Interpreter {
+	var n string
+	if len(name) > 0 {
+		n = name[0]
+	}
+
+	zap.L().Debug("interpreter.new.parent", zap.Uint("for_id", parent.ID), zap.String("file", parent.currentFile), zap.String("name", n))
+
+	ir := &Interpreter{
+		ctx:         parent.ctx,
+		ID:          parent.ID,
+		currentFile: file,
+		scope:       scope,
+		name:        n,
+		parent:      parent,
+		runtime:     parent.runtime,
+		objects:     make(map[uint32]*entry),
+		imports:     make(map[string]*Interpreter),
+	}
+
+	ir.Declare("__id__", language.NewInt(int64(ir.ID), nil), language.TypeInt, false)
+	ir.Declare("__entry__", language.NewBool(ir.ID == 1, nil), language.TypeBool, false)
+	ir.Declare("__dir__", language.NewString(filepath.Dir(ir.currentFile), nil), language.TypeString, false)
+	ir.Declare("__file__", language.NewString(ir.currentFile, nil), language.TypeString, false)
+
+	return ir
+}
+
 func (i *Interpreter) Run(nodes []*astnode.Node) (language.Object, error) {
 	defer func() {
 		i.runDeferred()

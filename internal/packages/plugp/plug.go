@@ -30,12 +30,11 @@ func NewPlug(dg *debug.Debug) language.Object {
 
 		ps := plugStruct.GetPrototype().(*language.StructPrototype)
 
-		empty, _ := language.NewDict(nil, nil, n.TString, n.TAny, dg)
 		ps.Unlock()
 		ps.SetObject(ctx, "send", n.Function(n.Describe(
 			n.Arg("self", plugStruct.Type()),
 			n.Arg("action", n.TString),
-			n.Arg("props", n.NewDictType(n.TString, n.TAny), empty),
+			n.Arg("props", n.Nullable(n.NewDictType(n.TString, n.TAny)), language.Nil),
 		).Returns(n.NewDictType(n.TString, n.TAny)),
 			func(a *n.Args) (any, error) {
 				self := a.Name("self").Value().(*language.StructInstance)
@@ -48,7 +47,7 @@ func NewPlug(dg *debug.Debug) language.Object {
 					return nil, fmt.Errorf("plugin cannot be loaded")
 				}
 
-				ctx, cancel := context.WithTimeout(ctx, time.Second*10)
+				ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 				defer cancel()
 
 				val, err := language.ToValue(a.Name("props"))

@@ -1,9 +1,9 @@
 package interpreter
 
 import (
+	"fmt"
 	"path/filepath"
 
-	"github.com/nubolang/nubo/events"
 	"github.com/nubolang/nubo/internal/ast/astnode"
 	"github.com/nubolang/nubo/language"
 	"github.com/nubolang/nubo/native"
@@ -52,7 +52,7 @@ func (ir *Interpreter) includeValue(node *astnode.Node) (language.Object, error)
 		return nil, wrapRunExc(err, node.Debug, "failed to tokenize file")
 	}
 
-	inc := newInclude(ir, resolveIncludePath(ir.currentFile, fileName, ir.workdir), ir.runtime, ir.dependent, ir.workdir)
+	inc := newInclude(ir, resolveIncludePath(ir.currentFile, fileName, ir.workdir))
 
 	var interp = ir
 	for interp.parent != nil {
@@ -72,30 +72,9 @@ func (ir *Interpreter) includeValue(node *astnode.Node) (language.Object, error)
 	return ob, nil
 }
 
-func newInclude(parent *Interpreter, file string, runtime Runtime, dependent bool, wd string) *Interpreter {
-	ir := &Interpreter{
-		parent:      parent,
-		name:        "include",
-		ID:          runtime.NewID(),
-		currentFile: filepath.Clean(file),
-		scope:       ScopeGlobal,
-		dependent:   dependent,
-		workdir:     wd,
-		runtime:     runtime,
-		objects:     make(map[uint32]*entry),
-		imports:     make(map[string]*Interpreter),
-		includes:    make([]*Interpreter, 0),
-		unsub:       make([]events.UnsubscribeFunc, 0),
-		deferred:    make([][]*astnode.Node, 0),
-	}
-
-	ir.Declare("__id__", language.NewInt(int64(ir.ID), nil), language.TypeInt, false)
-	ir.Declare("__entry__", language.NewBool(ir.ID == 1, nil), language.TypeBool, false)
-	ir.Declare("__dir__", language.NewString(filepath.Dir(ir.currentFile), nil), language.TypeString, false)
-	ir.Declare("__file__", language.NewString(ir.currentFile, nil), language.TypeString, false)
-
+func newInclude(parent *Interpreter, file string) *Interpreter {
+	ir := NewWithCustomFileParent(parent, ScopeGlobal, file, fmt.Sprintf("<include '%s'>", file))
 	zap.L().Debug("interpreter.include.new", zap.Uint("id", ir.ID), zap.String("file", ir.currentFile))
-
 	return ir
 }
 
