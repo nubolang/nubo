@@ -1,0 +1,7 @@
+const name: string = "John"
+
+fn len(obj: iface { length() int }) {
+    return obj.length()
+}
+
+println(name, len(name))

@@ -24,7 +24,7 @@ func (i *Char) ID() string {
 }
 
 func (i *Char) Type() *Type {
-	return TypeChar
+	return withObject(i, TypeChar)
 }
 
 func (i *Char) Inspect() string {

@@ -25,6 +25,7 @@ const (
 	ObjectTypeVoid
 	ObjectTypeSignal // TypeSignal is not really a type, it is used for break, continue statements
 	ObjectTypeHtml
+	ObjectTypeIface
 )
 
 func (ot ObjectType) String() string {
@@ -61,6 +62,8 @@ func (ot ObjectType) String() string {
 		return "@lang.signal"
 	case ObjectTypeHtml:
 		return "html"
+	case ObjectTypeIface:
+		return "iface"
 	default:
 		return "unknown"
 	}
@@ -107,4 +110,9 @@ type Object interface {
 
 	// Size is an idea for memory profiling and limits
 	// Size() uint64
+}
+
+func withObject(ob Object, t *Type) *Type {
+	t.Object = ob
+	return t
 }

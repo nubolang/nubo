@@ -41,7 +41,7 @@ func (i *StructInstance) ID() string {
 func (i *StructInstance) Type() *Type {
 	cloned := i.base.structType.DeepClone()
 	cloned.BaseType = ObjectTypeStructInstance
-	return cloned
+	return withObject(i, cloned)
 }
 
 func (i *StructInstance) Inspect() string {

@@ -27,10 +27,10 @@ func (i *List) ID() string {
 }
 
 func (i *List) Type() *Type {
-	return &Type{
+	return withObject(i, &Type{
 		BaseType: ObjectTypeList,
 		Element:  i.ItemType,
-	}
+	})
 }
 
 func (i *List) Inspect() string {

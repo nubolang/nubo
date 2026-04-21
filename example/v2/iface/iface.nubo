@@ -1,0 +1,15 @@
+fn sayHi(sayer: iface {
+    say(msg: string) void
+}) {
+    sayer.say("Hi")
+}
+
+struct SayStruct {}
+
+impl SayStruct {
+    fn say(msg: string) void {
+        println(msg)
+    }
+}
+
+sayHi(SayStruct())

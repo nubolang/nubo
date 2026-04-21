@@ -44,11 +44,11 @@ func (i *Dict) ID() string {
 }
 
 func (i *Dict) Type() *Type {
-	return &Type{
+	return withObject(i, &Type{
 		BaseType: ObjectTypeDict,
 		Key:      i.KeyType,
 		Value:    i.ValueType,
-	}
+	})
 }
 
 func (i *Dict) Inspect() string {

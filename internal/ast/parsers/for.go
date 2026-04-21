@@ -32,13 +32,13 @@ func ForParser(ctx context.Context, p Parser_HTML, tokens []*lexer.Token, inx *i
 	}
 
 	if err := inxPP(tokens, inx); err != nil {
-		return nil, newErr(ErrUnexpectedEOF, fmt.Sprintf("expected ',' or 'in', got EOF"), token.Debug)
+		return nil, newErr(ErrUnexpectedEOF, "expected ',' or 'in', got EOF", token.Debug)
 	}
 
 	token = tokens[*inx]
 	if token.Type == lexer.TokenComma {
 		if err := inxPP(tokens, inx); err != nil {
-			return nil, newErr(ErrUnexpectedEOF, fmt.Sprintf("expected identifier, got EOF"), token.Debug)
+			return nil, newErr(ErrUnexpectedEOF, "expected identifier, got EOF", token.Debug)
 		}
 		token = tokens[*inx]
 
@@ -54,7 +54,7 @@ func ForParser(ctx context.Context, p Parser_HTML, tokens []*lexer.Token, inx *i
 		}
 
 		if err := inxPP(tokens, inx); err != nil {
-			return nil, newErr(ErrUnexpectedEOF, fmt.Sprintf("expected 'in', got EOF"), token.Debug)
+			return nil, newErr(ErrUnexpectedEOF, "expected 'in', got EOF", token.Debug)
 		}
 
 		token = tokens[*inx]

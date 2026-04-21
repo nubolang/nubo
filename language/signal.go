@@ -33,7 +33,7 @@ func (i *Signal) ID() string {
 }
 
 func (i *Signal) Type() *Type {
-	return &Type{BaseType: ObjectTypeSignal}
+	return withObject(i, &Type{BaseType: ObjectTypeSignal})
 }
 
 func (i *Signal) Inspect() string {

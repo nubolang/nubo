@@ -19,7 +19,7 @@ func (i *Ref) ID() string {
 }
 
 func (i *Ref) Type() *Type {
-	return i.Data.Type()
+	return withObject(i, i.Data.Type())
 }
 
 func (i *Ref) Inspect() string {

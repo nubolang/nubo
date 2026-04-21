@@ -119,7 +119,7 @@ loop:
 			child.ValueType = typ
 
 			if *inx >= len(tokens) {
-				return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("unexpected end of input"), token.Debug)
+				return nil, newErr(ErrUnexpectedToken, "unexpected end of input", token.Debug)
 			}
 
 			body = append(body, child)

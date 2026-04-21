@@ -99,6 +99,37 @@ func (i *Interpreter) parseTypeNode(n *astnode.Node) (*language.Type, error) {
 
 		t.BaseType = language.ObjectTypeFunction
 		return i.checkAddUnionType(t, n)
+	case "IFACE":
+		t.BaseType = language.ObjectTypeIface
+		var fns = make([]language.IfaceTypeFn, len(n.Body))
+
+		for inx, fn := range n.Body {
+			returnType, err := i.parseTypeNode(fn.ValueType)
+			if err != nil {
+				return nil, err
+			}
+
+			var args = make([]*language.Type, len(fn.Args))
+			for j, argNode := range fn.Args {
+				arg, err := i.parseTypeNode(argNode.ValueType)
+				if err != nil {
+					return nil, err
+				}
+				args[j] = arg
+			}
+
+			fns[inx] = language.IfaceTypeFn{
+				Name:    fn.Content,
+				Returns: returnType,
+				Args:    args,
+			}
+		}
+
+		t.Iface = &language.IfaceType{
+			Functions: fns,
+		}
+
+		return i.checkAddUnionType(t, n)
 	}
 
 	baseType, err := i.stringToType(n.Content, n.Debug)

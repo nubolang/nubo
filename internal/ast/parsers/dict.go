@@ -106,7 +106,7 @@ loop:
 			node.Children = append(node.Children, dataset)
 
 			if *inx >= len(tokens) {
-				return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("unexpected end of input"), node.Debug)
+				return nil, newErr(ErrUnexpectedToken, "unexpected end of input", node.Debug)
 			}
 
 			token = tokens[*inx]

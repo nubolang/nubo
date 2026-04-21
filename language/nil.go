@@ -26,7 +26,7 @@ func (n *NilObj) ID() string {
 }
 
 func (n *NilObj) Type() *Type {
-	return TypeNil
+	return withObject(n, TypeNil)
 }
 
 func (n *NilObj) Inspect() string {

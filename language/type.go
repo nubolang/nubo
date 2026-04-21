@@ -1,20 +1,34 @@
 package language
 
 import (
+	"context"
 	"fmt"
 	"strings"
 )
 
+type IfaceTypeFn struct {
+	Name    string
+	Args    []*Type
+	Returns *Type
+}
+
+type IfaceType struct {
+	Functions []IfaceTypeFn
+}
+
 // Type represents a type in the language.
 type Type struct {
 	BaseType ObjectType
-	Content  string  // "int", "string", etc. (used for simple types)
-	Key      *Type   // if Kind == "DICT", represents the key type
-	Value    *Type   // if Kind == "DICT", represents the value type or if Kind == "FUNCTION", represents the return type
-	Element  *Type   // if Kind == "LIST", represents the element type
-	Args     []*Type // if Kind == "FUNCTION", represents the function argument types
-	ID       string  // if BaseType == ObjectTypeStructInstance, represents the struct ID
-	Next     *Type   // if it's an union type, represents the next type in the union
+	Content  string     // "int", "string", etc. (used for simple types)
+	Key      *Type      // if Kind == "DICT", represents the key type
+	Value    *Type      // if Kind == "DICT", represents the value type or if Kind == "FUNCTION", represents the return type
+	Element  *Type      // if Kind == "LIST", represents the element type
+	Args     []*Type    // if Kind == "FUNCTION", represents the function argument types
+	ID       string     // if BaseType == ObjectTypeStructInstance, represents the struct ID
+	Next     *Type      // if it's an union type, represents the next type in the union
+	Iface    *IfaceType // if Kind == "IFACE", represents the compare methods
+
+	Object Object
 }
 
 var (
@@ -32,6 +46,7 @@ var (
 	TypeAny              = &Type{BaseType: ObjectTypeAny, Content: "any"}
 	TypeVoid             = &Type{BaseType: ObjectTypeVoid, Content: "void"}
 	TypeHtml             = &Type{BaseType: ObjectTypeHtml, Content: "html"}
+	TypeIface            = Nullable(&Type{BaseType: ObjectTypeIface, Content: "iface"})
 )
 
 func NewFunctionType(returnType *Type, argsType ...*Type) *Type {
@@ -73,6 +88,8 @@ func DefaultValue(typ *Type) Object {
 		return nil
 	case ObjectTypeHtml:
 		return NewElement(nil, nil)
+	case ObjectTypeIface:
+		return Nil
 	default:
 		return Nil
 	}
@@ -116,6 +133,32 @@ func (t *Type) String() string {
 		return fmt.Sprintf("(struct) %s%s", t.Content, next)
 	case ObjectTypeStructInstance:
 		return fmt.Sprintf("%s{}%s", t.Content, next)
+	case ObjectTypeIface:
+		var sb strings.Builder
+
+		fnsLen := len(t.Iface.Functions) - 1
+		for i, fn := range t.Iface.Functions {
+			sb.WriteString(fn.Name)
+			sb.WriteRune('(')
+
+			argsLen := len(fn.Args) - 1
+			for j, arg := range fn.Args {
+				sb.WriteString(arg.String())
+				if j < argsLen {
+					sb.WriteString(", ")
+				}
+			}
+
+			sb.WriteString(") ")
+			sb.WriteString(fn.Returns.String())
+
+			if i < fnsLen {
+				sb.WriteString("; ")
+			}
+		}
+
+		defer sb.Reset()
+		return fmt.Sprintf("iface{%s}%s", sb.String(), next)
 	}
 }
 
@@ -133,6 +176,15 @@ func (t *Type) Compare(other *Type) bool {
 
 	if t.BaseType == ObjectTypeAny {
 		return true
+	}
+
+	// If other is an iface, check if t satisfies it.
+	if other.BaseType == ObjectTypeIface {
+		return t.SatisfiesIface(other)
+	}
+	// If t is an iface, check if other satisfies it.
+	if t.BaseType == ObjectTypeIface {
+		return other.SatisfiesIface(t)
 	}
 
 	if other.Base() == ObjectTypeNil {
@@ -254,4 +306,56 @@ func (t *Type) DeepClone() *Type {
 	}
 
 	return clone
+}
+
+func (t *Type) SatisfiesIface(iface *Type) bool {
+	if iface == nil || iface.Iface == nil {
+		return true
+	}
+
+	for _, required := range iface.Iface.Functions {
+		if !t.hasIfaceMethod(required) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func (t *Type) hasIfaceMethod(fn IfaceTypeFn) bool {
+	if t.Object == nil {
+		return false
+	}
+
+	proto := t.Object.GetPrototype()
+	if proto == nil {
+		return false
+	}
+
+	ob, ok := proto.GetObject(context.Background(), fn.Name)
+	if !ok {
+		return false
+	}
+
+	obType := ob.Type()
+
+	if obType.BaseType != ObjectTypeFunction {
+		return false
+	}
+
+	if !obType.Value.Compare(fn.Returns) {
+		return false
+	}
+
+	if len(fn.Args) != len(obType.Args) {
+		return false
+	}
+
+	for i, arg := range fn.Args {
+		if !arg.Compare(obType.Args[i]) {
+			return false
+		}
+	}
+
+	return true
 }

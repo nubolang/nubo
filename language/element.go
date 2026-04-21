@@ -49,7 +49,7 @@ func (e *Element) ID() string {
 }
 
 func (e *Element) Type() *Type {
-	return TypeHtml
+	return withObject(e, TypeHtml)
 }
 
 func (e *Element) Inspect() string {

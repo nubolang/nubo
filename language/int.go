@@ -28,7 +28,7 @@ func (i *Int) ID() string {
 }
 
 func (i *Int) Type() *Type {
-	return TypeInt
+	return withObject(i, TypeInt)
 }
 
 func (i *Int) Inspect() string {

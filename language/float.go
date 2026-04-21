@@ -24,7 +24,7 @@ func (i *Float) ID() string {
 }
 
 func (i *Float) Type() *Type {
-	return TypeFloat
+	return withObject(i, TypeFloat)
 }
 
 func (i *Float) Inspect() string {

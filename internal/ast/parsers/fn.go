@@ -177,7 +177,7 @@ bodyloop:
 	return node, nil
 }
 
-func fnArgumentParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, inx *int) (*astnode.Node, bool, error) {
+func fnArgumentParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, inx *int, typeOnly ...bool) (*astnode.Node, bool, error) {
 	if err := inxNlPP(tokens, inx); err != nil {
 		return nil, false, err
 	}
@@ -229,6 +229,10 @@ func fnArgumentParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token
 	}
 
 	if token.Type == lexer.TokenAssign {
+		if len(typeOnly) > 0 && typeOnly[0] {
+			return nil, false, newErr(ErrSyntaxError, "type only function, default values not supported")
+		}
+
 		if err := inxPP(tokens, inx); err != nil {
 			return nil, false, err
 		}

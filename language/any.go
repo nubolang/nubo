@@ -23,7 +23,7 @@ func (i *Any) ID() string {
 }
 
 func (i *Any) Type() *Type {
-	return i.Data.Type()
+	return withObject(i, i.Data.Type())
 }
 
 func (i *Any) Inspect() string {
@@ -50,6 +50,6 @@ func (i *Any) Debug() *debug.Debug {
 	return i.debug
 }
 
-func (i *Any) Clone() *Any {
+func (i *Any) Clone() Object {
 	return NewAny(i.Data.Clone(), i.debug)
 }

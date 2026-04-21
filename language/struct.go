@@ -100,7 +100,7 @@ func (i *Struct) ID() string {
 }
 
 func (i *Struct) Type() *Type {
-	return i.structType
+	return withObject(i, i.structType)
 }
 
 func (i *Struct) Inspect() string {
@@ -127,14 +127,22 @@ func (i *Struct) Inspect() string {
 }
 
 func (i *Struct) TypeString() string {
-	typ := i.Name + "{"
+	var sb strings.Builder
+	sb.WriteString(i.Name)
+	sb.WriteRune('{')
+
 	for inx, field := range i.Data {
-		typ += fmt.Sprintf("%s: %s", field.Name, field.Type.String())
+		sb.WriteString(field.Name)
+		sb.WriteString(": ")
+		sb.WriteString(field.Type.String())
 		if inx < len(i.Data)-1 {
-			typ += ", "
+			sb.WriteString(", ")
 		}
 	}
-	return typ + "}"
+	sb.WriteRune('}')
+
+	defer sb.Reset()
+	return sb.String()
 }
 
 func (i *Struct) String() string {

@@ -19,6 +19,10 @@ func TypeParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.
 		return TypeFnParser(ctx, node, tokens, inx)
 	}
 
+	if tokens[*inx].Type == lexer.TokenIface {
+		return IfaceParser(ctx, tokens, inx)
+	}
+
 	if tokens[*inx].Type == lexer.TokenOpenParen {
 		if err := inxPP(tokens, inx); err != nil {
 			return nil, err

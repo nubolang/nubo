@@ -31,6 +31,7 @@ const (
 	TokenReturn   TokenType = "return"
 	TokenDefer    TokenType = "defer"
 	TokenPrivate  TokenType = "private"
+	TokenIface    TokenType = "iface"
 
 	TokenIdentifier TokenType = "identifier"
 	TokenString     TokenType = "string"
@@ -104,6 +105,7 @@ func Keywords() []TokenType {
 		TokenStatic,
 		TokenImpl,
 		TokenStruct,
+		TokenIface,
 
 		TokenLet,
 		TokenConst,

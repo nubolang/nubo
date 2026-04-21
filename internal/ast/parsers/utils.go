@@ -59,7 +59,7 @@ func inxPP(tokens []*lexer.Token, inx *int) error {
 			return debug.NewError(ErrSyntaxError, msg, tokens[*inx-1].Debug)
 		}
 
-		msg := fmt.Sprintf("language specific error (nubo internal ast package misfunction [use flag --dev for more details]) (RECOMMENDED: use other syntax as this is not supported yet)")
+		msg := "language specific error (nubo internal ast package misfunction [use flag --dev for more details]) (RECOMMENDED: use other syntax as this is not supported yet)"
 		return debug.NewError(ErrSyntaxError, msg, tokens[*inx-1].Debug)
 	}
 	*inx++
@@ -147,9 +147,9 @@ func tokensPrint(tokens []*lexer.Token) {
 
 func inxPPeak(tokens []*lexer.Token, inx *int) (*lexer.Token, error) {
 	i := *inx
+	msg := "unexpected end of input"
 
 	if i >= len(tokens) {
-		msg := fmt.Sprintf("unexpected end of input")
 		return nil, debug.NewError(ErrSyntaxError, msg, tokens[*inx-1].Debug)
 	}
 
@@ -160,7 +160,6 @@ func inxPPeak(tokens []*lexer.Token, inx *int) (*lexer.Token, error) {
 	}
 
 	if i >= len(tokens) {
-		msg := fmt.Sprintf("unexpected end of input")
 		return nil, debug.NewError(ErrSyntaxError, msg, tokens[*inx-1].Debug)
 	}
 

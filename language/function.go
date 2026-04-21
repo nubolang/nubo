@@ -163,7 +163,7 @@ func (i *Function) ID() string {
 }
 
 func (i *Function) Type() *Type {
-	return i.typ
+	return withObject(i, i.typ)
 }
 
 func (i *Function) Inspect() string {

@@ -24,7 +24,7 @@ func (i *Byte) ID() string {
 }
 
 func (i *Byte) Type() *Type {
-	return TypeByte
+	return withObject(i, TypeByte)
 }
 
 func (i *Byte) Inspect() string {
