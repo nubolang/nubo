@@ -1,59 +1,48 @@
 package astnode
 
-type NodeType string
+type NodeType int
 
 const (
-	NodeTypeImport  NodeType = "import"
-	NodeTypeInclude NodeType = "include"
-
-	NodeTypeFunction         NodeType = "function"
-	NodeTypeInlineFunction   NodeType = "inline_function"
-	NodeTypeFunctionArgument NodeType = "function_argument"
-	NodeTypeFunctionCall     NodeType = "function_call"
-	NodeTypeReturn           NodeType = "return"
-
-	NodeTypeType        NodeType = "type"
-	NodeTypeStruct      NodeType = "struct"
-	NodeTypeStructField NodeType = "struct_field"
-	NodeTypeImpl        NodeType = "impl"
-
-	NodeTypeEvent         NodeType = "event"
-	NodeTypeEventArgument NodeType = "event_argument"
-	NodeTypeSubscribe     NodeType = "subscribe"
-	NodeTypePublish       NodeType = "publish"
-
-	NodeTypeExpression NodeType = "expression"
-	NodeTypeOperator   NodeType = "operator"
-	NodeTypeValue      NodeType = "value"
-
-	NodeTypeIncrement NodeType = "increment"
-	NodeTypeDecrement NodeType = "decrement"
-	NodeTypeAssign    NodeType = "assign"
-
-	NodeTypeVariableDecl NodeType = "variable_decl"
-
-	NodeTypeElement            NodeType = "element"
-	NodeTypeElementRawText     NodeType = "element_raw_text"
-	NodeTypeElementAttribute   NodeType = "element_attribute"
-	NodeTypeElementDynamicText NodeType = "element_dynamic_text"
-
-	NodeTypeList      NodeType = "list"
-	NodeTypeDict      NodeType = "dict"
-	NodeTypeDictField NodeType = "dict_field"
-
-	NodeTypeWhile  NodeType = "while"
-	NodeTypeIf     NodeType = "if"
-	NodeTypeElse   NodeType = "else"
-	NodeTypeFor    NodeType = "for"
-	NodeTypeSignal NodeType = "signal"
-	NodeTypeTry    NodeType = "try"
-
-	NodeTypeTemplateLiteral NodeType = "template_literal"
-	NodeTypeRawText         NodeType = "raw_text"
-	NodeTypeDynamicText     NodeType = "dynamic_text"
-
-	NodeTypeDefer NodeType = "defer"
-	NodeTypeSpawn NodeType = "spawn"
-
-	NodeTypeBlock NodeType = "block"
+	NodeTypeImport NodeType = iota
+	NodeTypeInclude
+	NodeTypeFunction
+	NodeTypeInlineFunction
+	NodeTypeFunctionArgument
+	NodeTypeFunctionCall
+	NodeTypeReturn
+	NodeTypeType
+	NodeTypeStruct
+	NodeTypeStructField
+	NodeTypeImpl
+	NodeTypeTypeKW
+	NodeTypeEvent
+	NodeTypeEventArgument
+	NodeTypeSubscribe
+	NodeTypePublish
+	NodeTypeExpression
+	NodeTypeOperator
+	NodeTypeValue
+	NodeTypeIncrement
+	NodeTypeDecrement
+	NodeTypeAssign
+	NodeTypeVariableDecl
+	NodeTypeElement
+	NodeTypeElementRawText
+	NodeTypeElementAttribute
+	NodeTypeElementDynamicText
+	NodeTypeList
+	NodeTypeDict
+	NodeTypeDictField
+	NodeTypeWhile
+	NodeTypeIf
+	NodeTypeElse
+	NodeTypeFor
+	NodeTypeSignal
+	NodeTypeTry
+	NodeTypeTemplateLiteral
+	NodeTypeRawText
+	NodeTypeDynamicText
+	NodeTypeDefer
+	NodeTypeSpawn
+	NodeTypeBlock
 )

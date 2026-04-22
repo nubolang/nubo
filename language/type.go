@@ -47,6 +47,7 @@ var (
 	TypeVoid             = &Type{BaseType: ObjectTypeVoid, Content: "void"}
 	TypeHtml             = &Type{BaseType: ObjectTypeHtml, Content: "html"}
 	TypeIface            = Nullable(&Type{BaseType: ObjectTypeIface, Content: "iface"})
+	TypeTypeObj          = &Type{BaseType: ObjectTypeType, Content: "<type>"}
 )
 
 func NewFunctionType(returnType *Type, argsType ...*Type) *Type {
@@ -112,6 +113,8 @@ func (t *Type) String() string {
 	switch t.BaseType {
 	default:
 		return t.BaseType.String() + next
+	case ObjectTypeType:
+		return t.ID + next
 	case ObjectTypeNil:
 		return "(nil)"
 	case ObjectTypeString:
@@ -246,7 +249,7 @@ func (t *Type) Compare(other *Type) bool {
 		return t.ID == other.ID
 	}
 
-	ok := t.Content == other.Content
+	ok := t.BaseType.String() == other.BaseType.String()
 	if !ok {
 		return t.NextMatch(other)
 	}

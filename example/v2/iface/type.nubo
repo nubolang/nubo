@@ -1,0 +1,25 @@
+type helloer: iface {
+    sayHello() void
+}
+
+struct User {
+    name: string
+}
+
+impl User {
+    fn init(self: User, name: string) void {
+        self.name = name
+    }
+
+    fn sayHello(self: User) {
+        println(`Hi! I am ${self.name}!`)
+    }
+}
+
+const john = User("John")
+
+fn interfaceTest(obj: helloer) void {
+    obj.sayHello()
+}
+
+interfaceTest(john)

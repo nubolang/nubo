@@ -61,7 +61,7 @@ func (h *Highlight) highlightToken(mode Mode, i int, token *lexer.Token) (string
 		lexer.TokenImpl, lexer.TokenFor, lexer.TokenWhile, lexer.TokenImport, lexer.TokenFrom,
 		lexer.TokenIf, lexer.TokenElse, lexer.TokenIn, lexer.TokenDefer, lexer.TokenContinue,
 		lexer.TokenBreak, lexer.TokenInclude, lexer.TokenEvent, lexer.TokenPub, lexer.TokenSub,
-		lexer.TokenPrivate, lexer.TokenTry:
+		lexer.TokenPrivate, lexer.TokenTry, lexer.TokenIface, lexer.TokenTypeKW:
 		return highlightKeyword(mode, token.Value), nil
 	case lexer.TokenOpenBrace, lexer.TokenCloseBrace, lexer.TokenOpenParen, lexer.TokenCloseParen,
 		lexer.TokenOpenBracket, lexer.TokenCloseBracket:

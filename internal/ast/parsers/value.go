@@ -126,7 +126,7 @@ func singleValueParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Toke
 	switch token.Type {
 	default:
 		return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("expected value, got '%v'", token.Value), token.Debug)
-	case lexer.TokenString:
+	case lexer.TokenString, lexer.TokenTypeKW:
 		s := &astnode.Node{
 			Type:  astnode.NodeTypeValue,
 			Kind:  "STRING",

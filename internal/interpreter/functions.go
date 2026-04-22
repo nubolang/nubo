@@ -161,7 +161,7 @@ func (i *Interpreter) handleFunctionCall(node *astnode.Node) (language.Object, e
 
 	okFn, ok := fn.(*language.Function)
 	if !ok {
-		err := exception.Create("expected function, got %s", node.Type).WithDebug(node.Debug)
+		err := exception.Create("expected function, got %d", node.Type).WithDebug(node.Debug)
 		zap.L().Error("interpreter.function.call.nonFunction", zap.Uint("id", i.ID), zap.String("name", node.Content), zap.Error(err))
 		return nil, err
 	}
@@ -187,7 +187,7 @@ func (i *Interpreter) handleFunctionCall(node *astnode.Node) (language.Object, e
 }
 
 func (i *Interpreter) getValueFromObjByNode(value language.Object, node *astnode.Node) (language.Object, error) {
-	zap.L().Debug("interpreter.function.access.start", zap.Uint("id", i.ID), zap.String("valueType", logObjectType(value)), zap.String("nodeType", string(node.Type)), zap.String("content", node.Content))
+	zap.L().Debug("interpreter.function.access.start", zap.Uint("id", i.ID), zap.String("valueType", logObjectType(value)), zap.Int("nodeType", int(node.Type)), zap.String("content", node.Content))
 
 	objID := node.Content
 	if strings.Contains(objID, ".") {
@@ -240,7 +240,7 @@ func (i *Interpreter) getValueFromObjByNode(value language.Object, node *astnode
 		}
 
 		if fn.Type().Base() != language.ObjectTypeFunction {
-			err := typeError("expected function, got %s", node.Type).WithDebug(node.Debug)
+			err := typeError("expected function, got %d", node.Type).WithDebug(node.Debug)
 			zap.L().Error("interpreter.function.access.fnInvalidType", zap.Uint("id", i.ID), zap.String("function", node.Content), zap.Error(err))
 			return nil, err
 		}
@@ -257,7 +257,7 @@ func (i *Interpreter) getValueFromObjByNode(value language.Object, node *astnode
 
 		okFn, ok := fn.(*language.Function)
 		if !ok {
-			err := typeError("expected function, got %s", node.Type).WithDebug(node.Debug)
+			err := typeError("expected function, got %d", node.Type).WithDebug(node.Debug)
 			zap.L().Error("interpreter.function.access.fnCast", zap.Uint("id", i.ID), zap.String("function", node.Content), zap.Error(err))
 			return nil, err
 		}
@@ -282,8 +282,8 @@ func (i *Interpreter) getValueFromObjByNode(value language.Object, node *astnode
 		return value, nil
 	}
 
-	err := runExc("cannot get prototype for type %s with node %s", value.Type(), node.Type).WithDebug(value.Debug())
-	zap.L().Error("interpreter.function.access.unsupportedNode", zap.Uint("id", i.ID), zap.String("nodeType", string(node.Type)), zap.Error(err))
+	err := runExc("cannot get prototype for type %s with node %d", value.Type(), node.Type).WithDebug(value.Debug())
+	zap.L().Error("interpreter.function.access.unsupportedNode", zap.Uint("id", i.ID), zap.Int("nodeType", int(node.Type)), zap.Error(err))
 	return nil, err
 }
 

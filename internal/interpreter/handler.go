@@ -7,7 +7,7 @@ import (
 )
 
 func (i *Interpreter) handleNode(node *astnode.Node) (language.Object, error) {
-	zap.L().Debug("interpreter.handler.node", zap.Uint("id", i.ID), zap.String("nodeType", string(node.Type)), zap.String("content", node.Content))
+	zap.L().Debug("interpreter.handler.node", zap.Uint("id", i.ID), zap.Int("nodeType", int(node.Type)), zap.String("content", node.Content))
 
 	switch node.Type {
 	case astnode.NodeTypeImport:
@@ -57,18 +57,20 @@ func (i *Interpreter) handleNode(node *astnode.Node) (language.Object, error) {
 		return nil, nil
 	case astnode.NodeTypeBlock:
 		return i.handleBlock(node)
+	case astnode.NodeTypeTypeKW:
+		return nil, i.handleTypeDecl(node)
 	default:
 		if node.Type == astnode.NodeTypeSignal {
 			if i.isChildOf(ScopeBlock, "for") || i.isChildOf(ScopeBlock, "while") {
 				return language.NewSignal(node.Content, node.Debug), nil
 			} else {
-				err := runExc("%s(%s) can only be used within a for or while loop", node.Type, node.Content).WithDebug(node.Debug)
-				zap.L().Error("interpreter.handler.signal.invalid", zap.Uint("id", i.ID), zap.String("nodeType", string(node.Type)), zap.String("content", node.Content), zap.Error(err))
+				err := runExc("%d(%s) can only be used within a for or while loop", node.Type, node.Content).WithDebug(node.Debug)
+				zap.L().Error("interpreter.handler.signal.invalid", zap.Uint("id", i.ID), zap.Int("nodeType", int(node.Type)), zap.String("content", node.Content), zap.Error(err))
 				return nil, err
 			}
 		}
-		err := runExc("unknown node %s", node.Type).WithDebug(node.Debug)
-		zap.L().Error("interpreter.handler.unknownNode", zap.Uint("id", i.ID), zap.String("nodeType", string(node.Type)), zap.Error(err))
+		err := runExc("unknown node %d", node.Type).WithDebug(node.Debug)
+		zap.L().Error("interpreter.handler.unknownNode", zap.Uint("id", i.ID), zap.Int("nodeType", int(node.Type)), zap.Error(err))
 		return nil, err
 	}
 }

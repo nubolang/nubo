@@ -26,6 +26,7 @@ const (
 	ObjectTypeSignal // TypeSignal is not really a type, it is used for break, continue statements
 	ObjectTypeHtml
 	ObjectTypeIface
+	ObjectTypeType
 )
 
 func (ot ObjectType) String() string {
@@ -64,6 +65,8 @@ func (ot ObjectType) String() string {
 		return "html"
 	case ObjectTypeIface:
 		return "iface"
+	case ObjectTypeType:
+		return "type"
 	default:
 		return "unknown"
 	}

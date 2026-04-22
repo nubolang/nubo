@@ -44,7 +44,7 @@ func (i *Interpreter) parseTypeNode(n *astnode.Node) (*language.Type, error) {
 	}
 
 	if n.Type != astnode.NodeTypeType {
-		return nil, runExc("expected node type 'type', got '%s'", n.Type).WithDebug(n.Debug)
+		return nil, runExc("expected node type 'type', got '%d'", n.Type).WithDebug(n.Debug)
 	}
 
 	t := &language.Type{
@@ -135,13 +135,19 @@ func (i *Interpreter) parseTypeNode(n *astnode.Node) (*language.Type, error) {
 	baseType, err := i.stringToType(n.Content, n.Debug)
 	if err != nil {
 		ob, ok := i.GetObject(n.Content)
-		if !ok || ob.Type().Base() != language.ObjectTypeStructDefinition {
+		if !ok || (ob.Type().Base() != language.ObjectTypeStructDefinition && ob.Type().Base() != language.ObjectTypeType) {
 			return nil, runExc("unknown type: %q", n.Content).WithDebug(n.Debug)
 		}
-		if n.Flags.Contains("OPTIONAL") {
-			return language.Nullable(ob.Type()), nil
+
+		t := ob.Type()
+		if ob.Type().Base() == language.ObjectTypeType {
+			t = ob.Value().(*language.Type)
 		}
-		return ob.Type(), nil
+
+		if n.Flags.Contains("OPTIONAL") {
+			return language.Nullable(t), nil
+		}
+		return t, nil
 	}
 
 	t.BaseType = baseType.Base()

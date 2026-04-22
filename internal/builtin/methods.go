@@ -22,22 +22,23 @@ func GetBuiltins() map[string]language.Object {
 	ctx := context.Background()
 
 	return map[string]language.Object{
-		"_id":     native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeString, idFn),
-		"println": native.NewFunction(printlnFn),
-		"print":   native.NewFunction(printFn),
-		"type":    native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeString, typeFn),
-		"_type":   native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeString, _typeFn),
-		"memsize": native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeInt, memsizeFn),
-		"inspect": native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeString, inspectFn),
-		"sleep":   native.NewTypedFunction(ctx, native.OneArg("ms", language.TypeInt, language.NewInt(0, nil)), language.TypeVoid, sleepFn),
-		"ref":     native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeAny, refFn),
-		"unwrap":  native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeAny, unwrapFn),
-		"clone":   native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeAny, cloneFn),
-		"exit":    native.NewTypedFunction(ctx, native.OneArg("code", language.TypeInt, language.NewInt(0, nil)), language.TypeVoid, exitFn),
-		"range":   getRangeStruct(),
-		"env":     n.Function(n.Describe(n.Arg("name", n.TString), n.Arg("value", n.Nullable(n.TString), language.Nil)).Returns(n.Nullable(n.TString)), envFn),
-		"concat":  native.NewFunction(concatFn),
-		"len":     n.Function(n.Describe(n.Arg("object", n.TAny)).Returns(n.TInt), lenFn),
+		"_id":       native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeString, idFn),
+		"println":   native.NewFunction(printlnFn),
+		"print":     native.NewFunction(printFn),
+		"type":      native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeString, typeFn),
+		"_type":     native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeString, _typeFn),
+		"memsize":   native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeInt, memsizeFn),
+		"inspect":   native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeString, inspectFn),
+		"sleep":     native.NewTypedFunction(ctx, native.OneArg("ms", language.TypeInt, language.NewInt(0, nil)), language.TypeVoid, sleepFn),
+		"ref":       native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeAny, refFn),
+		"unwrap":    native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeAny, unwrapFn),
+		"clone":     native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeAny, cloneFn),
+		"exit":      native.NewTypedFunction(ctx, native.OneArg("code", language.TypeInt, language.NewInt(0, nil)), language.TypeVoid, exitFn),
+		"range":     getRangeStruct(),
+		"env":       n.Function(n.Describe(n.Arg("name", n.TString), n.Arg("value", n.Nullable(n.TString), language.Nil)).Returns(n.Nullable(n.TString)), envFn),
+		"concat":    native.NewFunction(concatFn),
+		"len":       n.Function(n.Describe(n.Arg("object", n.TAny)).Returns(n.TInt), lenFn),
+		"typecheck": n.Function(n.Describe(n.Arg("typ", language.TypeTypeObj), n.Arg("value", n.TAny)).Returns(n.TBool), typecheckFn),
 
 		// Errors
 		"panic": n.Function(n.Describe(n.Arg("message", n.TString)), failFn),
@@ -172,7 +173,6 @@ func intFn(ctx native.FnCtx) (language.Object, error) {
 		if obj.Value().(bool) {
 			value = 1
 		}
-		break
 	case language.TypeChar:
 		value = int64(obj.Value().(rune))
 	case language.TypeByte:
@@ -189,7 +189,6 @@ func intFn(ctx native.FnCtx) (language.Object, error) {
 		} else {
 			value = int64(val)
 		}
-		break
 	default:
 		return nil, convertErr
 	}
@@ -575,4 +574,10 @@ func lenFn(args *n.Args) (any, error) {
 	}
 
 	return lenFunc.Data(fnCtx, nil)
+}
+
+func typecheckFn(a *n.Args) (any, error) {
+	typ := a.Name("typ").Value().(*language.Type)
+	val := a.Name("value")
+	return typ.Compare(val.Type()), nil
 }

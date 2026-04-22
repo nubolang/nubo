@@ -57,71 +57,27 @@ func (a *Ast) handleToken(tokens []*lexer.Token, inx *int) (*astnode.Node, error
 
 	switch token.Type {
 	case lexer.TokenImport:
-		node, err := parsers.ImportParser(a.ctx, tokens, inx)
-		if err != nil {
-			return nil, err
-		}
-		return node, nil
+		return parsers.ImportParser(a.ctx, tokens, inx)
 	case lexer.TokenInclude:
-		node, err := parsers.IncludeParser(a.ctx, a, tokens, inx)
-		if err != nil {
-			return nil, err
-		}
-		return node, nil
+		return parsers.IncludeParser(a.ctx, a, tokens, inx)
 	case lexer.TokenEvent:
-		node, err := parsers.EventParser(a.ctx, tokens, inx)
-		if err != nil {
-			return nil, err
-		}
-		return node, nil
+		return parsers.EventParser(a.ctx, tokens, inx)
 	case lexer.TokenStruct:
-		node, err := parsers.StructParser(a.ctx, tokens, inx)
-		if err != nil {
-			return nil, err
-		}
-		return node, nil
+		return parsers.StructParser(a.ctx, tokens, inx)
 	case lexer.TokenFn:
-		node, err := parsers.FnParser(a.ctx, a, tokens, inx, New(a.ctx, a.nodeTimeout), false)
-		if err != nil {
-			return nil, err
-		}
-		return node, nil
+		return parsers.FnParser(a.ctx, a, tokens, inx, New(a.ctx, a.nodeTimeout), false)
 	case lexer.TokenIdentifier:
-		node, err := parsers.IdentifierParser(a.ctx, a, tokens, inx)
-		if err != nil {
-			return nil, err
-		}
-		return node, nil
+		return parsers.IdentifierParser(a.ctx, a, tokens, inx)
 	case lexer.TokenConst, lexer.TokenLet:
-		node, err := parsers.VariableParser(a.ctx, a, tokens, inx)
-		if err != nil {
-			return nil, err
-		}
-		return node, nil
+		return parsers.VariableParser(a.ctx, a, tokens, inx)
 	case lexer.TokenReturn:
-		node, err := parsers.ReturnParser(a.ctx, a, tokens, inx)
-		if err != nil {
-			return nil, err
-		}
-		return node, nil
+		return parsers.ReturnParser(a.ctx, a, tokens, inx)
 	case lexer.TokenSub:
-		node, err := parsers.SubParser(a.ctx, a, tokens, inx)
-		if err != nil {
-			return nil, err
-		}
-		return node, nil
+		return parsers.SubParser(a.ctx, a, tokens, inx)
 	case lexer.TokenPub:
-		node, err := parsers.PubParser(a.ctx, a, tokens, inx)
-		if err != nil {
-			return nil, err
-		}
-		return node, nil
+		return parsers.PubParser(a.ctx, a, tokens, inx)
 	case lexer.TokenWhile:
-		node, err := parsers.WhileParser(a.ctx, a, tokens, inx)
-		if err != nil {
-			return nil, err
-		}
-		return node, nil
+		return parsers.WhileParser(a.ctx, a, tokens, inx)
 	case lexer.TokenIf:
 		return parsers.IfParser(a.ctx, a, tokens, inx)
 	case lexer.TokenFor:
@@ -143,6 +99,8 @@ func (a *Ast) handleToken(tokens []*lexer.Token, inx *int) (*astnode.Node, error
 		return parsers.SpawnParser(a.ctx, a, tokens, inx)
 	case lexer.TokenOpenBrace:
 		return parsers.BlockParser(a.ctx, a, tokens, inx, a)
+	case lexer.TokenTypeKW:
+		return parsers.TypeKWParser(a.ctx, a, tokens, inx)
 	}
 
 	if token.Type == lexer.TokenWhiteSpace || token.Type == lexer.TokenNewLine || token.Type == lexer.TokenSingleLineComment || token.Type == lexer.TokenMultiLineComment || token.Type == lexer.TokenSemicolon {

@@ -32,6 +32,7 @@ const (
 	TokenDefer    TokenType = "defer"
 	TokenPrivate  TokenType = "private"
 	TokenIface    TokenType = "iface"
+	TokenTypeKW   TokenType = "type"
 
 	TokenIdentifier TokenType = "identifier"
 	TokenString     TokenType = "string"
@@ -106,6 +107,7 @@ func Keywords() []TokenType {
 		TokenImpl,
 		TokenStruct,
 		TokenIface,
+		TokenTypeKW,
 
 		TokenLet,
 		TokenConst,
