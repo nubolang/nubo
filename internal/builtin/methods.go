@@ -53,6 +53,8 @@ func GetBuiltins() map[string]language.Object {
 		"char":   native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeChar, charFn),
 		"bytes":  native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.NewListType(language.TypeByte), bytesFn),
 
+		"valueof": native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeAny, valueofFn),
+
 		"highlight": n.Function(n.Describe(n.Arg("code", n.TString), n.Arg("mode", n.TString, n.String("console"))).Returns(n.TString), hlFn),
 		"regex":     regex(),
 
@@ -159,6 +161,38 @@ func intFn(ctx native.FnCtx) (language.Object, error) {
 		return nil, err
 	}
 
+	return intReal(obj)
+}
+
+func valueofFn(ctx native.FnCtx) (language.Object, error) {
+	obj, err := ctx.Get("obj")
+	if err != nil {
+		return nil, err
+	}
+
+	proto := obj.GetPrototype()
+	if proto == nil {
+		return obj, nil
+	}
+
+	val, ok := proto.GetObject(context.Background(), "__value__")
+	if !ok {
+		return obj, nil
+	}
+
+	if !language.NewFunctionType(language.TypeAny).Compare(val.Type()) {
+		return obj, nil
+	}
+
+	fn, ok := val.(*language.Function)
+	if !ok {
+		return nil, debug.NewError(fmt.Errorf("Value error"), fmt.Sprintf("Cannot get value of %s", obj.Type()), obj.Debug())
+	}
+
+	return fn.Call(context.Background(), nil)
+}
+
+func intReal(obj language.Object) (language.Object, error) {
 	var (
 		value      int64
 		convertErr = debug.NewError(fmt.Errorf("Type error"), fmt.Sprintf("Cannot convert %s to int", obj.Type()), obj.Debug())
@@ -190,7 +224,31 @@ func intFn(ctx native.FnCtx) (language.Object, error) {
 			value = int64(val)
 		}
 	default:
-		return nil, convertErr
+		proto := obj.GetPrototype()
+		if proto == nil {
+			return nil, convertErr
+		}
+
+		val, ok := proto.GetObject(context.Background(), "__value__")
+		if !ok {
+			return nil, convertErr
+		}
+
+		if !language.NewFunctionType(language.TypeAny).Compare(val.Type()) {
+			return nil, convertErr
+		}
+
+		fn, ok := val.(*language.Function)
+		if !ok {
+			return nil, convertErr
+		}
+
+		val, err := fn.Call(context.Background(), nil)
+		if err != nil {
+			return nil, err
+		}
+
+		return intReal(val)
 	}
 
 	return language.NewInt(value, obj.Debug()), nil

@@ -1,0 +1,10 @@
+import { Time, now } from '@std/time'
+
+let x: int = 0
+bytes('hello').map(int).each(fn(n: int) {
+    x = x + n
+})
+println(x)
+
+println(int(now()))
+println(valueof(now()))

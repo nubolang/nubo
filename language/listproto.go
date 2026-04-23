@@ -80,6 +80,25 @@ func NewListPrototype(base *List) *ListPrototype {
 		return NewInt(int64(len(lp.base.Data)), base.Debug()), nil
 	}, base.Debug()))
 
+	// each(fn: function(item any) void) -> void
+	lp.SetObject(ctx, "each", NewTypedFunction([]FnArg{
+		&BasicFnArg{TypeVal: NewFunctionType(TypeVoid, base.ItemType), NameVal: "fn"},
+	}, TypeVoid, func(ctx context.Context, o []Object) (Object, error) {
+		fn := o[0].(*Function)
+
+		lp.mu.RLock()
+		defer lp.mu.RUnlock()
+
+		for _, item := range lp.base.Data {
+			_, err := fn.Data(ctx, []Object{item})
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		return nil, nil
+	}, base.Debug()))
+
 	// map(fn: function(item any) any) -> List
 	lp.SetObject(ctx, "map", NewTypedFunction([]FnArg{
 		&BasicFnArg{TypeVal: NewFunctionType(TypeAny, base.ItemType), NameVal: "fn"},

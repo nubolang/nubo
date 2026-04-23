@@ -15,7 +15,7 @@ var timeStruct *language.Struct
 func GetInstance() *language.Struct {
 	if timeStruct == nil {
 		timeStruct = language.NewStruct("time", []language.StructField{
-			{Name: "unix", Type: language.TypeInt},
+			{Name: "unix", Type: language.TypeInt, Private: true},
 		}, nil)
 	}
 
@@ -23,12 +23,7 @@ func GetInstance() *language.Struct {
 }
 
 func NewTime(dg *debug.Debug) language.Object {
-	if timeStruct == nil {
-		timeStruct = language.NewStruct("time", []language.StructField{
-			{Name: "unix", Type: language.TypeInt},
-		}, dg)
-	}
-
+	GetInstance()
 	t := n.NewPackage("time", dg)
 	proto := t.GetPrototype()
 	ctx := context.Background()

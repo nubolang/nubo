@@ -17,6 +17,7 @@ func NewInstance(t time.Time) (language.Object, error) {
 	}
 
 	ctx := context.Background()
+	ctx = language.StructAllowPrivateCtx(ctx)
 
 	reCalc := func() {
 		ob, _ := inst.GetPrototype().GetObject(ctx, "unix")
@@ -35,9 +36,9 @@ func NewInstance(t time.Time) (language.Object, error) {
 		return n.Int64(t.UnixNano(), inst.Debug()), nil
 	}))
 	proto.SetObject(ctx, "unix", n.Int64(t.UnixNano(), inst.Debug()))
-	proto.SetObject(ctx, "string", n.Function(n.Describe().Returns(n.TString), func(a *n.Args) (any, error) {
+	proto.SetObject(ctx, "__string__", n.Function(n.Describe().Returns(n.TString), func(a *n.Args) (any, error) {
 		reCalc()
-		return n.String(t.Format(FormatTime(defaultTimeFormat)), inst.Debug()), nil
+		return n.String("(Time) "+t.Format(FormatTime(defaultTimeFormat)), inst.Debug()), nil
 	}))
 	proto.SetObject(ctx, "format", n.Function(n.Describe(n.Arg("format", n.TString, n.String(defaultTimeFormat, inst.Debug()))).Returns(n.TString), func(a *n.Args) (any, error) {
 		reCalc()
