@@ -21,6 +21,11 @@ func (i *Interpreter) handleEventDecl(node *astnode.Node) (language.Object, erro
 	}
 
 	eventProvider := i.runtime.GetEventProvider()
+	if eventProvider == nil {
+		err := runExc("events are disabled in runtime config").WithDebug(node.Debug)
+		zap.L().Error("interpreter.event.declare.providerMissing", zap.Uint("id", i.ID), zap.Error(err))
+		return nil, err
+	}
 	event := &events.Event{
 		ID:   fmt.Sprintf("%d_%s", iid, name),
 		Args: make([]language.FnArg, len(node.Args)),
@@ -54,6 +59,11 @@ func (i *Interpreter) handleSubscribe(node *astnode.Node) (language.Object, erro
 	}
 
 	eventProvider := i.runtime.GetEventProvider()
+	if eventProvider == nil {
+		err := runExc("events are disabled in runtime config").WithDebug(node.Debug)
+		zap.L().Error("interpreter.event.subscribe.providerMissing", zap.Uint("id", i.ID), zap.Error(err))
+		return nil, err
+	}
 
 	unsub, err := eventProvider.Subscribe(fmt.Sprintf("%d_%s", iid, name), func(td events.TransportData) {
 		ir := NewWithParent(i, ScopeBlock)
@@ -65,6 +75,9 @@ func (i *Interpreter) handleSubscribe(node *astnode.Node) (language.Object, erro
 
 			id := arg.Body[0].Value.(string)
 			if arg.Body[0].Kind != "IDENTIFIER" || strings.Contains(id, ".") {
+				return
+			}
+			if i >= len(td) {
 				return
 			}
 
@@ -91,7 +104,17 @@ func (i *Interpreter) handlePublish(node *astnode.Node) (language.Object, error)
 	eventID := fmt.Sprintf("%d_%s", iid, name)
 
 	eventProvider := i.runtime.GetEventProvider()
+	if eventProvider == nil {
+		err := runExc("events are disabled in runtime config").WithDebug(node.Debug)
+		zap.L().Error("interpreter.event.publish.providerMissing", zap.Uint("id", i.ID), zap.Error(err))
+		return nil, err
+	}
 	event := eventProvider.GetEvent(eventID)
+	if event == nil {
+		err := runExc("event '%s' is not declared", node.Content).WithDebug(node.Debug)
+		zap.L().Error("interpreter.event.publish.eventMissing", zap.Uint("id", i.ID), zap.String("event", node.Content), zap.Error(err))
+		return nil, err
+	}
 
 	if len(event.Args) != len(node.Args) {
 		err := argError(len(event.Args), len(node.Args)).WithDebug(node.Debug)

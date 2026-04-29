@@ -186,7 +186,11 @@ func (i *Interpreter) getIterator(expr language.Object) (func() (language.Object
 		return nil, false
 	}
 
-	next := nextFn.(*language.Function)
+	next, ok := nextFn.(*language.Function)
+	if !ok {
+		zap.L().Debug("interpreter.for.iterator.nextInvalid", zap.Uint("id", i.ID))
+		return nil, false
+	}
 
 	zap.L().Debug("interpreter.for.iterator.ready", zap.Uint("id", i.ID))
 	return func() (language.Object, language.Object, bool, error) {
@@ -205,7 +209,12 @@ func (i *Interpreter) getIterator(expr language.Object) (func() (language.Object
 			return nil, nil, false, runExc("end property not found")
 		}
 
-		if end.Value().(bool) {
+		endVal, ok := end.Value().(bool)
+		if !ok {
+			return nil, nil, false, runExc("end property is not bool")
+		}
+
+		if endVal {
 			return nil, nil, false, nil
 		}
 

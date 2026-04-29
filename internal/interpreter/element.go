@@ -62,7 +62,12 @@ func (i *Interpreter) evaluateElement(node *astnode.Node) (language.Object, erro
 				zap.L().Error("interpreter.element.child.element.error", zap.Uint("id", i.ID), zap.String("tagName", child.Content), zap.Error(err))
 				return nil, exception.From(err, child.Debug, "failed to evaluate element")
 			}
-			childElem := val.(*language.Element)
+			childElem, ok := val.(*language.Element)
+			if !ok {
+				err := typeError("expected html element, got %s", val.Type()).WithDebug(child.Debug)
+				zap.L().Error("interpreter.element.child.element.typeMismatch", zap.Uint("id", i.ID), zap.Error(err))
+				return nil, err
+			}
 			elem.Children = append(elem.Children, language.ElementChild{
 				Type:      astnode.NodeTypeElement,
 				Value:     childElem,
@@ -110,8 +115,19 @@ func (i *Interpreter) evaluateElement(node *astnode.Node) (language.Object, erro
 		return language.NewElement(elem, node.Debug), nil
 	}
 
-	cctxRaw, _ := component.NewComponent(node.Debug).GetPrototype().GetObject(i.ctx, "Context")
-	cctx := cctxRaw.(*language.Struct)
+	cctxRaw, ok := component.NewComponent(node.Debug).GetPrototype().GetObject(i.ctx, "Context")
+	if !ok || cctxRaw == nil {
+		err := runExc("component.Context is not available").WithDebug(node.Debug)
+		zap.L().Error("interpreter.element.context.missing", zap.Uint("id", i.ID), zap.Error(err))
+		return nil, err
+	}
+
+	cctx, ok := cctxRaw.(*language.Struct)
+	if !ok {
+		err := typeError("component.Context must be a struct, got %s", cctxRaw.Type()).WithDebug(node.Debug)
+		zap.L().Error("interpreter.element.context.typeMismatch", zap.Uint("id", i.ID), zap.Error(err))
+		return nil, err
+	}
 	fnType := language.NewFunctionType(language.TypeHtml, cctx.Type())
 
 	if !fnType.Compare(fn.Type()) {
@@ -152,9 +168,26 @@ func (i *Interpreter) evaluateElement(node *astnode.Node) (language.Object, erro
 
 	c := language.NewList(children, language.NewUnionType(language.TypeString, language.TypeHtml), node.Debug)
 
-	inst, _ := cctx.NewInstance()
-	initFunc, _ := inst.GetPrototype().GetObject(i.ctx, "init")
-	init := initFunc.(*language.Function)
+	inst, err := cctx.NewInstance()
+	if err != nil {
+		zap.L().Error("interpreter.element.context.newInstance", zap.Uint("id", i.ID), zap.Error(err))
+		return nil, exception.From(err, node.Debug, "Context instance creation failed")
+	}
+
+	initFunc, ok := inst.GetPrototype().GetObject(i.ctx, "init")
+	if !ok {
+		err := runExc("component.Context.init is not defined").WithDebug(node.Debug)
+		zap.L().Error("interpreter.element.context.initMissing", zap.Uint("id", i.ID), zap.Error(err))
+		return nil, err
+	}
+
+	init, ok := initFunc.(*language.Function)
+	if !ok {
+		err := typeError("component.Context.init must be a function, got %s", initFunc.Type()).WithDebug(node.Debug)
+		zap.L().Error("interpreter.element.context.initType", zap.Uint("id", i.ID), zap.Error(err))
+		return nil, err
+	}
+
 	cctxInstance, err := init.Data(i.ctx, []language.Object{d, c})
 	if err != nil {
 		zap.L().Error("interpreter.element.context.error", zap.Uint("id", i.ID), zap.Error(err))

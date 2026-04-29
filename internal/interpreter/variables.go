@@ -118,12 +118,20 @@ func (i *Interpreter) handleIncrement(node *astnode.Node) error {
 	}
 
 	proto := value.GetPrototype()
+	if proto == nil {
+		return runExc("cannot increment variable %q: no prototype", node.Content).WithDebug(node.Debug)
+	}
 	incr, ok := proto.GetObject(i.ctx, "increment")
 	if !ok {
 		return runExc("cannot increment variable %q: no implementation for increment()", node.Content).WithDebug(node.Debug)
 	}
 
-	if _, err := incr.(*language.Function).Data(i.ctx, nil); err != nil {
+	incrFn, ok := incr.(*language.Function)
+	if !ok {
+		return runExc("cannot increment variable %q: bad implementation for increment()", node.Content).WithDebug(node.Debug)
+	}
+
+	if _, err := incrFn.Data(i.ctx, nil); err != nil {
 		return wrapRunExc(err, node.Debug, fmt.Sprintf("cannot increment %q: @err", node.Content))
 	}
 	return nil
@@ -136,12 +144,20 @@ func (i *Interpreter) handleDecrement(node *astnode.Node) error {
 	}
 
 	proto := value.GetPrototype()
+	if proto == nil {
+		return runExc("cannot decrement variable %q: no prototype", node.Content).WithDebug(node.Debug)
+	}
 	decr, ok := proto.GetObject(i.ctx, "decrement")
 	if !ok {
 		return runExc("cannot decrement variable %q: no implementation for decrement()", node.Content).WithDebug(node.Debug)
 	}
 
-	_, err := decr.(*language.Function).Data(i.ctx, nil)
+	decrFn, ok := decr.(*language.Function)
+	if !ok {
+		return runExc("cannot decrement variable %q: bad implementation for decrement()", node.Content).WithDebug(node.Debug)
+	}
+
+	_, err := decrFn.Data(i.ctx, nil)
 	return err
 }
 

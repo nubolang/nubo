@@ -646,7 +646,10 @@ func lenFn(args *n.Args) (any, error) {
 }
 
 func typecheckFn(a *n.Args) (any, error) {
-	typ := a.Name("typ").Value().(*language.Type)
+	typ, ok := a.Name("typ").Value().(*language.Type)
+	if !ok || typ == nil {
+		return nil, fmt.Errorf("typ argument is not a valid type object")
+	}
 	val := a.Name("value")
 	return typ.Compare(val.Type()), nil
 }
