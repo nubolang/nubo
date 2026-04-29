@@ -2,5 +2,4 @@ fn hello() {
     println("Hello, world!");
 }
 
-let x = "str"
-println(x)
+include 'other.nubo'

@@ -41,10 +41,13 @@ runtime:
   interpreter:
     import:
       prefix:
-        "@nubo/": "@nubolang/" # Use nubo packages with @nubo prefix instead
+        ":src": "{current_dir}/src" # Application source directory
+        ":publ": "{current_dir}/publ" # Public directory for web apps
+        # you can use this as :publ/index.nubo or :public/myfolder that resolves to public
         "~": "{current_dir}" # ~ can be used as a prefix for the current directory root
         # You can modify this to load files from src instead by "{current_dir}/src"
         # Add as many prefixes as you want
+        # prefixes only work for filesystem imports
 
 # Logging configuration
 logging:

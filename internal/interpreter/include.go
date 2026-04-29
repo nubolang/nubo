@@ -49,7 +49,7 @@ func (ir *Interpreter) includeValue(node *astnode.Node) (language.Object, error)
 	nodes, err := native.NodesFromFile(path, path)
 	if err != nil {
 		zap.L().Error("interpreter.include.parseError", zap.Uint("id", ir.ID), zap.String("path", path), zap.Error(err))
-		return nil, wrapRunExc(err, node.Debug, "failed to tokenize file")
+		return nil, wrapRunExc(runExc("failed to include file: %v", err), node.Debug)
 	}
 
 	inc := newInclude(ir, resolveIncludePath(ir.currentFile, fileName, ir.workdir))
