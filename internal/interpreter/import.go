@@ -10,6 +10,7 @@ import (
 	"github.com/nubolang/nubo/config"
 	"github.com/nubolang/nubo/internal/ast/astnode"
 	"github.com/nubolang/nubo/internal/exception"
+	"github.com/nubolang/nubo/language"
 	"github.com/nubolang/nubo/native"
 	"go.uber.org/zap"
 )
@@ -94,6 +95,10 @@ func (ir *Interpreter) handleImport(node *astnode.Node) error {
 	}
 
 	imported, ok := ir.runtime.FindInterpreter(path)
+	var importedReturn language.Object
+	if ok {
+		importedReturn, _ = ir.runtime.GetInterpreterReturn(imported.ID)
+	}
 	if !ok {
 		zap.L().Debug("interpreter.import.load", zap.Uint("id", ir.ID), zap.String("path", path))
 		nodes, err := native.NodesFromFile(path, path)
@@ -103,11 +108,15 @@ func (ir *Interpreter) handleImport(node *astnode.Node) error {
 		}
 
 		imported = New(ir.ctx, path, ir.runtime, true, ir.workdir)
-		if _, err := imported.Run(nodes); err != nil {
+		importedReturn, err = imported.Run(nodes)
+		if err != nil {
 			zap.L().Error("interpreter.import.execError", zap.Uint("id", ir.ID), zap.String("path", path), zap.Error(err))
 			return exception.From(err, node.Debug, "failed to execute imported file")
 		}
 		ir.runtime.AddInterpreter(path, imported)
+		if importedReturn != nil {
+			ir.runtime.SetInterpreterReturn(imported.ID, importedReturn)
+		}
 	}
 
 	if node.Kind == "NONE" {
@@ -116,9 +125,16 @@ func (ir *Interpreter) handleImport(node *astnode.Node) error {
 	}
 
 	if node.Kind == "SINGLE" {
-		ir.mu.Lock()
-		defer ir.mu.Unlock()
-		ir.imports[node.Content] = imported
+		if importedReturn != nil {
+			if err := ir.Declare(node.Content, importedReturn, importedReturn.Type(), false); err != nil {
+				zap.L().Error("interpreter.import.single.declare", zap.Uint("id", ir.ID), zap.String("name", node.Content), zap.Error(err))
+				return exception.From(err, node.Debug, "failed to declare imported return value")
+			}
+		} else {
+			ir.mu.Lock()
+			ir.imports[node.Content] = imported
+			ir.mu.Unlock()
+		}
 		zap.L().Debug("interpreter.import.single", zap.Uint("id", ir.ID), zap.String("name", node.Content))
 	}
 
@@ -131,8 +147,13 @@ func (ir *Interpreter) handleImport(node *astnode.Node) error {
 				return err
 			}
 
-			value, ok := imported.GetObject(child.Content)
-			if !ok {
+			var value language.Object
+			if importedReturn != nil {
+				value, ok = ir.getImportObjectMember(importedReturn, child.Content)
+			} else {
+				value, ok = imported.GetObject(child.Content)
+			}
+			if !ok || value == nil {
 				err := exception.Create("failed to import ('%s') from %s", name, path).WithDebug(node.Debug)
 				zap.L().Error("interpreter.import.multiple.missing", zap.Uint("id", ir.ID), zap.String("alias", name), zap.String("source", child.Content), zap.Error(err))
 				return err
@@ -147,6 +168,34 @@ func (ir *Interpreter) handleImport(node *astnode.Node) error {
 
 	zap.L().Debug("interpreter.import.success", zap.Uint("id", ir.ID), zap.String("name", node.Content))
 	return nil
+}
+
+func (ir *Interpreter) getImportObjectMember(obj language.Object, name string) (language.Object, bool) {
+	if obj == nil {
+		return nil, false
+	}
+
+	proto := obj.GetPrototype()
+	if proto == nil {
+		return nil, false
+	}
+
+	value, ok := proto.GetObject(ir.ctx, name)
+	if ok {
+		return value, true
+	}
+
+	getter, ok := proto.GetObject(ir.ctx, "__get__")
+	if !ok {
+		return nil, false
+	}
+
+	value, err := ir.callGetFunction(getter, name)
+	if err != nil {
+		return nil, false
+	}
+
+	return value, value != nil
 }
 
 func (ir *Interpreter) stdImport(node *astnode.Node, fileName string) error {

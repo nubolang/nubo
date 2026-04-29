@@ -1,0 +1,3 @@
+import { id, name } from './util'
+
+println(id, name)

@@ -160,6 +160,9 @@ func (r *Runtime) Interpret(file string, nodes []*astnode.Node) (language.Object
 		zap.L().Error("runtime.interpret.error", zap.Uint("id", interpreter.ID), zap.String("file", file), zap.Error(runErr))
 		return nil, runErr
 	}
+	if result != nil {
+		r.SetInterpreterReturn(interpreter.ID, result)
+	}
 	zap.L().Info("runtime.interpret.success", zap.Uint("id", interpreter.ID), zap.String("file", file))
 	return result, nil
 }
@@ -185,6 +188,7 @@ func (r *Runtime) RemoveInterpreter(id uint) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	delete(r.interpreters, id)
+	delete(r.returnMap, id)
 	zap.L().Debug("runtime.interpreter.remove", zap.Uint("id", id))
 }
 
@@ -206,4 +210,21 @@ func (r *Runtime) FindInterpreter(file string) (*interpreter.Interpreter, bool) 
 	}
 	zap.L().Debug("runtime.interpreter.miss", zap.String("file", file))
 	return nil, false
+}
+
+func (r *Runtime) SetInterpreterReturn(id uint, value language.Object) {
+	if value == nil {
+		return
+	}
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.returnMap[id] = value
+}
+
+func (r *Runtime) GetInterpreterReturn(id uint) (language.Object, bool) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	obj, ok := r.returnMap[id]
+	return obj, ok
 }

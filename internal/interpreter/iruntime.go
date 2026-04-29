@@ -16,4 +16,6 @@ type Runtime interface {
 	GetPacker() (*packer.Packer, error)
 	FindInterpreter(file string) (*Interpreter, bool)
 	AddInterpreter(file string, interpreter *Interpreter)
+	SetInterpreterReturn(id uint, value language.Object)
+	GetInterpreterReturn(id uint) (language.Object, bool)
 }
