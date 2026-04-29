@@ -22,6 +22,7 @@ import (
 	"github.com/nubolang/nubo/internal/packages/plugp"
 	"github.com/nubolang/nubo/internal/packages/process"
 	"github.com/nubolang/nubo/internal/packages/random"
+	"github.com/nubolang/nubo/internal/packages/reflect"
 	"github.com/nubolang/nubo/internal/packages/sql"
 	"github.com/nubolang/nubo/internal/packages/system"
 	"github.com/nubolang/nubo/internal/packages/thread"
@@ -39,7 +40,7 @@ var packageList = []string{
 	"process", "sql", "time", "http", "system",
 	"hash", "component", "os", "iter",
 	"net/serial", "net/telnet", "net/ssh",
-	"plug",
+	"plug", "reflect",
 }
 
 var (
@@ -135,6 +136,8 @@ func ImportPackage(name string, dg *debug.Debug) (language.Object, bool) {
 		return ssh.NewSSH(dg), true
 	case "plug":
 		return plugp.NewPlug(dg), true
+	case "reflect":
+		return reflect.NewReflect(dg), true
 	}
 
 	return nil, false

@@ -1,0 +1,29 @@
+import reflect from "@std/reflect"
+
+let n = 42
+let s = "hello"
+let li = [1, 2, 3]
+
+let numRef = reflect.Of(n)
+expect(numRef.kind() == "int", "int kind mismatch")
+expect(reflect.typeOf(n) == "int", "int type mismatch")
+expect(!numRef.isStruct(), "int should not be struct")
+expect(!numRef.isFunction(), "int should not be function")
+expect(numRef.value() == 42, "int value() mismatch")
+expect(numRef.typeOf() == "int", "int typeOf() mismatch")
+
+let strRef = reflect.Of(s)
+expect(strRef.kind() == "string", "string kind mismatch")
+expect(reflect.typeOf(s) == "string", "string type mismatch")
+expect(strRef.value() == "hello", "string value() mismatch")
+
+let listRef = reflect.Of(li)
+expect(listRef.kind() == "list", "list kind mismatch")
+expect(reflect.typeOf(li).includes("[]"), "list type should include []")
+expect(listRef.has("length"), "list should expose length() method")
+expect(listRef.has("__get__"), "list should expose __get__ method")
+
+let text = listRef.inspect()
+expect(text.includes("list"), "inspect() should include list")
+
+println("reflect value passed")

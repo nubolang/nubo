@@ -1,0 +1,98 @@
+import reflect from "@std/reflect"
+
+struct User {
+    name: string
+    private token: string
+}
+
+impl User {
+    fn init(self: User, name: string, token: string = "tkn") User {
+        self.name = name
+        self.token = token
+        return self
+    }
+
+    fn greet(self: User) string {
+        return "Hello, " + self.name
+    }
+
+    private fn secret(self: User) string {
+        return self.token
+    }
+}
+
+let structRef = reflect.Struct(User)
+
+expect(structRef.kind() == "struct.definition", "kind() should detect struct definition")
+expect(structRef.isStruct(), "isStruct() should be true for struct definition")
+expect(!structRef.isFunction(), "isFunction() should be false for struct definition")
+expect(reflect.kind(User) == "struct.definition", "reflect.kind(User) mismatch")
+
+let structFields = structRef.fields(true)
+expect(len(structFields) == 2, "struct fields(true) should return 2 fields")
+
+let hasNameField = false
+let hasTokenField = false
+let tokenFieldPrivate = false
+
+for _, field in structFields {
+    if field["name"] == "name" {
+        hasNameField = true
+    }
+
+    if field["name"] == "token" {
+        hasTokenField = true
+        tokenFieldPrivate = field["private"]
+    }
+}
+
+expect(hasNameField, "struct fields should include name")
+expect(hasTokenField, "struct fields should include token")
+expect(tokenFieldPrivate, "token field should be private")
+
+let structMethods = structRef.methods(true)
+let hasInit = false
+let hasGreet = false
+let hasSecret = false
+let secretPrivate = false
+
+for _, method in structMethods {
+    if method["name"] == "init" {
+        hasInit = true
+    }
+
+    if method["name"] == "greet" {
+        hasGreet = true
+    }
+
+    if method["name"] == "secret" {
+        hasSecret = true
+        secretPrivate = method["private"]
+    }
+}
+
+expect(hasInit, "struct methods should include init")
+expect(hasGreet, "struct methods should include greet")
+expect(hasSecret, "struct methods(true) should include private secret")
+expect(secretPrivate, "secret method should be private")
+
+let user = User("Martin", "secret-token")
+let userRef = reflect.Of(user)
+
+expect(userRef.kind() == "struct.instance", "kind() should detect struct instance")
+expect(userRef.isStruct(), "isStruct() should be true for struct instance")
+expect(userRef.has("name"), "instance should expose public field")
+expect(userRef.has("greet"), "instance should expose public method")
+expect(!userRef.has("token"), "instance should hide private field")
+expect(!userRef.has("secret"), "instance should hide private method")
+
+expect(userRef.get("name") == "Martin", "get(name) should return public field value")
+expect(isNil(userRef.get("token")), "get(token) should be nil without private access")
+expect(!isNil(userRef.get("token", true)), "get(token, true) should return private field")
+expect(string(userRef.get("token", true)) == "secret-token", "private token value mismatch")
+expect(!isNil(userRef.get("secret", true)), "get(secret, true) should return private method")
+
+expect(len(userRef.fields()) == 1, "fields() should hide private fields")
+expect(len(userRef.fields(true)) == 2, "fields(true) should include private fields")
+
+println("reflect struct passed")

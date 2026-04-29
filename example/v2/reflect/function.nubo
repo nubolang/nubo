@@ -1,0 +1,36 @@
+import reflect from "@std/reflect"
+
+fn add(a: int, b: int = 2) int {
+    return a + b
+}
+
+let fnRef = reflect.Of(add)
+
+expect(fnRef.kind() == "function", "function kind mismatch")
+expect(fnRef.isFunction(), "isFunction() should be true for function")
+expect(!fnRef.isStruct(), "isStruct() should be false for function")
+
+let sig = fnRef.signature()
+expect(!isNil(sig), "signature() should exist for function")
+expect(sig["returns"] == "int", "function return type should be int")
+
+let sigText = string(sig["signature"])
+expect(sigText.includes("fn("), "signature string should look like a function")
+expect(sigText.includes("int"), "signature should include int types")
+
+let sigArgs = sig["args"]
+expect(len(sigArgs) == 2, "signature args should contain 2 entries")
+
+let arg0 = sigArgs[0]
+let arg1 = sigArgs[1]
+
+expect(arg0["name"] == "a", "first argument should be named a")
+expect(arg0["type"] == "int", "first argument type should be int")
+expect(!arg0["hasDefault"], "first argument should not have default")
+
+expect(arg1["name"] == "b", "second argument should be named b")
+expect(arg1["type"] == "int", "second argument type should be int")
+expect(arg1["hasDefault"], "second argument should have default")
+expect(arg1["default"] == 2, "second argument default should be 2")
+
+println("reflect function passed")

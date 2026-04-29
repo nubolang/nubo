@@ -41,8 +41,9 @@ func GetBuiltins() map[string]language.Object {
 		"typecheck": n.Function(n.Describe(n.Arg("typ", language.TypeTypeObj), n.Arg("value", n.TAny)).Returns(n.TBool), typecheckFn),
 
 		// Errors
-		"panic": n.Function(n.Describe(n.Arg("message", n.TString)), failFn),
-		"isNil": n.Function(n.Describe(n.Arg("obj", n.TAny)).Returns(n.TBool), isNilFn),
+		"panic":  n.Function(n.Describe(n.Arg("message", n.TString)), failFn),
+		"expect": n.Function(n.Describe(n.Arg("condition", n.TBool), n.Arg("message", n.TString, n.String("expectation failed"))), expectFn),
+		"isNil":  n.Function(n.Describe(n.Arg("obj", n.TAny)).Returns(n.TBool), isNilFn),
 
 		// Types
 		"string": native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeString, stringFn),
@@ -550,6 +551,16 @@ func envFn(a *n.Args) (any, error) {
 func failFn(a *n.Args) (any, error) {
 	message := a.Name("message")
 
+	return nil, exception.Create(message.String()).WithDebug(message.Debug()).WithLevel(exception.LevelRuntime)
+}
+
+func expectFn(a *n.Args) (any, error) {
+	condition := a.Name("condition").Value().(bool)
+	if condition {
+		return nil, nil
+	}
+
+	message := a.Name("message")
 	return nil, exception.Create(message.String()).WithDebug(message.Debug()).WithLevel(exception.LevelRuntime)
 }
 
