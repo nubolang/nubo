@@ -47,6 +47,14 @@ func (i *Interpreter) handleFunctionDecl(node *astnode.Node, ret ...bool) (langu
 			if arg.ValueType == nil {
 				typ = val.Type()
 			} else {
+				if typ.Base() == language.ObjectTypeList && isEmptyListFallbackLiteral(arg.FallbackValue) {
+					if l, ok := val.(*language.List); ok && len(l.Data) == 0 {
+						if typedEmpty := language.DefaultValue(typ); typedEmpty != nil {
+							val = typedEmpty
+						}
+					}
+				}
+
 				if typ.Base() == language.ObjectTypeDict && isEmptyDictFallbackLiteral(arg.FallbackValue) {
 					if d, ok := val.(*language.Dict); ok && d.Data.Len() == 0 {
 						if typedEmpty := language.DefaultValue(typ); typedEmpty != nil {
@@ -124,6 +132,23 @@ func isEmptyDictFallbackLiteral(node *astnode.Node) bool {
 	if node.Type == astnode.NodeTypeExpression && len(node.Body) == 1 {
 		n := node.Body[0]
 		return n != nil && n.Type == astnode.NodeTypeDict && len(n.Children) == 0
+	}
+
+	return false
+}
+
+func isEmptyListFallbackLiteral(node *astnode.Node) bool {
+	if node == nil {
+		return false
+	}
+
+	if node.Type == astnode.NodeTypeList && len(node.Children) == 0 {
+		return true
+	}
+
+	if node.Type == astnode.NodeTypeExpression && len(node.Body) == 1 {
+		n := node.Body[0]
+		return n != nil && n.Type == astnode.NodeTypeList && len(n.Children) == 0
 	}
 
 	return false

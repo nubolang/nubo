@@ -313,6 +313,10 @@ func (i *Interpreter) evalList(node *astnode.Node, typ *language.Type) (language
 		typ = baseTyp
 	}
 
+	if typ == nil || typ.Base() == language.ObjectTypeVoid {
+		typ = language.TypeAny
+	}
+
 	return language.NewList(list, typ, node.Debug), nil
 }
 
