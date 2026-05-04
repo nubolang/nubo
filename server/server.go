@@ -65,9 +65,6 @@ func New(root string) (*Server, error) {
 
 // Serve starts the server
 func (s *Server) Serve(addr string) error {
-	s.sem <- struct{}{}        // acquire
-	defer func() { <-s.sem }() // release
-
 	blue := color.New(color.FgBlue, color.Bold)
 	mode := "PROD"
 	if os.Getenv("NUBO_DEV") == "true" {
@@ -94,6 +91,9 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 	zap.L().Debug("server.request.start", zap.String("method", r.Method), zap.String("path", r.URL.Path))
 
+	s.sem <- struct{}{}
+	defer func() { <-s.sem }()
+
 	if os.Getenv("NUBO_DEV") == "true" && s.isDir {
 		_ = s.router.Reload()
 	}
@@ -103,8 +103,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			stack := debug.Stack()
 			zap.L().Error("server.request.panic", zap.Any("recover", rcv), zap.String("method", r.Method), zap.String("path", r.URL.Path), zap.String("stack", string(stack)))
 
-			w.Write(fmt.Appendf([]byte{}, "Nubo - Internal Server Error:\n%s\nStack Trace:\n%s", rcv, string(stack)))
 			w.WriteHeader(http.StatusInternalServerError)
+			w.Write(fmt.Appendf([]byte{}, "Nubo - Internal Server Error:\n%s\nStack Trace:\n%s", rcv, string(stack)))
 
 			if os.Getenv("NUBO_DEV") == "true" {
 				doLog(start, r.Method, r.URL.Path, cached)
@@ -165,25 +165,12 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	cached = c
 	zap.L().Debug("server.request.nodes", zap.String("file", file), zap.Bool("cached", cached))
 
-	var eventProvider events.Provider
-	if config.Current.Runtime.Events.Enabled {
-		eventProvider = events.NewDefaultProvider()
-	}
-
-	run := runtime.New(eventProvider)
-	zap.L().Debug("server.runtime.created", zap.Bool("events", eventProvider != nil))
-
-	// Bind the response object to the runtime
-	res := modules.NewResponse(w, r)
-	run.ProvidePackage(ServerPrefix+"response", res.Pkg())
-	req, err := modules.NewRequest(r)
+	run, res, err := s.newRequestRuntime(w, r)
 	if err != nil {
-		zap.L().Error("server.request.module", zap.String("module", "request"), zap.Error(err))
+		zap.L().Error("server.request.module", zap.Error(err))
 		s.handleError(err, w, r)
 		return
 	}
-
-	run.ProvidePackage(ServerPrefix+"request", req)
 
 	_, err = run.Interpret(file, nodes)
 	if err != nil {
@@ -193,6 +180,32 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Sync and output the generated data
-	res.Sync()
+	if err := res.Sync(); err != nil {
+		zap.L().Error("server.response.sync", zap.String("path", r.URL.Path), zap.Error(err))
+	}
 	zap.L().Debug("server.response.sync", zap.String("path", r.URL.Path))
+}
+
+func (s *Server) newRequestRuntime(w http.ResponseWriter, r *http.Request) (*runtime.Runtime, *modules.Response, error) {
+	var eventProvider events.Provider
+	if config.Current.Runtime.Events.Enabled {
+		eventProvider = events.NewDefaultProvider()
+	}
+
+	run := runtime.New(eventProvider)
+	zap.L().Debug("server.runtime.created", zap.Bool("events", eventProvider != nil))
+
+	res, err := modules.NewResponse(w, r)
+	if err != nil {
+		return nil, nil, err
+	}
+	run.ProvidePackage(ServerPrefix+"response", res.Pkg())
+
+	req, err := modules.NewRequest(r)
+	if err != nil {
+		return nil, nil, err
+	}
+	run.ProvidePackage(ServerPrefix+"request", req)
+
+	return run, res, nil
 }

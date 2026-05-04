@@ -25,7 +25,7 @@ type Response struct {
 
 var responseStruct *language.Struct
 
-func NewResponse(w http.ResponseWriter, req *http.Request) *Response {
+func NewResponse(w http.ResponseWriter, req *http.Request) (*Response, error) {
 	r := &Response{
 		w:       w,
 		r:       req,
@@ -42,44 +42,63 @@ func NewResponse(w http.ResponseWriter, req *http.Request) *Response {
 		responseStruct = language.NewStruct("response", nil, nil)
 	}
 
-	inst, _ := responseStruct.NewInstance()
-	r.setupInstance(inst)
+	inst, err := responseStruct.NewInstance()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := r.setupInstance(inst); err != nil {
+		return nil, err
+	}
 	r.inst = inst
 
-	return r
+	return r, nil
 }
 
 func (r *Response) Pkg() language.Object {
 	return r.inst
 }
 
-func (r *Response) Sync() {
+func (r *Response) SetStatus(code int) error {
+	if code < 100 || code > 599 {
+		return fmt.Errorf("status code must be between 100 and 599")
+	}
+	r.code = code
+	return nil
+}
+
+func (r *Response) Sync() error {
 	if r.written {
-		return
+		return nil
 	}
 
 	r.written = true
 
-	// 1. Copy all the headers
-	for key, values := range r.headers {
-		for _, value := range values {
-			r.w.Header().Add(key, value)
-		}
-	}
+	r.applyHeaders()
 
-	// 2. Set the status code
 	if r.code != 0 {
 		r.w.WriteHeader(r.code)
 	} else {
 		r.w.WriteHeader(http.StatusOK)
 	}
 
-	// 3. Write the content
-	r.w.Write(r.body.Bytes())
+	_, err := r.w.Write(r.body.Bytes())
+	return err
 }
 
-func (r *Response) setupInstance(inst *language.StructInstance) {
-	proto := inst.GetPrototype().(*language.StructPrototype)
+func (r *Response) applyHeaders() {
+	for key, values := range r.headers {
+		for _, value := range values {
+			r.w.Header().Add(key, value)
+		}
+	}
+}
+
+func (r *Response) setupInstance(inst *language.StructInstance) error {
+	proto, ok := inst.GetPrototype().(*language.StructPrototype)
+	if !ok {
+		return fmt.Errorf("response prototype has invalid type")
+	}
 	proto.Unlock()
 	defer proto.Lock()
 
@@ -100,6 +119,7 @@ func (r *Response) setupInstance(inst *language.StructInstance) {
 		&language.BasicFnArg{TypeVal: language.TypeString, NameVal: "path", DefaultVal: n.String("/")},
 	}, language.TypeVoid, r.fnSetCookie))
 	proto.SetObject(ctx, "redirect", native.NewTypedFunction(ctx, native.OneArg("url", language.TypeString), language.TypeVoid, r.fnRedirect))
+	return nil
 }
 
 func (r *Response) fnStatus(ctx native.FnCtx) (language.Object, error) {
@@ -108,13 +128,7 @@ func (r *Response) fnStatus(ctx native.FnCtx) (language.Object, error) {
 		return nil, err
 	}
 
-	code := int(obj.Value().(int64))
-	if code < 100 || code > 599 {
-		return nil, fmt.Errorf("status code must be between 100 and 599")
-	}
-
-	r.code = code
-	return nil, err
+	return nil, r.SetStatus(int(obj.Value().(int64)))
 }
 
 func (r *Response) fnWrite(ctx native.FnCtx) (language.Object, error) {
@@ -128,8 +142,14 @@ func (r *Response) fnWrite(ctx native.FnCtx) (language.Object, error) {
 }
 
 func (r *Response) fnHeader(ctx native.FnCtx) (language.Object, error) {
-	key, _ := ctx.Get("key")
-	value, _ := ctx.Get("value")
+	key, err := ctx.Get("key")
+	if err != nil {
+		return nil, err
+	}
+	value, err := ctx.Get("value")
+	if err != nil {
+		return nil, err
+	}
 
 	r.headers.Set(key.String(), value.String())
 	return nil, nil
@@ -141,23 +161,44 @@ func (r *Response) fnFlushbuf(ctx native.FnCtx) (language.Object, error) {
 }
 
 func (r *Response) fnJSON(ctx native.FnCtx) (language.Object, error) {
-	data, _ := ctx.Get("data")
-
-	r.w.Header().Set("Content-Type", "application/json")
-	bytes, err := json.Marshal(data)
+	data, err := ctx.Get("data")
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = r.w.Write(bytes)
+	value, err := language.ToValue(data, true)
+	if err != nil {
+		return nil, err
+	}
+
+	r.headers.Set("Content-Type", "application/json")
+	bytes, err := json.Marshal(value)
+	if err != nil {
+		return nil, err
+	}
+
+	r.body.Reset()
+	_, err = r.body.Write(bytes)
 	return nil, err
 }
 
 func (r *Response) fnSetCookie(ctx native.FnCtx) (language.Object, error) {
-	name, _ := ctx.Get("name")
-	value, _ := ctx.Get("value")
-	maxAgeObj, _ := ctx.Get("maxAge")
-	pathObj, _ := ctx.Get("path")
+	name, err := ctx.Get("name")
+	if err != nil {
+		return nil, err
+	}
+	value, err := ctx.Get("value")
+	if err != nil {
+		return nil, err
+	}
+	maxAgeObj, err := ctx.Get("maxAge")
+	if err != nil {
+		return nil, err
+	}
+	pathObj, err := ctx.Get("path")
+	if err != nil {
+		return nil, err
+	}
 
 	cookie := &http.Cookie{
 		Name:  name.String(),
@@ -169,15 +210,19 @@ func (r *Response) fnSetCookie(ctx native.FnCtx) (language.Object, error) {
 		cookie.MaxAge = int(maxAgeObj.Value().(int64))
 	}
 
-	http.SetCookie(r.w, cookie)
+	r.headers.Add("Set-Cookie", cookie.String())
 	return nil, nil
 }
 
 func (r *Response) fnRedirect(ctx native.FnCtx) (language.Object, error) {
-	urlObj, _ := ctx.Get("url")
+	urlObj, err := ctx.Get("url")
+	if err != nil {
+		return nil, err
+	}
 	url := urlObj.String()
 
 	r.written = true
+	r.applyHeaders()
 	http.Redirect(r.w, r.r, url, http.StatusFound)
 	return nil, nil
 }

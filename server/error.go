@@ -3,13 +3,12 @@ package server
 import (
 	"errors"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/nubolang/nubo/events"
 	"github.com/nubolang/nubo/internal/ast/astnode"
 	"github.com/nubolang/nubo/internal/exception"
-	"github.com/nubolang/nubo/internal/runtime"
 	"github.com/nubolang/nubo/server/modules"
 	"go.uber.org/zap"
 )
@@ -56,42 +55,46 @@ func (s *Server) handleError(err error, w http.ResponseWriter, r *http.Request) 
 	}
 
 	if s.isDir {
-		errNodes, _, e := s.getFile(filepath.Join(s.root, "error.nubo"))
+		errorFile := filepath.Join(s.root, "error.nubo")
+		errNodes, _, e := s.getFile(errorFile)
 		if e == nil {
-			if err := s.customError(errNodes, statusCode, err.Error(), w, r); err == nil {
+			if err := s.customError(errorFile, errNodes, statusCode, err.Error(), w, r); err == nil {
 				return
 			} else {
 				zap.L().Warn("error.nubo failed to serve error", zap.Error(err))
 			}
+		} else if !errors.Is(e, os.ErrNotExist) {
+			zap.L().Warn("server.error.custom.load", zap.String("file", errorFile), zap.Error(e))
 		}
 	}
 
 	http.Error(w, err.Error(), statusCode)
 }
 
-func (s *Server) customError(nodes []*astnode.Node, status int, message string, w http.ResponseWriter, r *http.Request) error {
-	run := runtime.New(events.NewDefaultProvider())
+func (s *Server) customError(file string, nodes []*astnode.Node, status int, message string, w http.ResponseWriter, r *http.Request) error {
 	zap.L().Debug("server.error.custom", zap.Int("status", status), zap.String("message", message))
 
-	// Bind the response object to the runtime
-	res := modules.NewResponse(w, r)
-	run.ProvidePackage(ServerPrefix+"response", res.Pkg())
-	req, err := modules.NewRequest(r)
+	run, res, err := s.newRequestRuntime(w, r)
 	if err != nil {
 		return err
 	}
+	if err := res.SetStatus(status); err != nil {
+		return err
+	}
 
-	run.ProvidePackage(ServerPrefix+"request", req)
-	run.ProvidePackage(ServerPrefix+"error", modules.NewError(status, message))
+	errObj, err := modules.NewError(status, message)
+	if err != nil {
+		return err
+	}
+	run.ProvidePackage(ServerPrefix+"error", errObj)
 
-	_, err = run.Interpret("error.nubo", nodes)
+	_, err = run.Interpret(file, nodes)
 	if err != nil {
 		return err
 	}
 
 	// Sync and output the generated data
-	res.Sync()
-	return nil
+	return res.Sync()
 }
 
 func prefersJSON(r *http.Request) bool {

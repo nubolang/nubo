@@ -62,13 +62,26 @@ func NewRequest(r *http.Request) (language.Object, error) {
 	proto.SetObject(ctx, "secure", language.NewBool(r.TLS != nil, nil))
 
 	proto.SetObject(ctx, "accepts", native.NewTypedFunction(ctx, native.OneArg("contentType", language.TypeString), language.TypeBool, func(ctx native.FnCtx) (language.Object, error) {
-		contentType, _ := ctx.Get("contentType")
-		accept := strings.ToLower(r.Header.Get("Accept"))
-		return language.NewBool(strings.ToLower(contentType.String()) == accept, nil), nil
+		contentType, err := ctx.Get("contentType")
+		if err != nil {
+			return nil, err
+		}
+
+		want := strings.ToLower(contentType.String())
+		for _, part := range strings.Split(r.Header.Get("Accept"), ",") {
+			got := strings.ToLower(strings.TrimSpace(strings.Split(part, ";")[0]))
+			if got == want || got == "*/*" {
+				return language.NewBool(true, nil), nil
+			}
+		}
+		return language.NewBool(false, nil), nil
 	}))
 
 	proto.SetObject(ctx, "param", native.NewTypedFunction(ctx, native.OneArg("name", language.TypeString), language.Nullable(language.TypeString), func(ctx native.FnCtx) (language.Object, error) {
-		name, _ := ctx.Get("name")
+		name, err := ctx.Get("name")
+		if err != nil {
+			return nil, err
+		}
 		param, ok := params[name.String()]
 		if ok {
 			return language.NewString(param, name.Debug()), nil
@@ -78,7 +91,10 @@ func NewRequest(r *http.Request) (language.Object, error) {
 	}))
 
 	proto.SetObject(ctx, "query", native.NewTypedFunction(ctx, native.OneArg("name", language.TypeString), language.Nullable(language.TypeString), func(ctx native.FnCtx) (language.Object, error) {
-		name, _ := ctx.Get("name")
+		name, err := ctx.Get("name")
+		if err != nil {
+			return nil, err
+		}
 		value := r.URL.Query().Get(name.String())
 		if value == "" {
 			return language.Nil, nil
@@ -87,7 +103,10 @@ func NewRequest(r *http.Request) (language.Object, error) {
 	}))
 
 	proto.SetObject(ctx, "cookie", native.NewTypedFunction(ctx, native.OneArg("name", language.TypeString), language.Nullable(language.TypeString), func(ctx native.FnCtx) (language.Object, error) {
-		name, _ := ctx.Get("name")
+		name, err := ctx.Get("name")
+		if err != nil {
+			return nil, err
+		}
 		cookie, err := r.Cookie(name.String())
 		if err != nil {
 			return language.Nil, nil
@@ -101,14 +120,17 @@ func NewRequest(r *http.Request) (language.Object, error) {
 	proto.SetObject(ctx, "ip", language.NewString(r.RemoteAddr, nil))
 
 	proto.SetObject(ctx, "is", native.NewTypedFunction(ctx, native.OneArg("method", language.TypeString), language.TypeBool, func(ctx native.FnCtx) (language.Object, error) {
-		method, _ := ctx.Get("method")
+		method, err := ctx.Get("method")
+		if err != nil {
+			return nil, err
+		}
 		return language.NewBool(strings.EqualFold(r.Method, method.String()), method.Debug()), nil
 	}))
 
 	proto.SetObject(ctx, "body", native.NewTypedFunction(ctx, nil, language.TypeString, func(ctx native.FnCtx) (language.Object, error) {
 		if body == nil {
 			var err error
-			body, err = io.ReadAll(io.LimitReader(r.Body, config.Current.Runtime.Server.MaxUploadSizeByte))
+			body, err = readLimitedBody(r)
 			if err != nil {
 				return nil, fmt.Errorf("could not read body content: '%v'", err)
 			}
@@ -119,7 +141,7 @@ func NewRequest(r *http.Request) (language.Object, error) {
 	proto.SetObject(ctx, "json", native.NewTypedFunction(ctx, nil, language.TypeAny, func(ctx native.FnCtx) (language.Object, error) {
 		if body == nil {
 			var err error
-			body, err = io.ReadAll(io.LimitReader(r.Body, config.Current.Runtime.Server.MaxUploadSizeByte))
+			body, err = readLimitedBody(r)
 			if err != nil {
 				return nil, fmt.Errorf("could not read body content: '%v'", err)
 			}
@@ -138,7 +160,10 @@ func NewRequest(r *http.Request) (language.Object, error) {
 		if err := r.ParseForm(); err != nil {
 			return language.Nil, nil
 		}
-		name, _ := ctx.Get("name")
+		name, err := ctx.Get("name")
+		if err != nil {
+			return nil, err
+		}
 		value := r.FormValue(name.String())
 		if value == "" {
 			return language.Nil, nil
@@ -175,7 +200,10 @@ func NewRequest(r *http.Request) (language.Object, error) {
 			return language.Nil, nil
 		}
 
-		nameObj, _ := ctx.Get("name")
+		nameObj, err := ctx.Get("name")
+		if err != nil {
+			return nil, err
+		}
 		name := nameObj.String()
 
 		if r.MultipartForm != nil && r.MultipartForm.File != nil {
@@ -231,4 +259,16 @@ func newHeadersDict(r *http.Request) (*language.Dict, error) {
 	}
 
 	return language.NewDict(keys, values, language.TypeString, language.NewListType(language.TypeString), nil)
+}
+
+func readLimitedBody(r *http.Request) ([]byte, error) {
+	limit := config.Current.Runtime.Server.MaxUploadSizeByte
+	body, err := io.ReadAll(io.LimitReader(r.Body, limit+1))
+	if err != nil {
+		return nil, err
+	}
+	if int64(len(body)) > limit {
+		return nil, fmt.Errorf("body exceeds max allowed size of %d bytes", limit)
+	}
+	return body, nil
 }
