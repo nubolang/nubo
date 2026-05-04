@@ -68,7 +68,7 @@ func (h *Highlight) highlightToken(mode Mode, i int, token *lexer.Token) (string
 		return highlightBracket(mode, token.Value), nil
 	case lexer.TokenIdentifier:
 		next := h.nextToken(i)
-		if next.Type == lexer.TokenOpenParen {
+		if next != nil && next.Type == lexer.TokenOpenParen {
 			return highlightFunction(mode, token.Value), nil
 		}
 		return highlightIdentifier(mode, token.Value), nil
