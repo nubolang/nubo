@@ -47,6 +47,14 @@ func (i *Interpreter) handleFunctionDecl(node *astnode.Node, ret ...bool) (langu
 			if arg.ValueType == nil {
 				typ = val.Type()
 			} else {
+				if typ.Base() == language.ObjectTypeDict && isEmptyDictFallbackLiteral(arg.FallbackValue) {
+					if d, ok := val.(*language.Dict); ok && d.Data.Len() == 0 {
+						if typedEmpty := language.DefaultValue(typ); typedEmpty != nil {
+							val = typedEmpty
+						}
+					}
+				}
+
 				if !typ.Compare(val.Type()) {
 					err := typeError("expected %s but got %s", typ, val.Type()).WithDebug(arg.Debug)
 					zap.L().Error("interpreter.function.declare.argMismatch", zap.Uint("id", i.ID), zap.String("name", node.Content), zap.String("arg", arg.Content), zap.Error(err))
@@ -102,6 +110,23 @@ func (i *Interpreter) handleFunctionDecl(node *astnode.Node, ret ...bool) (langu
 	}
 	zap.L().Debug("interpreter.function.declare.success", zap.Uint("id", i.ID), zap.String("name", node.Content))
 	return nil, nil
+}
+
+func isEmptyDictFallbackLiteral(node *astnode.Node) bool {
+	if node == nil {
+		return false
+	}
+
+	if node.Type == astnode.NodeTypeDict && len(node.Children) == 0 {
+		return true
+	}
+
+	if node.Type == astnode.NodeTypeExpression && len(node.Body) == 1 {
+		n := node.Body[0]
+		return n != nil && n.Type == astnode.NodeTypeDict && len(n.Children) == 0
+	}
+
+	return false
 }
 
 func (i *Interpreter) handleFunctionCall(node *astnode.Node) (language.Object, error) {

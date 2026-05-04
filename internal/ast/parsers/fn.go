@@ -214,6 +214,10 @@ func fnArgumentParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token
 		node.ValueType = typ
 	}
 
+	if err := inxPPIf(tokens, inx); err != nil {
+		return nil, false, err
+	}
+
 	token = tokens[*inx]
 	if token.Type == lexer.TokenComma {
 		if err := inxPP(tokens, inx); err != nil {
@@ -240,7 +244,13 @@ func fnArgumentParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token
 		if err != nil {
 			return nil, false, err
 		}
-		*inx--
+
+		if *inx < len(tokens) {
+			switch tokens[*inx].Type {
+			case lexer.TokenComma, lexer.TokenCloseParen, lexer.TokenNewLine:
+				*inx--
+			}
+		}
 
 		node.FallbackValue = val
 		if err := inxPP(tokens, inx); err != nil {

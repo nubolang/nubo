@@ -1,0 +1,8 @@
+import { typeOf } from "@std/reflect"
+
+fn doSomething(d: dict[string, any] = {k: 1}) dict[string, any] {
+    return d
+}
+
+let val = doSomething()
+println(val, typeOf(val))

@@ -1,0 +1,8 @@
+import { typeOf } from "@std/reflect"
+
+fn doSomething(l: []any = [1,2,3, 'a']) []any {
+    return l
+}
+
+let val = doSomething()
+println(val, typeOf(val))

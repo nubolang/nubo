@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_Default(t *testing.T) {
@@ -14,7 +15,7 @@ func Test_Default(t *testing.T) {
 		return x
 	`)
 
-	assert.NoError(t, err, "Execute error should be nil")
+	require.NoError(t, err, "Execute error should be nil")
 	assert.Equal(t, int64(5), obj.Value(), "Value should be 5")
 }
 
@@ -26,6 +27,6 @@ func Test_Html(t *testing.T) {
 		</div>
 	`)
 
-	assert.NoError(t, err, "Execute error should be nil")
+	require.NoError(t, err, "Execute error should be nil")
 	fmt.Println(obj.Value())
 }

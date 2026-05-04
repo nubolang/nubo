@@ -124,35 +124,49 @@ func (r *Runtime) Interpret(file string, nodes []*astnode.Node) (language.Object
 		return nil, err
 	}
 
-	info, err := os.Stat(file)
+	var (
+		info        os.FileInfo
+		hasFileInfo bool
+	)
+
+	info, err = os.Stat(file)
 	if err != nil {
-		zap.L().Error("runtime.interpret.stat", zap.String("file", file), zap.Error(err))
-		return nil, err
+		if !os.IsNotExist(err) {
+			zap.L().Error("runtime.interpret.stat", zap.String("file", file), zap.Error(err))
+			return nil, err
+		}
+		zap.L().Debug("runtime.interpret.virtualFile", zap.String("file", file))
+	} else {
+		hasFileInfo = true
 	}
 
 	// check if same file already registered
-	r.mu.RLock()
-	for path, id := range r.filemap {
-		existingInfo, err := os.Stat(path)
-		if err == nil && os.SameFile(existingInfo, info) {
-			if ret, ok := r.returnMap[id]; ok {
+	if hasFileInfo {
+		r.mu.RLock()
+		for path, id := range r.filemap {
+			existingInfo, err := os.Stat(path)
+			if err == nil && os.SameFile(existingInfo, info) {
+				if ret, ok := r.returnMap[id]; ok {
+					r.mu.RUnlock()
+					zap.L().Info("runtime.interpret.cachedReturn", zap.Uint("id", id), zap.String("file", file))
+					return ret, nil
+				}
 				r.mu.RUnlock()
-				zap.L().Info("runtime.interpret.cachedReturn", zap.Uint("id", id), zap.String("file", file))
-				return ret, nil
+				zap.L().Debug("runtime.interpret.skip", zap.Uint("id", id), zap.String("file", file))
+				return nil, nil
 			}
-			r.mu.RUnlock()
-			zap.L().Debug("runtime.interpret.skip", zap.Uint("id", id), zap.String("file", file))
-			return nil, nil
 		}
+		r.mu.RUnlock()
 	}
-	r.mu.RUnlock()
 
 	interpreter := interpreter.New(r.ctx, file, r, false, wd)
 	zap.L().Info("runtime.interpret.spawn", zap.Uint("id", interpreter.ID), zap.String("file", file))
 
 	r.mu.Lock()
 	r.interpreters[interpreter.ID] = interpreter
-	r.filemap[file] = interpreter.ID
+	if hasFileInfo {
+		r.filemap[file] = interpreter.ID
+	}
 	r.mu.Unlock()
 
 	result, runErr := interpreter.Run(nodes)
