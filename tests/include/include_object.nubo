@@ -1,0 +1,6 @@
+let obj = include "../helpers/include_object"
+
+expect(obj["name"] == "included", "include object name mismatch")
+expect(obj["value"] == 77, "include object value mismatch")
+
+return true

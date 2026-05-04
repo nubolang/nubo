@@ -1,0 +1,8 @@
+expect(1 == 1, "eq mismatch")
+expect(1 != 2, "neq mismatch")
+expect("a" == "a", "string eq mismatch")
+expect("a" != "b", "string neq mismatch")
+expect(true == true, "bool eq mismatch")
+expect(false != true, "bool neq mismatch")
+
+return true

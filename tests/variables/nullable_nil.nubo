@@ -1,0 +1,16 @@
+let value: string|nil = nil
+expect(isNil(value), "value should start nil")
+
+value = "set"
+expect(!isNil(value), "value should not be nil")
+expect(value == "set", "nullable string mismatch")
+
+let maybe: int|nil = nil
+
+if isNil(maybe) {
+    maybe = 10
+}
+
+expect(maybe == 10, "nullable int fallback mismatch")
+
+return true

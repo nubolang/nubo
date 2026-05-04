@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/nubolang/nubo/internal/debug"
 	"go.uber.org/zap"
@@ -15,6 +16,33 @@ type StructInstance struct {
 	prototype *StructPrototype
 	bucket    map[string]any
 	debug     *debug.Debug
+}
+
+var (
+	structCloneMu    sync.Mutex
+	structCloneDepth = map[string]int{}
+)
+
+func beginStructClone(typeID string) bool {
+	structCloneMu.Lock()
+	defer structCloneMu.Unlock()
+
+	depth := structCloneDepth[typeID]
+	structCloneDepth[typeID] = depth + 1
+	return depth == 0
+}
+
+func endStructClone(typeID string) {
+	structCloneMu.Lock()
+	defer structCloneMu.Unlock()
+
+	depth := structCloneDepth[typeID]
+	if depth <= 1 {
+		delete(structCloneDepth, typeID)
+		return
+	}
+
+	structCloneDepth[typeID] = depth - 1
 }
 
 func NewStructInstance(base *Struct, name string, debug *debug.Debug) (*StructInstance, error) {
@@ -125,6 +153,12 @@ func (i *StructInstance) Clone() Object {
 	if proto == nil {
 		return i
 	}
+
+	typeID := i.base.structType.ID
+	if !beginStructClone(typeID) {
+		return i
+	}
+	defer endStructClone(typeID)
 
 	cl, ok := proto.GetObject(context.Background(), "__clone__")
 	if ok {

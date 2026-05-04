@@ -1,0 +1,11 @@
+let trusted = <strong>safe</strong>
+
+let page = <div>
+    !{ trusted }
+</div>
+
+let out = string(page)
+
+expect(out.includes("<strong>safe</strong>"), "raw html should be included")
+
+return true

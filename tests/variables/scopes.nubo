@@ -1,0 +1,11 @@
+let outer = "outer"
+
+if true {
+    let inner = "inner"
+    expect(inner == "inner", "inner scope mismatch")
+    expect(outer == "outer", "outer should be visible")
+}
+
+expect(outer == "outer", "outer changed unexpectedly")
+
+return true

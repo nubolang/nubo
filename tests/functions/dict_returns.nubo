@@ -1,0 +1,13 @@
+fn makeUser(name: string, age: int) dict[string, any] {
+    return dict[string, any] {
+        "name": name,
+        "age": age
+    }
+}
+
+let user = makeUser("Martin", 19)
+
+expect(user["name"] == "Martin", "dict return name mismatch")
+expect(user["age"] == 19, "dict return age mismatch")
+
+return true

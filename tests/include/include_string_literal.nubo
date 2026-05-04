@@ -1,0 +1,5 @@
+let value = include "../helpers/include_value"
+
+expect(value == 123, "include string literal mismatch")
+
+return true

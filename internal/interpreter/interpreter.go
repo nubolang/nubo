@@ -156,9 +156,11 @@ func (i *Interpreter) Run(nodes []*astnode.Node) (language.Object, error) {
 func (i *Interpreter) runDeferred() {
 	zap.L().Debug("interpreter.deferred.run", zap.Uint("id", i.ID), zap.Int("count", len(i.deferred)))
 
-	for _, deferred := range i.deferred {
-		for _, node := range deferred {
-			_, _ = i.eval(node)
+	for d := len(i.deferred) - 1; d >= 0; d-- {
+		deferred := i.deferred[d]
+
+		for n := len(deferred) - 1; n >= 0; n-- {
+			_, _ = i.eval(deferred[n])
 		}
 	}
 }

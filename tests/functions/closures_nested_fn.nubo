@@ -1,0 +1,13 @@
+fn makeAdder(base: int) any {
+    fn add(value: int) int {
+        return base + value
+    }
+
+    return add
+}
+
+let add10 = makeAdder(10)
+
+expect(add10(5) == 15, "closure nested fn mismatch")
+
+return true

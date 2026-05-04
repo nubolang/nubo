@@ -1,0 +1,10 @@
+let matrix: [][]int = [
+    [1, 2],
+    [3, 4]
+]
+
+expect(len(matrix) == 2, "outer list length mismatch")
+expect(len(matrix[0]) == 2, "inner list length mismatch")
+expect(matrix[1][1] == 4, "nested index mismatch")
+
+return true

@@ -1,0 +1,13 @@
+let config = dict[string, any] {
+    "db": dict[string, any] {
+        "host": "localhost",
+        "port": 5432
+    }
+}
+
+let db = config["db"]
+
+expect(db["host"] == "localhost", "nested dict host mismatch")
+expect(db["port"] == 5432, "nested dict port mismatch")
+
+return true

@@ -1,0 +1,9 @@
+let a = 2 + 3 * 4
+let b = (2 + 3) * 4
+let c = 10 - 2 - 3
+
+expect(a == 14, "multiplication precedence mismatch")
+expect(b == 20, "parentheses precedence mismatch")
+expect(c == 5, "left associativity mismatch")
+
+return true

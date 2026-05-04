@@ -1,0 +1,21 @@
+import reflect from "@std/reflect"
+
+let value = dict[string, any] {
+    "name": "Nubo"
+}
+
+let text = inspect(value)
+
+expect(text.includes("dict[string, any]"), "inspect should include dict type")
+expect(text.includes("__get__"), "inspect should include __get__")
+expect(text.includes("__set__"), "inspect should include __set__")
+expect(text.includes("keys"), "inspect should include keys")
+expect(text.includes("values"), "inspect should include values")
+expect(text.includes("remove"), "inspect should include remove")
+
+expect(reflect.typeOf(value).includes("dict"), "reflect.typeOf should include dict")
+
+print("")
+println("builtins print_type_inspect passed")
+
+return true

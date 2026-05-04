@@ -1,0 +1,12 @@
+let name = "Nubo"
+let page = <main>
+    <h1>{ name }</h1>
+    <p>Hello</p>
+</main>
+
+let out = string(page)
+
+expect(out.includes("<main"), "html should include main")
+expect(out.includes("Nubo"), "html should include escaped value")
+
+return true

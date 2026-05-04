@@ -73,7 +73,7 @@ func (i *Interpreter) handleVariableDecl(parent *astnode.Node) error {
 
 	zap.L().Debug("interpreter.variables.declare", zap.Uint("id", i.ID), zap.String("name", variableName), zap.Any("value", value), zap.Bool("mutable", mutable))
 
-	if err := i.Declare(variableName, value.Clone(), typ, mutable); err != nil {
+	if err := i.Declare(variableName, cloneForBinding(value), typ, mutable); err != nil {
 		return wrapRunExc(err, node.Debug)
 	}
 	return nil

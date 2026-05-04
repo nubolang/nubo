@@ -1,0 +1,27 @@
+struct Secret {
+    name: string
+    private token: string
+}
+
+impl Secret {
+    fn init(self: Secret, name: string, token: string) void {
+        self.name = name
+        self.token = token
+    }
+
+    fn check(self: Secret, token: string) bool {
+        return self.token == token
+    }
+
+    private fn raw(self: Secret) string {
+        return self.token
+    }
+}
+
+let s = Secret("app", "secret")
+
+expect(s.name == "app", "public field mismatch")
+expect(s.check("secret"), "private field method access mismatch")
+expect(!s.check("wrong"), "private field negative mismatch")
+
+return true

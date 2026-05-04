@@ -1,0 +1,130 @@
+// tests/run_all.nubo
+
+let tests: []string = [
+    // variables
+    "variables/let_const",
+    "variables/type_annotations",
+    "variables/reassignment",
+    "variables/nullable_nil",
+    "variables/scopes",
+
+    // primitives
+    "primitives/numbers",
+    "primitives/booleans",
+    "primitives/conversions",
+    "primitives/bytes_chars",
+
+    // strings
+    "strings/basic_methods",
+    "strings/indexing_chars",
+    "strings/split_join_replace",
+    "strings/interpolation_html_escape_note",
+
+    // lists
+    "lists/empty_list",
+    "lists/list_with_items",
+    "lists/list_any_mixed",
+    "lists/set_and_loop",
+    "lists/nested_lists",
+
+    // dicts
+    "dicts/basic_dict",
+    "dicts/set_update_delete_like",
+    "dicts/nested_dict",
+    "dicts/iterate_dict",
+
+    // expressions
+    "expressions/precedence",
+    "expressions/comparisons",
+    "expressions/logical_nested",
+
+    // control flow
+    "control_flow/if_else",
+    "control_flow/while_loop",
+    "control_flow/for_list",
+    "control_flow/for_dict",
+    "control_flow/break_continue",
+
+    // functions
+    "functions/return_values",
+    "functions/default_arguments",
+    "functions/list_returns",
+    "functions/dict_returns",
+    "functions/function_values",
+    "functions/closures_nested_fn",
+    "functions/recursive",
+    "functions/void_function",
+
+    // structs
+    "structs/basic_struct",
+    "structs/init_void",
+    "structs/init_return_self",
+    "structs/methods_self",
+    "structs/private_fields_methods",
+    "structs/singleton_init_return",
+    "structs/string_hook",
+    "structs/value_hook",
+    "structs/get_set_hooks",
+    "structs/clone_hook",
+
+    // imports
+    "imports/import_object",
+    "imports/import_destructured",
+    "imports/import_without_extension",
+
+    // include
+    "include/include_string_literal",
+    "include/include_object",
+    "include/include_variable",
+    "include/include_runtime_dir",
+
+    // runtime
+    "runtime/runtime_vars",
+
+    // builtins
+    "builtins/print_type_inspect",
+    "builtins/len_concat_clone",
+    "builtins/range",
+    "builtins/env_and_nil",
+    "builtins/typecheck_valueof_ref",
+
+    // reflect
+    "reflect/values",
+    "reflect/functions",
+    "reflect/structs",
+
+    // errors
+    "errors/catch_runtime_error",
+    "errors/panic_function",
+
+    // defer
+    "defer/defer_order",
+
+    // concurrency
+    "concurrency/spawn_smoke",
+
+    // html
+    "html/html_value",
+    "html/raw_html_value",
+    "html/component_context",
+
+    // syntax
+    "syntax/struct_impl_iface_type"
+]
+
+let passed = 0
+
+println("Running Nubo language feature tests...")
+println("")
+
+for file in tests {
+    println("▶ " + file)
+
+    include file
+
+    passed = passed + 1
+    println("✓ " + file)
+    println("")
+}
+
+println("All tests executed: " + string(passed) + "/" + string(len(tests)))

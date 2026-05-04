@@ -1,0 +1,10 @@
+let user = dict[string, any] {
+    "name": "Martin",
+    "age": 19
+}
+
+expect(user["name"] == "Martin", "dict string value mismatch")
+expect(user["age"] == 19, "dict int value mismatch")
+expect(user.keys().includes("name"), "dict keys missing name")
+
+return true

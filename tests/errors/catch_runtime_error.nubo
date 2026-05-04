@@ -1,0 +1,12 @@
+let caught = false
+
+catch err {
+    panic("boom")
+} {
+    caught = true
+    expect(string(err).includes("boom"), "caught error should include message")
+}
+
+expect(caught, "catch should run")
+
+return true

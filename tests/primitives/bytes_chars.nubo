@@ -1,0 +1,10 @@
+let c: char = char('a')
+let b = byte(c)
+
+expect(c == char('a'), "char mismatch")
+expect(int(b) > 0, "byte conversion should produce positive byte")
+
+let bs = bytes("abc")
+expect(len(bs) == 3, "bytes length mismatch")
+
+return true

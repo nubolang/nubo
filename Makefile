@@ -21,3 +21,6 @@ format: build
 
 serve: build
 	@./bin/nubo serve ./example/v2/$(FOLDER) --dev --loglevel=WARN
+
+smoketest: build
+	@./bin/nubo ./tests/run_all.nubo

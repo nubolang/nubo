@@ -1,0 +1,16 @@
+let data = dict[string, int] {
+    "a": 1,
+    "b": 2,
+    "c": 3
+}
+
+let sum = 0
+
+for key, value in data {
+    expect(data.keys().includes(key), "iterated key should exist")
+    sum = sum + value
+}
+
+expect(sum == 6, "dict iteration sum mismatch")
+
+return true

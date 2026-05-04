@@ -110,6 +110,28 @@ func (s *StructPrototype) SetObject(ctx context.Context, name string, value Obje
 
 	for _, field := range s.base.Data {
 		if field.Name == name {
+			if field.Type.Base() == ObjectTypeList {
+				if listValue, ok := value.(*List); ok && len(listValue.Data) == 0 {
+					if value.Type().Base() == ObjectTypeList && (value.Type().Element.Compare(TypeAny) || value.Type().Element.Compare(TypeVoid)) {
+						if typed := DefaultValue(field.Type); typed != nil {
+							value = typed
+						}
+					}
+				}
+			}
+
+			if field.Type.Base() == ObjectTypeDict {
+				if dictValue, ok := value.(*Dict); ok && dictValue.Data.Len() == 0 {
+					if value.Type().Base() == ObjectTypeDict &&
+						(value.Type().Key.Compare(TypeAny) || value.Type().Key.Compare(TypeVoid)) &&
+						(value.Type().Value.Compare(TypeAny) || value.Type().Value.Compare(TypeVoid)) {
+						if typed := DefaultValue(field.Type); typed != nil {
+							value = typed
+						}
+					}
+				}
+			}
+
 			if !field.Type.Compare(value.Type()) {
 				return fmt.Errorf("type mismatch, expected %s, got %s", field.Type, value.Type())
 			}

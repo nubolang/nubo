@@ -1,0 +1,12 @@
+fn factorial(n: int) int {
+    if n <= 1 {
+        return 1
+    }
+
+    return n * factorial(n - 1)
+}
+
+expect(factorial(1) == 1, "factorial 1 mismatch")
+expect(factorial(5) == 120, "factorial 5 mismatch")
+
+return true

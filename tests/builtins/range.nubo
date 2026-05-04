@@ -1,0 +1,25 @@
+let sum = 0
+
+for i in range(5) {
+    sum = sum + i
+}
+
+expect(sum == 10, "range stop sum mismatch")
+
+let sum2 = 0
+
+for i in range(1, 5) {
+    sum2 = sum2 + i
+}
+
+expect(sum2 == 10, "range start stop sum mismatch")
+
+let sum3 = 0
+
+for i in range(0, 10, 2) {
+    sum3 = sum3 + i
+}
+
+expect(sum3 == 20, "range step sum mismatch")
+
+return true

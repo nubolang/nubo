@@ -1,0 +1,22 @@
+let items: []int = []
+
+fn work() void {
+    defer fn() {
+        items.push(1)
+    }()
+
+    defer fn() {
+        items.push(2)
+    }()
+
+    items.push(3)
+}
+
+work()
+
+expect(len(items) == 3, "defer length mismatch")
+expect(items[0] == 3, "normal push should run first")
+expect(items[1] == 2, "defer should run LIFO first")
+expect(items[2] == 1, "defer should run LIFO second")
+
+return true

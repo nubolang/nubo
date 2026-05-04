@@ -155,6 +155,39 @@ loop:
 	}
 	*inx = last
 
+	for *inx < len(tokens) {
+		token := tokens[*inx]
+		if token.Type != lexer.TokenOpenBracket {
+			break
+		}
+
+		start := *inx
+		bracketCount := 1
+		*inx++
+
+		for *inx < len(tokens) && bracketCount > 0 {
+			switch tokens[*inx].Type {
+			case lexer.TokenOpenBracket:
+				bracketCount++
+			case lexer.TokenCloseBracket:
+				bracketCount--
+			}
+			*inx++
+		}
+
+		if bracketCount != 0 {
+			return nil, newErr(ErrUnexpectedToken, "unclosed [ in function call access", token.Debug)
+		}
+
+		exprTokens := tokens[start+1 : *inx-1]
+		newInx := 0
+		valueNode, err := ValueParser(ctx, attrParser, exprTokens, &newInx)
+		if err != nil {
+			return nil, err
+		}
+		fn.ArrayAccess = append(fn.ArrayAccess, valueNode)
+	}
+
 	return fn, nil
 }
 

@@ -1,0 +1,26 @@
+import reflect from "@std/reflect"
+
+fn add(a: int, b: int = 2) int {
+    return a + b
+}
+
+let fnRef = reflect.Of(add)
+
+expect(fnRef.kind() == "function", "function kind mismatch")
+expect(fnRef.isFunction(), "isFunction mismatch")
+expect(!fnRef.isStruct(), "function should not be struct")
+
+let sig = fnRef.signature()
+expect(!isNil(sig), "signature should exist")
+expect(sig["returns"] == "int", "return type mismatch")
+
+let args = sig["args"]
+expect(len(args) == 2, "arg length mismatch")
+expect(args[0]["name"] == "a", "arg0 name mismatch")
+expect(args[0]["type"] == "int", "arg0 type mismatch")
+expect(!args[0]["hasDefault"], "arg0 should not default")
+expect(args[1]["name"] == "b", "arg1 name mismatch")
+expect(args[1]["hasDefault"], "arg1 should have default")
+expect(args[1]["default"] == 2, "arg1 default mismatch")
+
+return true

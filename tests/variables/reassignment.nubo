@@ -1,0 +1,11 @@
+let value = 10
+expect(value == 10, "initial value mismatch")
+
+value = value + 5
+expect(value == 15, "reassignment mismatch")
+
+let text = "hello"
+text = text + " world"
+expect(text == "hello world", "string reassignment mismatch")
+
+return true

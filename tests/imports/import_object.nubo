@@ -1,0 +1,7 @@
+import math from "../helpers/math"
+
+expect(math.ANSWER == 42, "import const mismatch")
+expect(math.double(5) == 10, "import function mismatch")
+expect(math.add(2, 3) == 5, "import add mismatch")
+
+return true

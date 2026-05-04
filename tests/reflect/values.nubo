@@ -1,0 +1,21 @@
+import reflect from "@std/reflect"
+
+let n = 42
+let s = "hello"
+let li = [1, 2, 3]
+
+let numRef = reflect.Of(n)
+expect(numRef.kind() == "int", "int kind mismatch")
+expect(reflect.typeOf(n) == "int", "int type mismatch")
+expect(numRef.value() == 42, "int value mismatch")
+
+let strRef = reflect.Of(s)
+expect(strRef.kind() == "string", "string kind mismatch")
+expect(strRef.value() == "hello", "string value mismatch")
+
+let listRef = reflect.Of(li)
+expect(listRef.kind() == "list", "list kind mismatch")
+expect(reflect.typeOf(li).includes("[]"), "list type mismatch")
+expect(listRef.has("length"), "list length method missing")
+
+return true

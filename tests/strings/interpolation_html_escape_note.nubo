@@ -1,0 +1,6 @@
+let name = "Nubo"
+let text = "hello " + name
+
+expect(text == "hello Nubo", "string composition mismatch")
+
+return true

@@ -38,7 +38,7 @@ func GetBuiltins() map[string]language.Object {
 		"env":       n.Function(n.Describe(n.Arg("name", n.TString), n.Arg("value", n.Nullable(n.TString), language.Nil)).Returns(n.Nullable(n.TString)), envFn),
 		"concat":    native.NewFunction(concatFn),
 		"len":       n.Function(n.Describe(n.Arg("object", n.TAny)).Returns(n.TInt), lenFn),
-		"typecheck": n.Function(n.Describe(n.Arg("typ", language.TypeTypeObj), n.Arg("value", n.TAny)).Returns(n.TBool), typecheckFn),
+		"typecheck": n.Function(n.Describe(n.Arg("typ", n.TAny), n.Arg("value", n.TAny)).Returns(n.TBool), typecheckFn),
 
 		// Errors
 		"panic":  n.Function(n.Describe(n.Arg("message", n.TString)), failFn),
@@ -646,10 +646,32 @@ func lenFn(args *n.Args) (any, error) {
 }
 
 func typecheckFn(a *n.Args) (any, error) {
-	typ, ok := a.Name("typ").Value().(*language.Type)
-	if !ok || typ == nil {
-		return nil, fmt.Errorf("typ argument is not a valid type object")
+	typArg := a.Name("typ")
+	if typArg == nil {
+		return nil, fmt.Errorf("typ argument is required")
 	}
+
+	var target *language.Type
+
+	if typeObj, ok := typArg.(*language.TypeObject); ok && typeObj != nil && typeObj.Data != nil {
+		target = typeObj.Data
+	} else if fn, ok := typArg.(*language.Function); ok && fn != nil {
+		// Allow conversion/constructor functions like `int`, `string`, `User` as type descriptors.
+		if fn.ReturnType != nil {
+			target = fn.ReturnType
+		} else if fnType := fn.Type(); fnType != nil && fnType.Base() == language.ObjectTypeFunction && fnType.Value != nil {
+			target = fnType.Value
+		}
+	}
+
+	if target == nil {
+		return nil, fmt.Errorf("typ argument must be a type object or typed function")
+	}
+
 	val := a.Name("value")
-	return typ.Compare(val.Type()), nil
+	if val == nil {
+		return nil, fmt.Errorf("value argument is required")
+	}
+
+	return language.TypeCheck(target, val.Type()), nil
 }

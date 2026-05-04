@@ -135,7 +135,7 @@ func (i *Interpreter) handlePublish(node *astnode.Node) (language.Object, error)
 			zap.L().Error("interpreter.event.publish.typeMismatch", zap.Uint("id", i.ID), zap.String("event", node.Content), zap.Int("index", j), zap.Error(err))
 			return nil, err
 		}
-		args[j] = value.Clone()
+		args[j] = cloneForBinding(value)
 	}
 
 	err = eventProvider.Publish(eventID, args)

@@ -1,0 +1,24 @@
+struct Store {
+    data: dict[string, any]
+}
+
+impl Store {
+    fn init(self: Store) void {
+        self.data = dict[string, any] {}
+    }
+
+    fn __get__(self: Store, key: string) any {
+        return self.data[key]
+    }
+
+    fn __set__(self: Store, key: string, value: any) void {
+        self.data[key] = value
+    }
+}
+
+let store = Store()
+store["name"] = "Nubo"
+
+expect(store["name"] == "Nubo", "__get__/__set__ mismatch")
+
+return true

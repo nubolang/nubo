@@ -1,0 +1,27 @@
+struct Counter {
+    value: int
+}
+
+impl Counter {
+    fn init(self: Counter, start: int = 0) void {
+        self.value = start
+    }
+
+    fn inc(self: Counter) void {
+        self.value = self.value + 1
+    }
+
+    fn add(self: Counter, amount: int) int {
+        self.value = self.value + amount
+        return self.value
+    }
+}
+
+let c = Counter(10)
+c.inc()
+
+expect(c.value == 11, "inc mismatch")
+expect(c.add(5) == 16, "add return mismatch")
+expect(c.value == 16, "add side effect mismatch")
+
+return true

@@ -1,0 +1,10 @@
+const prefix = "hello"
+
+fn message(name: string) string {
+    return prefix + ", " + name
+}
+
+return {
+    "prefix": prefix,
+    "message": message
+}

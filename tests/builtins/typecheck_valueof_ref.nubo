@@ -1,0 +1,9 @@
+let x = 10
+let r = ref(x)
+
+expect(!isNil(r), "ref should not be nil")
+expect(unwrap(r) == 10, "unwrap ref mismatch")
+expect(typecheck(int, x), "typecheck int mismatch")
+expect(valueof(x) == 10, "valueof primitive mismatch")
+
+return true

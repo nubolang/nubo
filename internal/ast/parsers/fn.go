@@ -184,7 +184,6 @@ func fnArgumentParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token
 
 	token := tokens[*inx]
 	if token.Type == lexer.TokenCloseParen {
-		*inx++
 		return nil, true, nil
 	}
 

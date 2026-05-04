@@ -1,0 +1,53 @@
+import reflect from "@std/reflect"
+
+struct User {
+    name: string
+    private token: string
+}
+
+impl User {
+    fn init(self: User, name: string, token: string = "tkn") void {
+        self.name = name
+        self.token = token
+    }
+
+    fn greet(self: User) string {
+        return "Hello, " + self.name
+    }
+
+    private fn secret(self: User) string {
+        return self.token
+    }
+}
+
+let structRef = reflect.Struct(User)
+
+expect(structRef.kind() == "struct.definition", "struct definition kind mismatch")
+expect(structRef.isStruct(), "struct definition isStruct mismatch")
+
+let fields = structRef.fields(true)
+expect(len(fields) == 2, "struct fields length mismatch")
+
+let methods = structRef.methods(true)
+let hasSecret = false
+
+for _, method in methods {
+    if method["name"] == "secret" {
+        hasSecret = true
+        expect(method["private"], "secret should be private")
+    }
+}
+
+expect(hasSecret, "private method should exist with true")
+
+let user = User("Martin", "secret")
+let ref = reflect.Of(user)
+
+expect(ref.kind() == "struct.instance", "struct instance kind mismatch")
+expect(ref.has("name"), "public name should exist")
+expect(!ref.has("token"), "private token should be hidden")
+expect(ref.get("name") == "Martin", "get public name mismatch")
+expect(isNil(ref.get("token")), "private token should be nil")
+expect(ref.get("token", true) == "secret", "private token access mismatch")
+
+return true

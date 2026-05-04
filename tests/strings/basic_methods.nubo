@@ -1,0 +1,11 @@
+let text = "hello"
+let world = "world"
+let combined = text + " " + world
+
+expect(text.length() == 5, "length mismatch")
+expect(combined == "hello world", "concat mismatch")
+expect(combined.includes("world"), "includes mismatch")
+expect(combined.startsWith("hello"), "startsWith mismatch")
+expect(combined.endsWith("world"), "endsWith mismatch")
+
+return true

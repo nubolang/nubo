@@ -1,0 +1,14 @@
+let nums = [1, 2, 3]
+nums[1] = 20
+
+expect(nums[1] == 20, "list set mismatch")
+
+let sum = 0
+
+for _, value in nums {
+    sum = sum + value
+}
+
+expect(sum == 24, "for list sum mismatch")
+
+return true

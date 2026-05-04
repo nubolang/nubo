@@ -1,0 +1,10 @@
+let nums = [1, 2, 3, 4]
+let sum = 0
+
+for _, value in nums {
+    sum = sum + value
+}
+
+expect(sum == 10, "for list sum mismatch")
+
+return true

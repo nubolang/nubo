@@ -203,9 +203,9 @@ func (i *Interpreter) handleFunctionCall(node *astnode.Node) (language.Object, e
 		}
 
 		if arg.Kind == "NAMED_ARG" {
-			namedArgs[arg.ArgName] = value.Clone()
+			namedArgs[arg.ArgName] = cloneForBinding(value)
 		} else {
-			args = append(args, value.Clone())
+			args = append(args, cloneForBinding(value))
 		}
 	}
 
@@ -222,18 +222,28 @@ func (i *Interpreter) handleFunctionCall(node *astnode.Node) (language.Object, e
 		return nil, exception.From(err, node.Debug, fmt.Sprintf("error calling function %s: @err", node.Content))
 	}
 
+	resolved := value
+
 	if len(node.Children) == 1 {
-		ob, err := i.getValueFromObjByNode(value, node.Children[0])
+		ob, err := i.getValueFromObjByNode(resolved, node.Children[0])
 		if err != nil {
 			zap.L().Error("interpreter.function.call.childAccess", zap.Uint("id", i.ID), zap.String("name", node.Content), zap.Error(err))
 			return nil, exception.From(err, node.Children[0].Debug, "failed to get value by node")
 		}
-		zap.L().Debug("interpreter.function.call.childReturn", zap.Uint("id", i.ID), zap.String("name", node.Content), zap.String("returnType", logObjectType(ob)))
-		return ob, nil
+		resolved = ob
 	}
 
-	zap.L().Debug("interpreter.function.call.success", zap.Uint("id", i.ID), zap.String("name", node.Content), zap.String("returnType", logObjectType(value)))
-	return value, nil
+	if len(node.ArrayAccess) > 0 {
+		ob, err := i.checkGetter(resolved, node)
+		if err != nil {
+			zap.L().Error("interpreter.function.call.arrayAccess", zap.Uint("id", i.ID), zap.String("name", node.Content), zap.Error(err))
+			return nil, exception.From(err, node.Debug, "failed to access function return value")
+		}
+		resolved = ob
+	}
+
+	zap.L().Debug("interpreter.function.call.success", zap.Uint("id", i.ID), zap.String("name", node.Content), zap.String("returnType", logObjectType(resolved)))
+	return resolved, nil
 }
 
 func (i *Interpreter) getValueFromObjByNode(value language.Object, node *astnode.Node) (language.Object, error) {
@@ -318,18 +328,28 @@ func (i *Interpreter) getValueFromObjByNode(value language.Object, node *astnode
 			return nil, exception.From(err, node.Debug)
 		}
 
+		resolved := value
+
 		if len(node.Children) == 1 {
-			ob, err := i.getValueFromObjByNode(value, node.Children[0])
+			ob, err := i.getValueFromObjByNode(resolved, node.Children[0])
 			if err != nil {
 				zap.L().Error("interpreter.function.access.fnChildError", zap.Uint("id", i.ID), zap.String("function", node.Content), zap.Error(err))
 				return nil, exception.From(err, node.Children[0].Debug)
 			}
-			zap.L().Debug("interpreter.function.access.fnChildReturn", zap.Uint("id", i.ID), zap.String("function", node.Content), zap.String("returnType", logObjectType(ob)))
-			return ob, nil
+			resolved = ob
 		}
 
-		zap.L().Debug("interpreter.function.access.fnReturn", zap.Uint("id", i.ID), zap.String("function", node.Content), zap.String("returnType", logObjectType(value)))
-		return value, nil
+		if len(node.ArrayAccess) > 0 {
+			ob, err := i.checkGetter(resolved, node)
+			if err != nil {
+				zap.L().Error("interpreter.function.access.fnArrayAccess", zap.Uint("id", i.ID), zap.String("function", node.Content), zap.Error(err))
+				return nil, exception.From(err, node.Debug)
+			}
+			resolved = ob
+		}
+
+		zap.L().Debug("interpreter.function.access.fnReturn", zap.Uint("id", i.ID), zap.String("function", node.Content), zap.String("returnType", logObjectType(resolved)))
+		return resolved, nil
 	}
 
 	err := runExc("cannot get prototype for type %s with node %d", value.Type(), node.Type).WithDebug(value.Debug())
@@ -429,7 +449,7 @@ func (i *Interpreter) createInlineFunction(node *astnode.Node) (language.Object,
 				return nil, err
 			}
 
-			args[j] = value.Clone()
+			args[j] = cloneForBinding(value)
 		}
 
 		ob, err := fn.Data(i.ctx, args)

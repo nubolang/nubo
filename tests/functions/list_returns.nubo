@@ -1,0 +1,19 @@
+fn emptyList() []int {
+    let out: []int = []
+    return out
+}
+
+fn listWithItems() []int {
+    return [1, 2, 3]
+}
+
+fn mixedList() []any {
+    return [1, "two", true]
+}
+
+expect(len(emptyList()) == 0, "empty list return mismatch")
+expect(len(listWithItems()) == 3, "list return length mismatch")
+expect(listWithItems()[1] == 2, "list return value mismatch")
+expect(mixedList()[1] == "two", "mixed list return mismatch")
+
+return true

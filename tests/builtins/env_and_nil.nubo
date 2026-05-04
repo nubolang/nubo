@@ -1,0 +1,11 @@
+let missing = env("NUBO_THIS_ENV_SHOULD_NOT_EXIST", nil)
+
+expect(missing == "", "missing env should return empty string")
+
+let setResult = env("NUBO_TEST_ENV_VALUE", "hello-nubo")
+expect(isNil(setResult), "setting env should return nil")
+
+let value = env("NUBO_TEST_ENV_VALUE", nil)
+expect(value == "hello-nubo", "env get after set mismatch")
+
+return true

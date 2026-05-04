@@ -1,0 +1,15 @@
+let caught = false
+
+fn fail() void {
+    panic("failed")
+}
+
+catch err {
+    fail()
+} {
+    caught = true
+}
+
+expect(caught, "panic should be caught")
+
+return true

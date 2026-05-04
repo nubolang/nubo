@@ -1,0 +1,15 @@
+const ANSWER = 42
+
+fn double(value: int) int {
+    return value * 2
+}
+
+fn add(a: int, b: int) int {
+    return a + b
+}
+
+return {
+    "ANSWER": ANSWER,
+    "double": double,
+    "add": add
+}

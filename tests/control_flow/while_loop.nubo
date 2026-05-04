@@ -1,0 +1,12 @@
+let i = 0
+let sum = 0
+
+while i < 5 {
+    sum = sum + i
+    i = i + 1
+}
+
+expect(sum == 10, "while sum mismatch")
+expect(i == 5, "while final i mismatch")
+
+return true

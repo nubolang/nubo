@@ -1,0 +1,6 @@
+let dir = include "../helpers/include_with_dir"
+
+expect(!isNil(dir), "include __dir__ should not be nil")
+expect(string(dir).includes("helpers"), "include __dir__ should include helpers")
+
+return true

@@ -1,0 +1,18 @@
+let x: int = 5
+let y: float = 1.5
+let ok: bool = true
+let text: string = "typed"
+let list: []string = ["a", "b"]
+let data: dict[string, int] = dict[string, int] {
+    "a": 1,
+    "b": 2
+}
+
+expect(x == 5, "typed int mismatch")
+expect(y == 1.5, "typed float mismatch")
+expect(ok, "typed bool mismatch")
+expect(text == "typed", "typed string mismatch")
+expect(len(list) == 2, "typed list length mismatch")
+expect(data["a"] == 1, "typed dict value mismatch")
+
+return true

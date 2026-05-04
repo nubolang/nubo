@@ -1,0 +1,11 @@
+let value = 0
+
+fn setValue() void {
+    value = 42
+}
+
+setValue()
+
+expect(value == 42, "void function side effect mismatch")
+
+return true

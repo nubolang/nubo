@@ -1,0 +1,8 @@
+let nums = [1, 2, 3]
+
+expect(len(nums) == 3, "list length mismatch")
+expect(nums[0] == 1, "index 0 mismatch")
+expect(nums[1] == 2, "index 1 mismatch")
+expect(nums[2] == 3, "index 2 mismatch")
+
+return true

@@ -1,0 +1,18 @@
+struct User {
+    name: string
+    age: int
+}
+
+impl User {
+    fn init(self: User, name: string, age: int) void {
+        self.name = name
+        self.age = age
+    }
+}
+
+let user = User("Martin", 19)
+
+expect(user.name == "Martin", "init name mismatch")
+expect(user.age == 19, "init age mismatch")
+
+return true

@@ -1,0 +1,15 @@
+let a = 10
+let b = 3
+
+expect(a + b == 13, "addition mismatch")
+expect(a - b == 7, "subtraction mismatch")
+expect(a * b == 30, "multiplication mismatch")
+expect(int(a / b) == 3, "division mismatch")
+
+let f = 1.5
+let g = 2.5
+
+expect(f + g == 4.0, "float addition mismatch")
+expect(g - f == 1.0, "float subtraction mismatch")
+
+return true

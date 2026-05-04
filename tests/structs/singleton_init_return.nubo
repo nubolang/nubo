@@ -1,0 +1,27 @@
+struct Config {
+    name: string
+}
+
+let instance: Config|nil = nil
+
+impl Config {
+    fn init(self: Config, name: string = "first") Config {
+        if !isNil(instance) {
+            return instance
+        }
+
+        self.name = name
+        instance = self
+
+        return self
+    }
+}
+
+let a = Config("A")
+let b = Config("B")
+
+expect(a.name == "A", "singleton first value mismatch")
+expect(b.name == "A", "singleton should reuse first value")
+expect(_id(a) == _id(b), "singleton instances should match")
+
+return true

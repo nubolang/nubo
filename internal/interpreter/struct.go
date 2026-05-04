@@ -59,7 +59,7 @@ func (i *Interpreter) handleStructCreation(obj language.Object, node *astnode.No
 			zap.L().Error("interpreter.struct.create.argEval", zap.Uint("id", i.ID), zap.Int("index", j), zap.Error(err))
 			return nil, wrapRunExc(err, arg.Debug)
 		}
-		args[j] = value.Clone()
+		args[j] = cloneForBinding(value)
 	}
 
 	instance, err := definition.NewInstance()
@@ -83,7 +83,7 @@ func (i *Interpreter) handleStructCreation(obj language.Object, node *astnode.No
 				zap.L().Error("interpreter.struct.create.initArgEval", zap.Uint("id", i.ID), zap.Int("index", j), zap.Error(err))
 				return nil, wrapRunExc(err, arg.Debug)
 			}
-			args[j] = value.Clone()
+			args[j] = cloneForBinding(value)
 		}
 
 		var inst language.Object

@@ -1,0 +1,21 @@
+struct Point {
+    x: int
+    y: int
+}
+
+impl Point {
+    fn init(self: Point, x: int, y: int) void {
+        self.x = x
+        self.y = y
+    }
+
+    fn __string__(self: Point) string {
+        return "Point(" + string(self.x) + ", " + string(self.y) + ")"
+    }
+}
+
+let p = Point(1, 2)
+
+expect(string(p) == "Point(1, 2)", "__string__ mismatch")
+
+return true

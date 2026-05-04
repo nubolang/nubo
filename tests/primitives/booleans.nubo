@@ -1,0 +1,13 @@
+let yes = true
+let no = false
+
+expect(yes, "true mismatch")
+expect(!no, "false negation mismatch")
+expect(yes && !no, "and mismatch")
+expect(yes || no, "or mismatch")
+expect(1 < 2, "less than mismatch")
+expect(2 <= 2, "less equal mismatch")
+expect(3 > 2, "greater than mismatch")
+expect(3 >= 3, "greater equal mismatch")
+
+return true

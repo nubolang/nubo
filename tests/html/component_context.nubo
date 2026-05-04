@@ -1,0 +1,14 @@
+import { Context } from "@std/component"
+
+fn Button(ctx: Context) html {
+    return <button class="btn">
+        !{ ctx.children.join("") }
+    </button>
+}
+
+let out = string(<Button>Save</Button>)
+
+expect(out.includes("button"), "component should render button")
+expect(out.includes("Save"), "component should render children")
+
+return true

@@ -1,0 +1,17 @@
+fn intValue() int {
+    return 10
+}
+
+fn stringValue() string {
+    return "hello"
+}
+
+fn boolValue() bool {
+    return true
+}
+
+expect(intValue() == 10, "function int return mismatch")
+expect(stringValue() == "hello", "function string return mismatch")
+expect(boolValue(), "function bool return mismatch")
+
+return true

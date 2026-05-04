@@ -1,0 +1,9 @@
+let items: []int = []
+
+expect(len(items) == 0, "empty list length mismatch")
+
+items.push(1)
+expect(len(items) == 1, "push length mismatch")
+expect(items[0] == 1, "push value mismatch")
+
+return true

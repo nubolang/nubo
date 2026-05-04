@@ -199,6 +199,10 @@ func (i *Interpreter) GetObject(name string) (language.Object, bool) {
 }
 
 func (i *Interpreter) getObject(name string, depth int) (language.Object, bool) {
+	return i.getObjectScoped(name, depth, true)
+}
+
+func (i *Interpreter) getObjectScoped(name string, depth int, allowParent bool) (language.Object, bool) {
 	if depth > maxScopeDepth {
 		return nil, false
 	}
@@ -219,33 +223,33 @@ func (i *Interpreter) getObject(name string, depth int) (language.Object, bool) 
 		obj, ok := i.objects[hashKey(parts[0])]
 		i.mu.RUnlock()
 		if !ok || obj == nil || obj.value == nil {
-			return i.parentGetObject(name, depth+1)
+			return i.parentGetObjectScoped(name, depth+1, allowParent)
 		}
 
 		current := obj.value
 		for _, part := range parts[1 : len(parts)-1] {
 			if current == nil {
-				return i.parentGetObject(name, depth+1)
+				return i.parentGetObjectScoped(name, depth+1, allowParent)
 			}
 			proto := current.GetPrototype()
 			if proto == nil {
-				return i.parentGetObject(name, depth+1)
+				return i.parentGetObjectScoped(name, depth+1, allowParent)
 			}
 			var ok bool
 			current, ok = proto.GetObject(i.ctx, part)
 			if !ok {
-				return i.parentGetObject(name, depth+1)
+				return i.parentGetObjectScoped(name, depth+1, allowParent)
 			}
 		}
 
 		last := parts[len(parts)-1]
 		if current == nil {
-			return i.parentGetObject(name, depth+1)
+			return i.parentGetObjectScoped(name, depth+1, allowParent)
 		}
 
 		proto := current.GetPrototype()
 		if proto == nil {
-			return i.parentGetObject(name, depth+1)
+			return i.parentGetObjectScoped(name, depth+1, allowParent)
 		}
 
 		val, ok := proto.GetObject(i.ctx, last)
@@ -259,7 +263,7 @@ func (i *Interpreter) getObject(name string, depth int) (language.Object, bool) 
 			}
 		}
 
-		return i.parentGetObject(name, depth+1)
+		return i.parentGetObjectScoped(name, depth+1, allowParent)
 	}
 
 	// normal (non-nested) lookup
@@ -278,24 +282,32 @@ func (i *Interpreter) getObject(name string, depth int) (language.Object, bool) 
 		}
 	}
 
-	return i.parentGetObject(name, depth+1)
+	return i.parentGetObjectScoped(name, depth+1, allowParent)
 }
 
 func (i *Interpreter) parentGetObject(name string, depth int) (language.Object, bool) {
+	return i.parentGetObjectScoped(name, depth, true)
+}
+
+func (i *Interpreter) parentGetObjectScoped(name string, depth int, allowParent bool) (language.Object, bool) {
 	if depth > maxScopeDepth {
+		return nil, false
+	}
+
+	if !allowParent {
 		return nil, false
 	}
 
 	if i.parent == nil {
 		for _, inc := range i.includes {
-			if obj, ok := inc.getObject(name, depth+1); ok {
+			if obj, ok := inc.getObjectScoped(name, depth+1, false); ok {
 				return obj, true
 			}
 		}
 		return nil, false
 	}
 
-	return i.parent.getObject(name, depth+1)
+	return i.parent.getObjectScoped(name, depth+1, allowParent)
 }
 
 func (i *Interpreter) callGetFunction(fn language.Object, key string) (language.Object, error) {
@@ -315,4 +327,27 @@ func (i *Interpreter) callSetFunction(fn language.Object, key string, value lang
 	args := []language.Object{language.NewString(key, fn.Debug()), value}
 	_, err := callable.Data(i.ctx, args)
 	return err
+}
+
+// declaredInCurrentScope returns true when a symbol exists in the current
+// interpreter scope or as a builtin. It intentionally ignores parent/include
+// scopes to avoid cross-file and cross-scope declaration bleed.
+func (i *Interpreter) declaredInCurrentScope(name string) bool {
+	if _, ok := i.runtime.GetBuiltin(name); ok {
+		return true
+	}
+
+	key := hashKey(name)
+
+	i.mu.RLock()
+	head := i.objects[key]
+	i.mu.RUnlock()
+
+	for e := head; e != nil; e = e.next {
+		if e.key == name {
+			return true
+		}
+	}
+
+	return false
 }

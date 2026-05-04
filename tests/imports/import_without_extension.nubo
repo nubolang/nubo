@@ -1,0 +1,6 @@
+import msg from "../helpers/message"
+
+expect(msg.prefix == "hello", "import no extension const mismatch")
+expect(msg.message("Martin") == "hello, Martin", "import no extension fn mismatch")
+
+return true

@@ -1,0 +1,10 @@
+let value = 1
+
+spawn fn() {
+    let inside = 2
+    expect(inside == 2, "spawn inside mismatch")
+}()
+
+expect(value == 1, "spawn should not change value")
+
+return true

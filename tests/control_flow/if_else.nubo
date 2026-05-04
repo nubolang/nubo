@@ -1,0 +1,14 @@
+let value = 10
+let label = ""
+
+if value > 10 {
+    label = "big"
+} else if value == 10 {
+    label = "exact"
+} else {
+    label = "small"
+}
+
+expect(label == "exact", "if else label mismatch")
+
+return true

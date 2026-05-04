@@ -1,0 +1,25 @@
+let a = [1, 2]
+let b = [3, 4]
+
+expect(len(a) == 2, "len list mismatch")
+
+let c = clone(a)
+
+for _, value in b {
+    c.push(value)
+}
+
+expect(len(c) == 4, "manual list concat length mismatch")
+expect(c[2] == 3, "manual list concat value mismatch")
+expect(c[3] == 4, "manual list concat final value mismatch")
+
+let d = clone(c)
+d.push(5)
+
+expect(len(c) == 4, "clone original length mismatch")
+expect(len(d) == 5, "clone copy length mismatch")
+
+let text = concat("hello", " ", "nubo")
+expect(text == "hello nubo", "string concat mismatch")
+
+return true

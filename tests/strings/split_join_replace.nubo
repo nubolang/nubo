@@ -1,0 +1,13 @@
+let text = "a,b,c"
+let parts = text.split(",")
+
+expect(len(parts) == 3, "split length mismatch")
+expect(parts[0] == "a", "split value mismatch")
+
+let joined = parts.join("-")
+expect(joined == "a-b-c", "join mismatch")
+
+let replaced = joined.replace("-", ":", -1)
+expect(replaced == "a:b:c", "replace mismatch")
+
+return true

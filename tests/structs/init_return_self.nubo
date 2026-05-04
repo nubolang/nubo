@@ -1,0 +1,16 @@
+struct Box {
+    value: int
+}
+
+impl Box {
+    fn init(self: Box, value: int) Box {
+        self.value = value
+        return self
+    }
+}
+
+let box = Box(42)
+
+expect(box.value == 42, "init return self mismatch")
+
+return true

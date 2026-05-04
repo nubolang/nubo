@@ -1,0 +1,15 @@
+let data = dict[string, int] {
+    "x": 2,
+    "y": 3
+}
+
+let sum = 0
+
+for key, value in data {
+    expect(data.keys().includes(key), "for dict key mismatch")
+    sum = sum + value
+}
+
+expect(sum == 5, "for dict sum mismatch")
+
+return true

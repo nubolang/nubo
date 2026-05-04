@@ -1,0 +1,10 @@
+let a = true
+let b = false
+let c = true
+
+expect(a && c, "and true mismatch")
+expect(!(a && b), "and false mismatch")
+expect(a || b, "or true mismatch")
+expect(!b && (a || c), "nested logical mismatch")
+
+return true

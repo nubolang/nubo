@@ -12,3 +12,6 @@ nubo.log
 
 # OS files
 .DS_Store
+
+# Go
+.gocache

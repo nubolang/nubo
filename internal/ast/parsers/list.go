@@ -18,6 +18,10 @@ func ListParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, inx 
 	token := tokens[*inx]
 	node.Debug = token.Debug
 	if token.Type == lexer.TokenCloseBracket {
+		last := *inx
+		if err := inxPP(tokens, inx); err != nil {
+			*inx = last
+		}
 		return node, nil
 	}
 
@@ -97,6 +101,11 @@ loop:
 
 			return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("expected ',' or ']', got %s", token.Type), token.Debug)
 		}
+	}
+
+	last := *inx
+	if err := inxPP(tokens, inx); err != nil {
+		*inx = last
 	}
 
 	return node, nil

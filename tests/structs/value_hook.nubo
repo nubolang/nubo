@@ -1,0 +1,19 @@
+struct NumberBox {
+    value: int
+}
+
+impl NumberBox {
+    fn init(self: NumberBox, value: int) void {
+        self.value = value
+    }
+
+    fn __value__(self: NumberBox) any {
+        return self.value
+    }
+}
+
+let box = NumberBox(10)
+
+expect(valueof(box) == 10, "__value__ / valueof mismatch")
+
+return true

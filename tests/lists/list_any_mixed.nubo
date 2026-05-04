@@ -1,0 +1,12 @@
+let values: []any = []
+
+values.push(1)
+values.push("two")
+values.push(true)
+
+expect(len(values) == 3, "mixed list length mismatch")
+expect(values[0] == 1, "mixed int mismatch")
+expect(values[1] == "two", "mixed string mismatch")
+expect(values[2], "mixed bool mismatch")
+
+return true

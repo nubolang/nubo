@@ -1,0 +1,23 @@
+type Greeter: iface {
+    greet() string
+}
+
+struct Person {
+    name: string
+}
+
+impl Person {
+    fn init(self: Person, name: string) void {
+        self.name = name
+    }
+
+    fn greet(self: Person) string {
+        return "Hello, " + self.name
+    }
+}
+
+let p: Greeter = Person("Martin")
+
+expect(p.greet() == "Hello, Martin", "iface-like method mismatch")
+
+return true

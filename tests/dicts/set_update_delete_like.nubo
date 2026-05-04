@@ -1,0 +1,12 @@
+let data = dict[string, int] {
+    "a": 1
+}
+
+data["b"] = 2
+data["a"] = 10
+
+expect(data["a"] == 10, "dict update mismatch")
+expect(data["b"] == 2, "dict set mismatch")
+expect(len(data.keys()) == 2, "dict keys length mismatch")
+
+return true

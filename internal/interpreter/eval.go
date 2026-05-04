@@ -50,6 +50,10 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 		return language.Nil, nil
 	}
 
+	if len(node.Body) == 1 && node.Body[0].Type == astnode.NodeTypeFunctionCall {
+		return i.handleFunctionCall(node.Body[0])
+	}
+
 	for _, child := range node.Body {
 		switch child.Type {
 		case astnode.NodeTypeValue, astnode.NodeTypeFunctionArgument:

@@ -52,7 +52,7 @@ func (ir *Interpreter) includeValue(node *astnode.Node) (language.Object, error)
 		return nil, wrapRunExc(runExc("failed to include file: %v", err), node.Debug)
 	}
 
-	inc := newInclude(ir, resolveIncludePath(ir.currentFile, fileName, ir.workdir))
+	inc := newInclude(ir, path)
 
 	var interp = ir
 	for interp.parent != nil {
@@ -73,15 +73,7 @@ func (ir *Interpreter) includeValue(node *astnode.Node) (language.Object, error)
 }
 
 func newInclude(parent *Interpreter, file string) *Interpreter {
-	ir := NewWithCustomFileParent(parent, ScopeGlobal, file, fmt.Sprintf("<include '%s'>", file))
+	ir := NewWithCustomFileParent(parent, ScopeGlobal, filepath.Clean(file), fmt.Sprintf("<include '%s'>", file))
 	zap.L().Debug("interpreter.include.new", zap.Uint("id", ir.ID), zap.String("file", ir.currentFile))
 	return ir
-}
-
-func resolveIncludePath(currentFile, includePath, workdir string) string {
-	if filepath.IsAbs(includePath) {
-		return filepath.Clean(includePath)
-	}
-	baseDir := filepath.Dir(currentFile)
-	return filepath.Clean(filepath.Join(workdir, baseDir, includePath))
 }

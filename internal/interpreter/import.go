@@ -18,7 +18,7 @@ import (
 func (ir *Interpreter) handleImport(node *astnode.Node) error {
 	zap.L().Debug("interpreter.import.start", zap.Uint("id", ir.ID), zap.String("name", node.Content))
 
-	_, ok := ir.GetObject(node.Content)
+	ok := ir.declaredInCurrentScope(node.Content)
 	if ok {
 		err := runExc("imported module name ('%s') should not be used as an identifier", node.Content).WithDebug(node.Debug)
 		zap.L().Error("interpreter.import.nameConflict", zap.Uint("id", ir.ID), zap.String("name", node.Content), zap.Error(err))
@@ -141,7 +141,7 @@ func (ir *Interpreter) handleImport(node *astnode.Node) error {
 	if node.Kind == "MULTIPLE" {
 		for _, child := range node.Children {
 			name := child.Value.(string)
-			if _, ok := ir.GetObject(name); ok {
+			if ir.declaredInCurrentScope(name) {
 				err := runExc("variable ('%s') already declared", name).WithDebug(node.Debug)
 				zap.L().Error("interpreter.import.multiple.redeclare", zap.Uint("id", ir.ID), zap.String("alias", name), zap.Error(err))
 				return err
@@ -220,7 +220,7 @@ func (ir *Interpreter) stdImport(node *astnode.Node, fileName string) error {
 		if node.Kind == "MULTIPLE" {
 			for _, child := range node.Children {
 				name := child.Value.(string)
-				if _, ok := ir.GetObject(name); ok {
+				if ir.declaredInCurrentScope(name) {
 					err := runExc("cannot redeclare variable %q", name).WithDebug(node.Debug)
 					zap.L().Error("interpreter.import.std.redeclare", zap.Uint("id", ir.ID), zap.String("alias", name), zap.Error(err))
 					return err

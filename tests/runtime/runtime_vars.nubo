@@ -1,0 +1,12 @@
+expect(!isNil(__id__), "__id__ should exist")
+expect(!isNil(__entry__), "__entry__ should exist")
+expect(!isNil(__dir__), "__dir__ should exist")
+expect(!isNil(__file__), "__file__ should exist")
+expect(!isNil(__concurrent__), "__concurrent__ should exist")
+
+expect(int(__id__) >= 1, "__id__ should be positive")
+expect(string(__dir__).length() > 0, "__dir__ should be non-empty")
+println(__file__)
+expect(string(__file__).includes(".nubo"), "__file__ should include .nubo")
+
+return true

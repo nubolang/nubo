@@ -1,0 +1,8 @@
+let text = "nubo"
+
+expect(text[0] == char('n'), "index 0 mismatch")
+expect(text[1] == char('u'), "index 1 mismatch")
+expect(text[2] == char('b'), "index 2 mismatch")
+expect(text[3] == char('o'), "index 3 mismatch")
+
+return true

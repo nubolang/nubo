@@ -1,0 +1,14 @@
+let name = "Nubo"
+let age = 19
+let active = true
+
+const VERSION = "1.0.0"
+const COUNT = 3
+
+expect(name == "Nubo", "let string mismatch")
+expect(age == 19, "let int mismatch")
+expect(active, "let bool mismatch")
+expect(VERSION == "1.0.0", "const string mismatch")
+expect(COUNT == 3, "const int mismatch")
+
+return true

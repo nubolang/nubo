@@ -1,0 +1,11 @@
+let i = int("12")
+let f = float("3.5")
+let b = bool(1)
+let s = string(42)
+
+expect(i == 12, "int conversion mismatch")
+expect(f == 3.5, "float conversion mismatch")
+expect(b, "bool conversion mismatch")
+expect(s == "42", "string conversion mismatch")
+
+return true

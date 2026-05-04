@@ -1,0 +1,13 @@
+struct User {
+    name: string
+    age: int
+}
+
+let user = User()
+user.name = "Martin"
+user.age = 19
+
+expect(user.name == "Martin", "struct field name mismatch")
+expect(user.age == 19, "struct field age mismatch")
+
+return true

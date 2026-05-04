@@ -1,0 +1,6 @@
+let file = "../helpers/include_value"
+let value = include file
+
+expect(value == 123, "include variable mismatch")
+
+return true

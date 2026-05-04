@@ -1,0 +1,8 @@
+fn add(a: int, b: int = 2) int {
+    return a + b
+}
+
+expect(add(3) == 5, "default arg mismatch")
+expect(add(3, 4) == 7, "provided arg mismatch")
+
+return true

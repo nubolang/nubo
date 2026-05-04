@@ -1,0 +1,7 @@
+import { ANSWER, double, add: otherAdd } from "../helpers/math"
+
+expect(ANSWER == 42, "destructured const mismatch")
+expect(double(4) == 8, "destructured fn mismatch")
+expect(otherAdd(4, 5) == 9, "destructured add mismatch")
+
+return true

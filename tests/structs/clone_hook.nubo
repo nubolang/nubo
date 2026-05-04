@@ -1,0 +1,29 @@
+struct User {
+    name: string
+    roles: []string
+}
+
+impl User {
+    fn init(self: User, name: string) void {
+        self.name = name
+        self.roles = []
+    }
+
+    fn __clone__(self: User) User {
+        let copy = User(self.name)
+        copy.roles = clone(self.roles)
+        return copy
+    }
+}
+
+let user = User("Martin")
+user.roles.push("admin")
+
+let copied = clone(user)
+copied.roles.push("editor")
+
+expect(user.name == copied.name, "clone name mismatch")
+expect(len(user.roles) == 1, "original roles should not change")
+expect(len(copied.roles) == 2, "copied roles mismatch")
+
+return true

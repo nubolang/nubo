@@ -22,7 +22,8 @@ func ReturnParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, in
 		return nil, err
 	}
 
-	if len(value.Body) > 0 || len(value.Children) > 0 {
+	isVoid := value.Type == astnode.NodeTypeExpression && len(value.Body) == 0 && len(value.Children) == 0
+	if !isVoid {
 		node.Value = value
 		node.Flags.Append("NODEVALUE")
 	} else {
