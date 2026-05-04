@@ -119,6 +119,17 @@ func parseTextNodes(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer
 	var children []*astnode.Node
 	var content strings.Builder
 
+	flushContent := func() {
+		raw := content.String()
+		if content.Len() > 0 && strings.TrimSpace(raw) != "" {
+			children = append(children, &astnode.Node{
+				Type:    astnode.NodeTypeElementRawText,
+				Content: normalizeTextSpace(raw),
+			})
+			content.Reset()
+		}
+	}
+
 textloop:
 	for *inx < len(tokens) {
 		select {
@@ -130,18 +141,14 @@ textloop:
 			switch tok.Type {
 			case lexer.TokenOpenBrace, lexer.TokenUnescapedBrace:
 				isUnescaped := tok.Type == lexer.TokenUnescapedBrace
-				if content.Len() > 0 && strings.TrimSpace(content.String()) != "" {
-					children = append(children, &astnode.Node{
-						Type:    astnode.NodeTypeElementRawText,
-						Content: strings.TrimLeftFunc(content.String(), unicode.IsSpace),
-					})
-					content.Reset()
-				}
+
+				flushContent()
 
 				dynamicNode, err := parseDynamicText(ctx, sn, tokens, inx, isUnescaped)
 				if err != nil {
 					return nil, err
 				}
+
 				children = append(children, dynamicNode)
 				continue textloop
 
@@ -155,12 +162,8 @@ textloop:
 		}
 	}
 
-	if content.Len() > 0 && strings.TrimSpace(content.String()) != "" {
-		children = append(children, &astnode.Node{
-			Type:    astnode.NodeTypeElementRawText,
-			Content: strings.TrimSpace(content.String()),
-		})
-	}
+	flushContent()
+
 	return children, nil
 }
 
@@ -215,4 +218,24 @@ func parseDynamicText(ctx context.Context, sn HTMLAttrValueParser, tokens []*lex
 		}
 	}
 	return nil, newErr(ErrUnexpectedToken, "unclosed dynamic text", debug)
+}
+
+func normalizeTextSpace(s string) string {
+	var b strings.Builder
+	lastWasSpace := false
+
+	for _, r := range s {
+		if unicode.IsSpace(r) {
+			if !lastWasSpace {
+				b.WriteRune(' ')
+				lastWasSpace = true
+			}
+			continue
+		}
+
+		b.WriteRune(r)
+		lastWasSpace = false
+	}
+
+	return b.String()
 }

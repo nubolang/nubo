@@ -1,0 +1,6 @@
+let name = "Martin"
+let div = <div>Hello {name}!</div>
+let div2 = <div>Hello
+{name}!</div>
+
+println(div, div2)
