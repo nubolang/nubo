@@ -1,0 +1,7 @@
+const title = "Nubo Error Demo"
+
+// Immutable assignment error in an imported file.
+title = "broken"
+
+return title
+

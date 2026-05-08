@@ -26,6 +26,7 @@ func ImplParser(ctx context.Context, a Parser_HTML, tokens []*lexer.Token, inx *
 		return nil, fmt.Errorf("expected identifier, got %s", token.Type)
 	}
 	node.Content = token.Value
+	node.Debug = token.Debug
 
 	if err := inxPP(tokens, inx); err != nil {
 		return nil, err

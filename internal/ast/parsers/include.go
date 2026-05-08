@@ -24,6 +24,9 @@ func IncludeParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, i
 
 	node.Value = value
 	node.Flags.Append("NODEVALUE")
+	if *inx < len(tokens) {
+		node.Debug = tokens[*inx].Debug
+	}
 
 	return skipSemi(tokens, inx, node), nil
 }

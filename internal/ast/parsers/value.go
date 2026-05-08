@@ -58,6 +58,7 @@ loop:
 			token = tokens[*inx]
 			if token.Type == lexer.TokenNewLine || token.Type == lexer.TokenSemicolon {
 				*inx++
+				node.Debug = token.Debug
 				break loop
 			}
 
@@ -100,6 +101,7 @@ loop:
 				last := *inx
 				if err := inxPP(tokens, inx); err == nil {
 					if !isBinaryOperator(tokens[*inx].Type) && parenCount == 0 {
+						node.Debug = token.Debug
 						break loop
 					}
 				}
@@ -108,6 +110,7 @@ loop:
 
 			*inx++
 			if *inx >= len(tokens) {
+				node.Debug = token.Debug
 				break loop
 			}
 		}

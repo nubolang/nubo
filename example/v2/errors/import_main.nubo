@@ -1,0 +1,6 @@
+// Should fail in import_broken.nubo (not on this import line).
+import broken from "./import_broken.nubo"
+
+println("This should never print")
+println(broken)
+

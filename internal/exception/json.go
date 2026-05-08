@@ -47,7 +47,6 @@ func (e *Expection) JSON(pretty ...bool) ([]byte, error) {
 		StatusCode: e.statusCode,
 		Level:      e.level,
 		Message:    e.msg,
-		Stack:      make([]*JSONDebug, len(e.trace)),
 	}
 
 	if e.debug != nil {
@@ -59,18 +58,25 @@ func (e *Expection) JSON(pretty ...bool) ([]byte, error) {
 		}
 	}
 
-	for i, st := range e.trace {
-		je.Stack[i] = &JSONDebug{
+	frames := e.traceFrames()
+	if len(frames) > 0 {
+		je.Stack = make([]*JSONDebug, 0, len(frames))
+	}
+
+	for _, st := range frames {
+		je.Stack = append(je.Stack, &JSONDebug{
 			File:      st.File,
 			Line:      st.Line,
 			Column:    st.Column,
 			ColumnEnd: st.ColumnEnd,
-		}
+		})
 	}
 
-	code, _, ok := showHtmlCodeError(e.debug.File, e.debug.Line)
-	if ok {
-		je.Near = code
+	if e.debug != nil {
+		code, _, ok := showHtmlCodeError(e.debug.File, e.debug.Line)
+		if ok {
+			je.Near = code
+		}
 	}
 
 	if p {

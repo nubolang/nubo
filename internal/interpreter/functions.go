@@ -102,7 +102,8 @@ func (i *Interpreter) handleFunctionDecl(node *astnode.Node, ret ...bool) (langu
 
 		ob, err := ir.Run(node.Body)
 		if err != nil {
-			return nil, exception.From(err, node.Debug, "function execution failed: @err")
+			// preserve the original error call-site chain
+			return nil, err
 		}
 		return ob, nil
 	}, node.Debug)
@@ -429,7 +430,8 @@ func (i *Interpreter) createInlineFunction(node *astnode.Node) (language.Object,
 
 		ob, err := ir.Run(node.Body)
 		if err != nil {
-			return nil, exception.From(err, node.Debug, "cannot run function body")
+			// Preserve the original error call-site chain
+			return nil, err
 		}
 		return ob, nil
 	}, node.Debug)

@@ -3,6 +3,8 @@ package exception
 import (
 	"errors"
 	"fmt"
+	"path/filepath"
+	"strconv"
 	"strings"
 
 	htm "html"
@@ -51,12 +53,30 @@ func From(err error, dg *debug.Debug, otherwise ...string) *Expection {
 		return exception.WithTrace(dg)
 	}
 
-	if len(otherwise) > 0 {
-		otherwise[0] = strings.ReplaceAll(otherwise[0], "@err", err.Error())
-		return Create(otherwise[0]).WithBase(err).WithDebug(dg)
+	if err == nil {
+		if len(otherwise) > 0 {
+			return Create(otherwise[0]).WithDebug(dg)
+		}
+		return Create("unknown exception").WithDebug(dg)
 	}
 
-	return Create("%v", err).WithDebug(dg)
+	msg := fmt.Sprintf("%v", err)
+	if len(otherwise) > 0 {
+		msg = strings.ReplaceAll(otherwise[0], "@err", err.Error())
+	}
+
+	created := Create(msg).WithBase(err)
+
+	sourceDebug := unwrapDebug(err)
+	if sourceDebug != nil {
+		created.WithDebug(sourceDebug)
+		if !sameDebugLine(sourceDebug, dg) {
+			created.WithTrace(dg)
+		}
+		return created
+	}
+
+	return created.WithDebug(dg)
 }
 
 func (e *Expection) WithBase(err error) *Expection {
@@ -82,10 +102,17 @@ func (e *Expection) WithTrace(trace *debug.Debug) *Expection {
 		return e
 	}
 
-	if len(e.trace) == 0 || e.trace[len(e.trace)-1] != trace {
-		e.trace = append(e.trace, trace)
+	if sameDebugLine(e.debug, trace) {
+		return e
 	}
 
+	for _, tr := range e.trace {
+		if sameDebugLine(tr, trace) {
+			return e
+		}
+	}
+
+	e.trace = append(e.trace, trace)
 	return e
 }
 
@@ -100,40 +127,35 @@ func (e *Expection) Error() string {
 	}
 
 	var sb strings.Builder
-
+	levelColor := color.New(color.Bold, color.FgRed)
 	if e.level == LevelSyntax || e.level == LevelSemantic {
-		sb.WriteString(color.New(color.Bold, color.FgYellow).Sprintf("%s", e.level))
-	} else {
-		sb.WriteString(color.New(color.Bold, color.FgRed).Sprintf("%s", e.level))
+		levelColor = color.New(color.Bold, color.FgYellow)
 	}
 
-	if e.msg != "" {
-		sb.WriteString(": ")
-		sb.WriteString(color.New(color.FgRed).Sprintf("%s", e.msg))
+	msg := e.msg
+	if msg == "" {
+		msg = "unknown error"
 	}
 
-	blue := color.New(color.FgHiBlue).SprintFunc()
+	sb.WriteString(levelColor.Sprintf("error[%s]", e.level))
+	sb.WriteString(": ")
+	sb.WriteString(color.New(color.FgRed).Sprintf("%s", msg))
+
 	if e.debug != nil {
-		sb.WriteRune(' ')
-		sb.WriteString(color.New(color.FgCyan).Sprint("at"))
-		sb.WriteRune(' ')
+		fmt.Fprintf(&sb, "\n  source: %s:%d:%d", color.New(color.FgHiBlue).Sprint(e.debug.File), e.debug.Line, e.debug.Column)
+		fmt.Fprintf(&sb, "\n  %s", color.New(color.Bold, color.FgHiBlack).Sprint("snippet:"))
 
-		if e.debug != nil {
-			sb.WriteString(fmt.Sprintf("%s:%s:%s", blue(e.debug.File), blue(e.debug.Line), blue(e.debug.Column)))
-
-			code, ok := showConsoleCodeError(e.debug.File, e.debug.Line)
-			if ok {
-				sb.WriteString(fmt.Sprintf("\n%s", code))
-			}
+		code, ok := showConsoleCodeError(e.debug.File, e.debug.Line)
+		if ok {
+			sb.WriteString(fmt.Sprintf("\n%s", code))
 		}
 	}
 
-	if len(e.trace) > 0 {
-		sb.WriteRune('\n')
-		sb.WriteString(color.New(color.FgYellow, color.Bold).Sprint("trace"))
-		sb.WriteRune(':')
-		for _, trace := range e.trace {
-			sb.WriteString(fmt.Sprintf("\n\t%s:%s:%s", blue(trace.File), blue(trace.Line), blue(trace.Column)))
+	frames := e.traceFrames()
+	if len(frames) > 0 {
+		fmt.Fprintf(&sb, "\n\n  %s", color.New(color.Bold, color.FgYellow).Sprint("stack:"))
+		for idx, trace := range frames {
+			fmt.Fprintf(&sb, "\n    #%02d %s:%d:%d", idx+1, trace.File, trace.Line, trace.Column)
 		}
 	}
 
@@ -149,13 +171,13 @@ func (e *Expection) GetMessage(html bool) string {
 
 	if e.level == LevelSyntax || e.level == LevelSemantic {
 		if html {
-			sb.WriteString(fmt.Sprintf("<span style=\"color:var(--color-yellow-400)\"><strong>%s</strong></span>", e.level))
+			fmt.Fprintf(&sb, "<span style=\"color:var(--color-yellow-400)\"><strong>%s</strong></span>", e.level)
 		} else {
 			sb.WriteString(color.New(color.Bold, color.FgYellow).Sprintf("%s", e.level))
 		}
 	} else {
 		if html {
-			sb.WriteString(fmt.Sprintf("<span style=\"color:var(--color-red-400)\"><strong>%s</strong></span>", e.level))
+			fmt.Fprintf(&sb, "<span style=\"color:var(--color-red-400)\"><strong>%s</strong></span>", e.level)
 		} else {
 			sb.WriteString(color.New(color.Bold, color.FgRed).Sprintf("%s", e.level))
 		}
@@ -164,7 +186,7 @@ func (e *Expection) GetMessage(html bool) string {
 	if e.msg != "" {
 		sb.WriteString(": ")
 		if html {
-			sb.WriteString(fmt.Sprintf("<span style=\"color:var(--color-red-400)\">%s</span>", htm.EscapeString(e.msg)))
+			fmt.Fprintf(&sb, "<span style=\"color:var(--color-red-400)\">%s</span>", htm.EscapeString(e.msg))
 		} else {
 			sb.WriteString(color.New(color.FgRed).Sprintf("%s", e.msg))
 		}
@@ -180,9 +202,9 @@ func (e *Expection) GetMessage(html bool) string {
 		}
 		sb.WriteRune(' ')
 		if html {
-			sb.WriteString(fmt.Sprintf("<span style=\"color:var(--color-blue-400)\">%s</span>:<span style=\"color:var(--color-blue-400)\">%s</span>:<span style=\"color:var(--color-blue-400)\">%s</span>", blue(e.debug.File), blue(e.debug.Line), blue(e.debug.Column)))
+			fmt.Fprintf(&sb, "<span style=\"color:var(--color-blue-400)\">%s</span>:<span style=\"color:var(--color-blue-400)\">%s</span>:<span style=\"color:var(--color-blue-400)\">%s</span>", blue(e.debug.File), blue(e.debug.Line), blue(e.debug.Column))
 		} else {
-			sb.WriteString(fmt.Sprintf("%s:%s:%s", blue(e.debug.File), blue(e.debug.Line), blue(e.debug.Column)))
+			fmt.Fprintf(&sb, "%s:%s:%s", blue(e.debug.File), blue(e.debug.Line), blue(e.debug.Column))
 		}
 	}
 
@@ -194,4 +216,65 @@ func (e *Expection) HTML() *HtmlError {
 		StatusCode: e.statusCode,
 		err:        e,
 	}
+}
+
+func (e *Expection) traceFrames() []*debug.Debug {
+	if len(e.trace) == 0 {
+		return nil
+	}
+
+	deduped := make([]*debug.Debug, 0, len(e.trace))
+	seen := make(map[string]struct{}, len(e.trace)+1)
+
+	if e.debug != nil {
+		seen[debugKey(e.debug)] = struct{}{}
+	}
+
+	for _, trace := range e.trace {
+		if trace == nil {
+			continue
+		}
+		key := debugKey(trace)
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		deduped = append(deduped, trace)
+	}
+
+	return deduped
+}
+
+func unwrapDebug(err error) *debug.Debug {
+	_, _, dg := debug.Unwrap(err)
+	if dg != nil {
+		return dg
+	}
+
+	type debugProvider interface {
+		GetDebug() *debug.Debug
+	}
+
+	var provider debugProvider
+	if errors.As(err, &provider) {
+		return provider.GetDebug()
+	}
+
+	return nil
+}
+
+func sameDebugLine(a, b *debug.Debug) bool {
+	if a == nil || b == nil {
+		return false
+	}
+
+	return filepath.Clean(a.File) == filepath.Clean(b.File) && a.Line == b.Line
+}
+
+func debugKey(d *debug.Debug) string {
+	if d == nil {
+		return ""
+	}
+
+	return filepath.Clean(d.File) + ":" + strconv.Itoa(d.Line)
 }

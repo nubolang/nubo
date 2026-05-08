@@ -46,9 +46,7 @@ func (r *Router) Reload() error {
 			routePath = "/" + filepath.ToSlash(rel)
 		}
 
-		if strings.HasSuffix(routePath, "/index") {
-			routePath = strings.TrimSuffix(routePath, "/index")
-		}
+		routePath = strings.TrimSuffix(routePath, "/index")
 		if routePath == "" {
 			routePath = "/"
 		}

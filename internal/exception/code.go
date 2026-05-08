@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/fatih/color"
@@ -32,16 +33,9 @@ func showConsoleCodeError(path string, line int) (string, bool) {
 		return "", false
 	}
 
-	start := line - 4
-	if start < 1 {
-		start = 1
-	}
-	end := line + 4
-	if end > len(lines) {
-		end = len(lines)
-	}
-
-	width := len(fmt.Sprintf("%d", end))
+	start := max(1, line-3)
+	end := min(line+3, len(lines))
+	width := len(strconv.Itoa(end))
 
 	linesS := strings.Join(lines, "\n")
 	hl, err := codehighlight.NewHighlight(strings.NewReader(linesS))
@@ -53,13 +47,15 @@ func showConsoleCodeError(path string, line int) (string, bool) {
 	}
 
 	var out strings.Builder
+	fmt.Fprintf(&out, "    %s\n", color.New(color.FgHiBlack).Sprint("|"))
 	for i := start; i <= end; i++ {
-		mark := " "
+		mark := "  "
 		if i == line {
-			mark = color.New(color.FgRed).Sprint(">")
+			mark = color.New(color.FgRed, color.Bold).Sprint(">>")
 		}
-		fmt.Fprintf(&out, "   %s %s %s\n", mark, color.New(color.FgHiBlack).Sprintf("%*d|", width, i), lines[i-1])
+		fmt.Fprintf(&out, "    %s %s %s\n", mark, color.New(color.FgHiBlack).Sprintf("%*d |", width, i), lines[i-1])
 	}
+	fmt.Fprintf(&out, "    %s", color.New(color.FgHiBlack).Sprint("|"))
 
 	return out.String(), true
 }
@@ -85,14 +81,8 @@ func showHtmlCodeError(path string, line int) (string, string, bool) {
 		return "", "", false
 	}
 
-	start := line - 4
-	if start < 1 {
-		start = 1
-	}
-	end := line + 4
-	if end > len(lines) {
-		end = len(lines)
-	}
+	start := max(1, line-4)
+	end := min(line+4, len(lines))
 
 	width := len(fmt.Sprintf("%d", end))
 
@@ -114,9 +104,9 @@ func showHtmlCodeError(path string, line int) (string, string, bool) {
 		mark := " "
 		if i == line {
 			mark = "&gt;"
-			linesOut.WriteString(fmt.Sprintf("<span style=\"color:var(--color-red-400)\">%s %*d</span>\n", mark, width, i))
+			fmt.Fprintf(&linesOut, "<span style=\"color:var(--color-red-400)\">%s %*d</span>\n", mark, width, i)
 		} else {
-			linesOut.WriteString(fmt.Sprintf("%s %*d\n", mark, width, i))
+			fmt.Fprintf(&linesOut, "%s %*d\n", mark, width, i)
 		}
 
 		if shouldEscape {

@@ -1,0 +1,5 @@
+// Type mismatch error inside an included file.
+let retries: int = "3"
+
+println(retries)
+

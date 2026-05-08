@@ -1,0 +1,7 @@
+fn entry() void {
+    println("Including broken file...")
+    include "./include_broken.nubo"
+}
+
+entry()
+

@@ -2,6 +2,7 @@ package interpreter
 
 import (
 	"context"
+	"errors"
 	"path/filepath"
 	"sync"
 
@@ -120,9 +121,9 @@ func NewWithCustomFileParent(parent *Interpreter, scope Scope, file string, name
 	return ir
 }
 
-func (i *Interpreter) Run(nodes []*astnode.Node) (language.Object, error) {
+func (i *Interpreter) Run(nodes []*astnode.Node) (obj language.Object, err error) {
 	defer func() {
-		i.runDeferred()
+		err = errors.Join(err, i.runDeferred())
 		i.Detach()
 	}()
 
@@ -134,6 +135,7 @@ func (i *Interpreter) Run(nodes []*astnode.Node) (language.Object, error) {
 			zap.L().Error("interpreter.run.handleNode", zap.Uint("id", i.ID), zap.Error(err))
 			return nil, exception.From(err, node.Debug, "failed to handle node: @err")
 		}
+
 		if obj != nil {
 			if i.parent != nil && node.Type == astnode.NodeTypeFunctionCall && i.scope == ScopeFunction {
 				zap.L().Debug("interpreter.run.continue", zap.Uint("id", i.ID))
@@ -153,16 +155,21 @@ func (i *Interpreter) Run(nodes []*astnode.Node) (language.Object, error) {
 	return nil, nil
 }
 
-func (i *Interpreter) runDeferred() {
+func (i *Interpreter) runDeferred() error {
 	zap.L().Debug("interpreter.deferred.run", zap.Uint("id", i.ID), zap.Int("count", len(i.deferred)))
 
 	for d := len(i.deferred) - 1; d >= 0; d-- {
 		deferred := i.deferred[d]
 
 		for n := len(deferred) - 1; n >= 0; n-- {
-			_, _ = i.eval(deferred[n])
+			if _, err := i.eval(deferred[n]); err != nil {
+				return err
+			}
+
 		}
 	}
+
+	return nil
 }
 
 func (i *Interpreter) Detach() {

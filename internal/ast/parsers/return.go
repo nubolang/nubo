@@ -30,5 +30,7 @@ func ReturnParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, in
 		node.Flags.Append("VOID")
 	}
 
+	node.Debug = value.Debug
+
 	return node, nil
 }

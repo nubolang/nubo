@@ -28,7 +28,7 @@ func Unwrap(err error) (*ExceptionData, bool) {
 			Message:    excp.msg,
 			Level:      excp.level,
 			Debug:      excp.debug,
-			StackTrace: excp.trace,
+			StackTrace: excp.traceFrames(),
 		}, true
 	}
 	return nil, false
