@@ -2,6 +2,7 @@ package server
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -14,9 +15,11 @@ import (
 )
 
 var errNotFound = errors.New("not found")
+var errInternalServerMessage = "Internal Server Error"
 
 // handleError handles the error
 func (s *Server) handleError(err error, w http.ResponseWriter, r *http.Request) {
+	devMode := os.Getenv("NUBO_DEV") == "true"
 	var statusCode = http.StatusInternalServerError
 	fields := []zap.Field{
 		zap.String("method", r.Method),
@@ -28,22 +31,11 @@ func (s *Server) handleError(err error, w http.ResponseWriter, r *http.Request) 
 
 	if errors.As(err, &exc) {
 		zap.L().Error("server.request.exception", fields...)
-		htmlErr := exc.HTML()
-
-		if prefersJSON(r) {
-			message, err := exc.JSON()
-			if err == nil {
-				w.Header().Add("Content-Type", "application/json")
-				w.WriteHeader(statusCode)
-			}
-			_, _ = w.Write(message)
-			return
+		if devMode {
+			s.writeDevError(exc, statusCode, w, r)
+		} else {
+			s.writeProdError(statusCode, w, r)
 		}
-
-		w.Header().Add("Content-Type", "text/html")
-		w.WriteHeader(statusCode)
-		page := htmlErr.GetPage()
-		_, _ = w.Write([]byte(page))
 		return
 	}
 
@@ -52,6 +44,13 @@ func (s *Server) handleError(err error, w http.ResponseWriter, r *http.Request) 
 		zap.L().Warn("server.request.notFound", append(fields, zap.Int("status", statusCode))...)
 	} else {
 		zap.L().Error("server.request.error", append(fields, zap.Int("status", statusCode))...)
+
+		if devMode {
+			s.writeDevError(exception.Create("%s", err.Error()).WithBase(err).WithStatusCode(statusCode), statusCode, w, r)
+		} else {
+			s.writeProdError(statusCode, w, r)
+		}
+		return
 	}
 
 	if s.isDir {
@@ -69,6 +68,41 @@ func (s *Server) handleError(err error, w http.ResponseWriter, r *http.Request) 
 	}
 
 	http.Error(w, err.Error(), statusCode)
+}
+
+func (s *Server) writeDevError(exc *exception.Expection, statusCode int, w http.ResponseWriter, r *http.Request) {
+	if prefersJSON(r) {
+		message, err := exc.JSON()
+		if err == nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(statusCode)
+			_, _ = w.Write(message)
+			return
+		}
+	}
+
+	w.Header().Set("Content-Type", "text/html")
+	w.WriteHeader(statusCode)
+	page := exc.HTML().GetPage()
+	_, _ = w.Write([]byte(page))
+}
+
+func (s *Server) writeProdError(statusCode int, w http.ResponseWriter, r *http.Request) {
+	message := errInternalServerMessage
+	if statusCode != http.StatusInternalServerError {
+		message = http.StatusText(statusCode)
+	}
+
+	if prefersJSON(r) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(statusCode)
+		fmt.Fprintf(w, "{\"status\":%d,\"message\":%q}", statusCode, message)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(statusCode)
+	_, _ = w.Write([]byte(message))
 }
 
 func (s *Server) customError(file string, nodes []*astnode.Node, status int, message string, w http.ResponseWriter, r *http.Request) error {

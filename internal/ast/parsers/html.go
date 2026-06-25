@@ -89,6 +89,8 @@ func HTMLParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer.Tok
 				if tokens[*inx].Type != lexer.TokenGreaterThan {
 					return nil, newErr(ErrUnexpectedToken, "unexpected token", token.Debug)
 				}
+
+				node.Debug = tok.Debug
 				*inx++
 				return node, nil
 			}

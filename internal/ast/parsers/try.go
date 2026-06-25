@@ -24,6 +24,7 @@ func TryParser(ctx context.Context, p Parser_HTML, tokens []*lexer.Token, inx *i
 	}
 
 	node.Content = token.Value
+	node.Debug = token.Debug
 
 	if err := inxPP(tokens, inx); err != nil {
 		return nil, err

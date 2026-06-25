@@ -28,6 +28,7 @@ func FnParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, inx *i
 			return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("expected identifier, got %s", token.Type), token.Debug)
 		}
 
+		node.Debug = token.Debug
 		node.Content = token.Value
 	}
 

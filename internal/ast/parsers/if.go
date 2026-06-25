@@ -44,6 +44,7 @@ loop:
 			}
 
 			if token.Type == lexer.TokenColon && braceCount == 0 {
+				node.Debug = token.Debug
 				break loop
 			}
 

@@ -23,6 +23,9 @@ func DeferParser(ctx context.Context, p Parser_HTML, tokens []*lexer.Token, inx 
 	}
 
 	node.Children = append(node.Children, value)
+	if *inx <= len(tokens) {
+		node.Debug = tokens[0].Debug
+	}
 
 	return node, nil
 }

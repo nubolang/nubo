@@ -1,0 +1,5 @@
+defer fn() {
+    panic("defer error")
+}()
+
+println("x")

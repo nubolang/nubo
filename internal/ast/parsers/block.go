@@ -42,6 +42,7 @@ bodyloop:
 				braceCount--
 				if braceCount == 0 {
 					*inx++
+					node.Debug = token.Debug
 					break bodyloop
 				}
 			} else if token.Type == lexer.TokenOpenBrace || token.Type == lexer.TokenUnescapedBrace {

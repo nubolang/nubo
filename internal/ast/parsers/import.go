@@ -56,6 +56,7 @@ func ImportParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnod
 	}
 
 	node.Value = token.Value
+	node.Debug = token.Debug
 
 	return skipSemi(tokens, inx, node), nil
 }
@@ -118,6 +119,7 @@ loop:
 				if err := inxPP(tokens, inx); err != nil {
 					return nil, err
 				}
+				node.Debug = token.Debug
 				return node, nil
 			}
 		}

@@ -1,0 +1,7 @@
+import { write } from "@server/response"
+import pageTitle from "./page_title.nubo"
+
+write(<main>
+    <h1>{pageTitle}</h1>
+</main>)
+

@@ -64,6 +64,7 @@ loop:
 						fn.Args = append(fn.Args, node)
 						currentTokens = nil
 					}
+					fn.Debug = token.Debug
 					*inx++
 					break loop
 				}

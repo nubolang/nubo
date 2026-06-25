@@ -57,6 +57,7 @@ func TypeParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.
 			if err != nil {
 				return nil, err
 			}
+			node.Debug = dict.Debug
 			return multiType(dict, ctx, tokens, inx)
 		case "ref":
 			if err := inxPP(tokens, inx); err != nil {
@@ -74,6 +75,7 @@ func TypeParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.
 
 		if *inx < len(tokens) && tokens[*inx].Type == lexer.TokenQuestion {
 			node.Flags = append(node.Flags, "OPTIONAL")
+			node.Debug = tokens[*inx].Debug
 			*inx++
 		}
 
@@ -87,6 +89,7 @@ func TypeParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.
 			return nil, err
 		}
 		node.Body = append(node.Body, typ)
+		node.Debug = typ.Debug
 		node.Kind = "LIST"
 		return multiType(node, ctx, tokens, inx)
 	}

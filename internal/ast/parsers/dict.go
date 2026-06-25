@@ -126,6 +126,7 @@ loop:
 			}
 
 			if token.Type == lexer.TokenCloseBrace {
+				node.Debug = token.Debug
 				break loop
 			}
 

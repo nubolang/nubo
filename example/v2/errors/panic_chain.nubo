@@ -1,0 +1,14 @@
+fn level3() void {
+    panic("panic at level3")
+}
+
+fn level2() void {
+    level3()
+}
+
+fn level1() void {
+    level2()
+}
+
+level1()
+

@@ -59,13 +59,18 @@ func (he *HtmlError) getTemplateProps() (map[string]any, error) {
 		return nil, he.err
 	}
 
-	if he.err.debug == nil {
-		return nil, he.err
-	}
+	file := ""
+	line := 0
+	code := ""
+	lines := ""
 
-	code, lines, ok := showHtmlCodeError(he.err.debug.File, he.err.debug.Line)
-	if !ok {
-		return nil, he.err
+	if he.err.debug != nil {
+		file = he.err.debug.File + ":" + strconv.Itoa(he.err.debug.Line) + ":" + strconv.Itoa(he.err.debug.Column)
+		line = he.err.debug.Line
+		if rawCode, rawLines, ok := showHtmlCodeError(he.err.debug.File, he.err.debug.Line); ok {
+			code = rawCode
+			lines = rawLines
+		}
 	}
 
 	var json string
@@ -78,11 +83,11 @@ func (he *HtmlError) getTemplateProps() (map[string]any, error) {
 		"Version": version.Version,
 		"Style":   template.HTML("<style>" + string(css) + "</style>"),
 		"Message": template.HTML(he.err.GetMessage(true)),
-		"File":    he.err.debug.File + ":" + strconv.Itoa(he.err.debug.Line) + ":" + strconv.Itoa(he.err.debug.Column),
-		"Line":    he.err.debug.Line,
+		"File":    file,
+		"Line":    line,
 		"Lines":   template.HTML(lines),
 		"Code":    template.HTML(code),
-		"Stack":   traceHtmlString(he.err.trace),
+		"Stack":   traceHtmlString(he.err.traceFrames()),
 		"JSON":    json,
 	}, nil
 }

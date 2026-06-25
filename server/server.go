@@ -13,6 +13,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/nubolang/nubo/config"
 	"github.com/nubolang/nubo/events"
+	"github.com/nubolang/nubo/internal/exception"
 	"github.com/nubolang/nubo/internal/runtime"
 	"github.com/nubolang/nubo/server/modules"
 	"github.com/nubolang/nubo/server/router"
@@ -102,13 +103,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if rcv := recover(); rcv != nil {
 			stack := debug.Stack()
 			zap.L().Error("server.request.panic", zap.Any("recover", rcv), zap.String("method", r.Method), zap.String("path", r.URL.Path), zap.String("stack", string(stack)))
-
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write(fmt.Appendf([]byte{}, "Nubo - Internal Server Error:\n%s\nStack Trace:\n%s", rcv, string(stack)))
-
-			if os.Getenv("NUBO_DEV") == "true" {
-				doLog(start, r.Method, r.URL.Path, cached)
-			}
+			s.handleError(exception.Create("panic: %v\n%s", rcv, string(stack)).WithStatusCode(http.StatusInternalServerError), w, r)
 		}
 	}()
 
