@@ -77,6 +77,7 @@ loop:
 				return nil, newErr(ErrSyntaxError, fmt.Sprintf("expected identifier, got %s", token.Type), token.Debug)
 			}
 
+			dg := token.Debug
 			name := token.Value
 			value := token.Value
 
@@ -108,6 +109,7 @@ loop:
 				Kind:    "CHILD",
 				Content: name,
 				Value:   value,
+				Debug:   dg,
 			})
 
 			token = tokens[*inx]
@@ -119,7 +121,6 @@ loop:
 				if err := inxPP(tokens, inx); err != nil {
 					return nil, err
 				}
-				node.Debug = token.Debug
 				return node, nil
 			}
 		}

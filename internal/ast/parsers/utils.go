@@ -20,6 +20,37 @@ func isWhite(token *lexer.Token) bool {
 	return slices.Contains(white, token.Type)
 }
 
+func debugRange(tokens []*lexer.Token, start, end int) *debug.Debug {
+	dg := *tokens[start].Debug
+	for j := start; j <= end && j < len(tokens); j++ {
+		token := tokens[j]
+		if token.Debug.Line != dg.Line {
+			break
+		}
+		if !isWhite(token) && token.Type != lexer.TokenNewLine {
+			dg.ColumnEnd = token.Debug.ColumnEnd
+		}
+	}
+	return &dg
+}
+
+func debugOffset(dg *debug.Debug, text string, offset int) *debug.Debug {
+	out := *dg
+	for j, ch := range []rune(text) {
+		if j >= offset {
+			break
+		}
+		if ch == '\n' {
+			out.Line++
+			out.Column = 1
+		} else {
+			out.Column++
+		}
+	}
+	out.ColumnEnd = out.Column
+	return &out
+}
+
 func inxPPIf(tokens []*lexer.Token, inx *int) error {
 	if *inx >= len(tokens) {
 		return exception.Create("unexpected end of input").WithDebug(tokens[*inx-1].Debug).WithLevel(exception.LevelSemantic)

@@ -16,7 +16,6 @@ func ListParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, inx 
 	}
 
 	token := tokens[*inx]
-	node.Debug = token.Debug
 	if token.Type == lexer.TokenCloseBracket {
 		last := *inx
 		if err := inxPP(tokens, inx); err != nil {
@@ -96,7 +95,6 @@ loop:
 			}
 
 			if token.Type == lexer.TokenCloseBracket {
-				node.Debug = token.Debug
 				break loop
 			}
 

@@ -3,7 +3,6 @@ package lexer
 import (
 	"strings"
 	"unicode"
-	"unicode/utf8"
 
 	"github.com/nubolang/nubo/internal/debug"
 )
@@ -56,13 +55,16 @@ func (lx *HtmlLexer) add(t TokenType, val string, ma ...map[string]any) {
 		m = ma[0]
 	}
 
-	end := lx.col + utf8.RuneCountInString(val) - 1
-	lx.tokens = append(lx.tokens, &Token{Type: t, Value: val, Debug: &debug.Debug{
-		File:      lx.file,
-		Line:      lx.line,
-		Column:    lx.col,
-		ColumnEnd: end,
-	}, Map: m})
+	lx.tokens = append(lx.tokens, newToken(t, val, val, m, lx.file, lx.line, lx.col))
+}
+
+func (lx *HtmlLexer) addAt(t TokenType, val string, start, line, col int, ma ...map[string]any) {
+	var m map[string]any
+	if len(ma) > 0 {
+		m = ma[0]
+	}
+	source := string(lx.input[start:lx.pos])
+	lx.tokens = append(lx.tokens, newToken(t, val, source, m, lx.file, line, col))
 }
 
 func (lx *HtmlLexer) Lex() ([]*Token, error) {
@@ -71,9 +73,13 @@ func (lx *HtmlLexer) Lex() ([]*Token, error) {
 		if ch == '<' {
 			lx.lexTag()
 		} else if ch == '!' && lx.peek(1) == '{' {
-			lx.lexUnescapedBrace()
+			if err := lx.lexUnescapedBrace(); err != nil {
+				return nil, err
+			}
 		} else if ch == '{' {
-			lx.lexBrace()
+			if err := lx.lexBrace(); err != nil {
+				return nil, err
+			}
 		} else {
 			lx.lexText()
 		}
@@ -82,23 +88,23 @@ func (lx *HtmlLexer) Lex() ([]*Token, error) {
 }
 
 func (lx *HtmlLexer) lexTag() {
-	lx.advance()
-
-	if lx.curr() == '/' {
+	if lx.peek(1) == '/' {
 		lx.add(TokenClosingStartTag, "</")
+		lx.advance()
 		lx.advance()
 	} else {
 		lx.add(TokenLessThan, "<")
+		lx.advance()
 	}
 
 	// tag name (letters, numbers, _, .)
 	readIdent := func() {
-		start := lx.pos
+		start, startLine, startCol := lx.pos, lx.line, lx.col
 		for unicode.IsLetter(lx.curr()) || unicode.IsDigit(lx.curr()) {
 			lx.advance()
 		}
 		if start != lx.pos {
-			lx.add(TokenIdentifier, string(lx.input[start:lx.pos]))
+			lx.addAt(TokenIdentifier, string(lx.input[start:lx.pos]), start, startLine, startCol)
 		}
 	}
 
@@ -131,11 +137,11 @@ func (lx *HtmlLexer) lexTag() {
 			lx.lexString()
 		default:
 			if unicode.IsLetter(ch) || unicode.IsDigit(ch) {
-				start := lx.pos
+				start, startLine, startCol := lx.pos, lx.line, lx.col
 				for unicode.IsLetter(lx.curr()) || unicode.IsDigit(lx.curr()) || lx.curr() == '_' || lx.curr() == '-' {
 					lx.advance()
 				}
-				lx.add(TokenIdentifier, string(lx.input[start:lx.pos]))
+				lx.addAt(TokenIdentifier, string(lx.input[start:lx.pos]), start, startLine, startCol)
 			} else {
 				lx.add(TokenUnknown, string(ch))
 				lx.advance()
@@ -159,6 +165,7 @@ func (lx *HtmlLexer) lexTag() {
 }
 
 func (lx *HtmlLexer) lexString() {
+	tokenStart, tokenLine, tokenCol := lx.pos, lx.line, lx.col
 	quote := lx.curr()
 	lx.advance()
 	start := lx.pos
@@ -169,70 +176,91 @@ func (lx *HtmlLexer) lexString() {
 	if lx.curr() == quote {
 		lx.advance()
 	}
-	lx.add(TokenString, val, map[string]any{
+	lx.addAt(TokenString, val, tokenStart, tokenLine, tokenCol, map[string]any{
 		"quote": string(quote),
 	})
 }
 
-func (lx *HtmlLexer) lexUnescapedBrace() {
+func (lx *HtmlLexer) lexUnescapedBrace() error {
 	// consume '!{'
-	lx.advance()
-	lx.advance()
 	lx.add(TokenUnescapedBrace, "!{")
+	lx.advance()
+	lx.advance()
 
 	// consume until matching '}'
 	depth := 1
-	start := lx.pos
+	start, startLine, startCol := lx.pos, lx.line, lx.col
 	for lx.curr() != 0 && depth > 0 {
 		if lx.curr() == '{' {
 			depth++
 		} else if lx.curr() == '}' {
 			depth--
+			if depth == 0 {
+				break
+			}
 		}
 		lx.advance()
 	}
-	content := string(lx.input[start : lx.pos-1])
-	lx.htmlContent(content)
+	if depth != 0 {
+		return newErr(ErrSyntaxError, "unclosed dynamic text", &debug.Debug{Line: lx.line, Column: lx.col, ColumnEnd: lx.col, File: lx.file})
+	}
+	content := string(lx.input[start:lx.pos])
+	if err := lx.htmlContent(content, startLine, startCol); err != nil {
+		return err
+	}
 	lx.add(TokenCloseBrace, "}")
+	lx.advance()
+	return nil
 }
 
-func (lx *HtmlLexer) lexBrace() {
+func (lx *HtmlLexer) lexBrace() error {
 	// consume '{'
-	lx.advance()
 	lx.add(TokenOpenBrace, "{")
+	lx.advance()
 
 	// consume until matching '}'
 	depth := 1
-	start := lx.pos
+	start, startLine, startCol := lx.pos, lx.line, lx.col
 	for lx.curr() != 0 && depth > 0 {
 		if lx.curr() == '{' {
 			depth++
 		} else if lx.curr() == '}' {
 			depth--
+			if depth == 0 {
+				break
+			}
 		}
 		lx.advance()
 	}
-	content := string(lx.input[start : lx.pos-1])
-	lx.htmlContent(content)
+	if depth != 0 {
+		return newErr(ErrSyntaxError, "unclosed dynamic text", &debug.Debug{Line: lx.line, Column: lx.col, ColumnEnd: lx.col, File: lx.file})
+	}
+	content := string(lx.input[start:lx.pos])
+	if err := lx.htmlContent(content, startLine, startCol); err != nil {
+		return err
+	}
 	lx.add(TokenCloseBrace, "}")
+	lx.advance()
+	return nil
 }
 
 func (lx *HtmlLexer) lexText() {
-	start := lx.pos
+	start, startLine, startCol := lx.pos, lx.line, lx.col
 	for lx.curr() != 0 && lx.curr() != '<' && !(lx.curr() == '!' && lx.peek(1) == '{') && lx.curr() != '{' {
 		lx.advance()
 	}
 	if start != lx.pos {
-		lx.add(TokenHtmlText, string(lx.input[start:lx.pos]))
+		lx.addAt(TokenHtmlText, string(lx.input[start:lx.pos]), start, startLine, startCol)
 	}
 }
 
-func (lx *HtmlLexer) htmlContent(content string) error {
+func (lx *HtmlLexer) htmlContent(content string, line, col int) error {
 	nuboLx, err := New(strings.NewReader(content), lx.debug.File)
 	if err != nil {
 		return err
 	}
 
+	nuboLx.SetDebugLineColData(line, col)
 	tokens, err := nuboLx.Parse()
 	if err != nil {
 		return err

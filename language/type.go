@@ -116,7 +116,7 @@ func (t *Type) String() string {
 	case ObjectTypeType:
 		return t.ID + next
 	case ObjectTypeNil:
-		return "(nil)"
+		return "nil"
 	case ObjectTypeString:
 		return t.Content
 	case ObjectTypeFunction:

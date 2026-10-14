@@ -189,9 +189,9 @@ func (i *Function) TypeString() string {
 }
 
 func (i *Function) String() string {
-	var argTypes []string
-	for _, arg := range i.Type().Args {
-		argTypes = append(argTypes, arg.String())
+	var args []string
+	for _, arg := range i.ArgTypes {
+		args = append(args, fmt.Sprintf("%s: %s", arg.Name(), arg.Type().String()))
 	}
 
 	var rt string
@@ -201,7 +201,7 @@ func (i *Function) String() string {
 		rt = i.Type().Value.String()
 	}
 
-	return fmt.Sprintf("(closure) (%v -> %s)", argTypes, rt)
+	return fmt.Sprintf("(fn (%s) %s)", strings.Join(args, ", "), rt)
 }
 
 func (i *Function) GetPrototype() Prototype {

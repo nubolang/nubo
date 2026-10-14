@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/nubolang/nubo/internal/ast/astnode"
+	"github.com/nubolang/nubo/internal/debug"
 	"github.com/nubolang/nubo/internal/lexer"
 )
 
@@ -58,13 +59,16 @@ loop:
 			token = tokens[*inx]
 			if token.Type == lexer.TokenNewLine || token.Type == lexer.TokenSemicolon {
 				*inx++
-				node.Debug = token.Debug
 				break loop
 			}
 
 			if isWhite(token) {
 				*inx++
 				continue
+			}
+
+			if len(body) == 0 {
+				node.Debug = token.Debug
 			}
 
 			var (
@@ -82,13 +86,15 @@ loop:
 					return nil, newErr(ErrSyntaxError, "unbalanced parentheses", token.Debug)
 				}
 				body = append(body, &astnode.Node{
-					Type: astnode.NodeTypeOperator,
-					Kind: token.Value,
+					Type:  astnode.NodeTypeOperator,
+					Kind:  token.Value,
+					Debug: token.Debug,
 				})
 			} else if isBinaryOperator(token.Type) {
 				value = &astnode.Node{
-					Type: astnode.NodeTypeOperator,
-					Kind: token.Value,
+					Type:  astnode.NodeTypeOperator,
+					Kind:  token.Value,
+					Debug: token.Debug,
 				}
 				body = append(body, value)
 			} else if token.Type != lexer.TokenWhiteSpace {
@@ -101,7 +107,6 @@ loop:
 				last := *inx
 				if err := inxPP(tokens, inx); err == nil {
 					if !isBinaryOperator(tokens[*inx].Type) && parenCount == 0 {
-						node.Debug = token.Debug
 						break loop
 					}
 				}
@@ -110,7 +115,6 @@ loop:
 
 			*inx++
 			if *inx >= len(tokens) {
-				node.Debug = token.Debug
 				break loop
 			}
 		}
@@ -194,11 +198,13 @@ func singleValueParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Toke
 			Debug: token.Debug,
 		}, nil
 	case lexer.TokenIdentifier:
+		start := *inx
 		id, err := TypeWholeIDParser(ctx, tokens, inx)
 		if err != nil {
 			return nil, err
 		}
 
+		dg := debugRange(tokens, start, *inx)
 		last := *inx
 
 		if err := inxPP(tokens, inx); err != nil {
@@ -207,22 +213,22 @@ func singleValueParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Toke
 				Kind:        "IDENTIFIER",
 				Value:       id,
 				IsReference: true,
-				Debug:       token.Debug,
+				Debug:       dg,
 			}, nil
 		}
 
-		token := tokens[*inx]
+		next := tokens[*inx]
 
-		if token.Type == lexer.TokenOpenParen || token.Type == lexer.TokenOpenBracket {
-			if token.Type == lexer.TokenOpenParen {
-				n, err := fnCallParser(ctx, sn, id, tokens, inx)
+		if next.Type == lexer.TokenOpenParen || next.Type == lexer.TokenOpenBracket {
+			if next.Type == lexer.TokenOpenParen {
+				n, err := fnCallParser(ctx, sn, id, dg, tokens, inx)
 				if err != nil {
 					return nil, err
 				}
 				*inx--
 				return n, nil
 			} else {
-				n, err := arrayKeyParser(ctx, sn, id, tokens, inx)
+				n, err := arrayKeyParser(ctx, sn, id, dg, tokens, inx)
 				if err != nil {
 					return nil, err
 				}
@@ -238,7 +244,7 @@ func singleValueParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Toke
 			Kind:        "IDENTIFIER",
 			Value:       id,
 			IsReference: true,
-			Debug:       token.Debug,
+			Debug:       dg,
 		}, nil
 	case lexer.TokenFn:
 		n, err := FnParser(ctx, sn, tokens, inx, sn, true)
@@ -268,13 +274,13 @@ func isBinaryOperator(typ lexer.TokenType) bool {
 	}
 }
 
-func arrayKeyParser(ctx context.Context, sn Parser_HTML, id string, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
+func arrayKeyParser(ctx context.Context, sn Parser_HTML, id string, dg *debug.Debug, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
 	node := &astnode.Node{
 		Type:        astnode.NodeTypeValue,
 		Kind:        "IDENTIFIER",
 		Value:       id,
 		IsReference: true,
-		Debug:       tokens[*inx].Debug,
+		Debug:       dg,
 	}
 
 loop:

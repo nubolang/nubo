@@ -2,6 +2,7 @@ package commands
 
 import (
 	"os"
+	"time"
 
 	"github.com/nubolang/nubo/config"
 	"github.com/nubolang/nubo/events"
@@ -27,12 +28,29 @@ func execRun(cmd *cobra.Command, args []string) {
 		eventProvider = events.NewDefaultProvider()
 	}
 
+	stopwatch, _ := cmd.Flags().GetBool("stopwatch")
+
+	var start time.Time
+	if stopwatch {
+		start = time.Now()
+	}
+
 	ex := runtime.New(eventProvider)
-	ret, err := runner.Execute(filePath, ex)
+	ret, parseDuration, err := runner.Execute(filePath, ex, stopwatch)
+
+	if stopwatch {
+		totalDuration := time.Since(start)
+
+		cmd.Printf("(debug) Load/parse time:  %s\n", *parseDuration)
+		cmd.Printf("(debug) Execution time:   %s\n", totalDuration-*parseDuration)
+		cmd.Printf("(debug) Total time:       %s\n", totalDuration)
+	}
+
 	if err != nil {
 		cmd.PrintErrln(err)
 		return
 	}
+
 	if ret != nil {
 		cmd.Println(ret.String())
 	}

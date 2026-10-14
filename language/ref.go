@@ -15,7 +15,7 @@ func NewRef(value Object) *Ref {
 }
 
 func (i *Ref) ID() string {
-	return fmt.Sprintf("%p", i)
+	return i.Data.ID()
 }
 
 func (i *Ref) Type() *Type {

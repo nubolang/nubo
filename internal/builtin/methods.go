@@ -22,7 +22,6 @@ func GetBuiltins() map[string]language.Object {
 	ctx := context.Background()
 
 	return map[string]language.Object{
-		"_id":       native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeString, idFn),
 		"println":   native.NewFunction(printlnFn),
 		"print":     native.NewFunction(printFn),
 		"type":      native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeString, typeFn),
@@ -30,7 +29,6 @@ func GetBuiltins() map[string]language.Object {
 		"memsize":   native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeInt, memsizeFn),
 		"inspect":   native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeString, inspectFn),
 		"sleep":     native.NewTypedFunction(ctx, native.OneArg("ms", language.TypeInt, language.NewInt(0, nil)), language.TypeVoid, sleepFn),
-		"ref":       native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeAny, refFn),
 		"unwrap":    native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeAny, unwrapFn),
 		"clone":     native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeAny, cloneFn),
 		"exit":      native.NewTypedFunction(ctx, native.OneArg("code", language.TypeInt, language.NewInt(0, nil)), language.TypeVoid, exitFn),
@@ -63,14 +61,6 @@ func GetBuiltins() map[string]language.Object {
 		"xdbg":        native.NewFunction(xdbgFn),
 		"__version__": n.String(version.Version),
 	}
-}
-
-func idFn(ctx native.FnCtx) (language.Object, error) {
-	obj, err := ctx.Get("obj")
-	if err != nil {
-		return nil, err
-	}
-	return language.NewString(obj.ID(), nil), nil
 }
 
 func printlnFn(args []language.Object) (language.Object, error) {
@@ -511,15 +501,6 @@ func exitFn(ctx native.FnCtx) (language.Object, error) {
 	os.Exit(int(code.Value().(int64)))
 
 	return nil, nil
-}
-
-func refFn(ctx native.FnCtx) (language.Object, error) {
-	obj, err := ctx.Get("obj")
-	if err != nil {
-		return nil, err
-	}
-
-	return language.NewRef(obj), nil
 }
 
 func unwrapFn(ctx native.FnCtx) (language.Object, error) {

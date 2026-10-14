@@ -22,6 +22,7 @@ func EventParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode
 		return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("expected identifier, got %s", token.Type), token.Debug)
 	}
 	node.Content = token.Value
+	node.Debug = token.Debug
 
 	if err := inxPP(tokens, inx); err != nil {
 		return nil, err
@@ -74,6 +75,7 @@ func eventArgumentParser(ctx context.Context, tokens []*lexer.Token, inx *int) (
 	node := &astnode.Node{
 		Type:    astnode.NodeTypeEventArgument,
 		Content: token.Value,
+		Debug:   token.Debug,
 	}
 
 	if err := inxPP(tokens, inx); err != nil {

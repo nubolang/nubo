@@ -15,15 +15,19 @@ func parseTemplateLiteral(_ context.Context, sn HTMLAttrValueParser, str *astnod
 		Debug:   str.Debug,
 	}
 
+	contentDebug := *str.Debug
+	contentDebug.Column++ // skip the opening quote
 	for _, part := range content {
+		dg := debugOffset(&contentDebug, str.Value.(string), part.offset)
 		if part.Dynamic {
-			partNode, err := sn.ParseHTMLAttrValue(str.Debug, part.Text)
+			partNode, err := sn.ParseHTMLAttrValue(dg, part.Text)
 			if err != nil {
 				return nil, err
 			}
 			dynamic := &astnode.Node{
 				Type:  astnode.NodeTypeDynamicText,
 				Value: partNode,
+				Debug: dg,
 			}
 			dynamic.Flags.Append("NODEVALUE")
 			s.Children = append(s.Children, dynamic)
@@ -31,6 +35,7 @@ func parseTemplateLiteral(_ context.Context, sn HTMLAttrValueParser, str *astnod
 			s.Children = append(s.Children, &astnode.Node{
 				Type:    astnode.NodeTypeRawText,
 				Content: part.Text,
+				Debug:   dg,
 			})
 		}
 	}
@@ -41,6 +46,7 @@ func parseTemplateLiteral(_ context.Context, sn HTMLAttrValueParser, str *astnod
 type TemplatePart struct {
 	Text    string
 	Dynamic bool
+	offset  int
 }
 
 func splitWithDynamic(s string) []TemplatePart {
@@ -50,12 +56,14 @@ func splitWithDynamic(s string) []TemplatePart {
 	var quote rune
 	escape := false
 	dynamicMode := false
+	start := 0
 
 	flush := func() {
 		if len(buf) > 0 {
 			parts = append(parts, TemplatePart{
 				Text:    string(buf),
 				Dynamic: dynamicMode,
+				offset:  start,
 			})
 			buf = nil
 		}
@@ -93,6 +101,7 @@ func splitWithDynamic(s string) []TemplatePart {
 			if depth == 0 {
 				flush()
 				dynamicMode = true
+				start = i + 2
 			} else {
 				buf = append(buf, r)
 			}
@@ -101,11 +110,15 @@ func splitWithDynamic(s string) []TemplatePart {
 			continue
 		}
 
-		if r == '}' {
+		if dynamicMode && r == '{' {
+			depth++
+		}
+		if dynamicMode && r == '}' {
 			depth--
 			if depth == 0 {
 				flush()
 				dynamicMode = false
+				start = i + 1
 				continue
 			}
 			buf = append(buf, r)

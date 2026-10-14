@@ -120,17 +120,20 @@ loop:
 			}
 
 			node.Content = strings.Join(parts, "")
+			node.Debug = debugRange(tokens, start, inx-1)
 
 			if inx >= len(tokens) {
 				if node.Kind == "DYNAMIC" && !strings.ContainsAny(node.Content, "-") {
 					node.Value = &astnode.Node{
-						Type: astnode.NodeTypeExpression,
+						Type:  astnode.NodeTypeExpression,
+						Debug: node.Debug,
 						Body: []*astnode.Node{
 							{
 								Type:        astnode.NodeTypeValue,
 								Kind:        "IDENTIFIER",
 								Value:       node.Content,
 								IsReference: true,
+								Debug:       node.Debug,
 							},
 						},
 					}
@@ -143,13 +146,15 @@ loop:
 			if token.Type == lexer.TokenIdentifier || token.Type == lexer.TokenColon {
 				if node.Kind == "DYNAMIC" && !strings.ContainsAny(node.Content, "-") {
 					node.Value = &astnode.Node{
-						Type: astnode.NodeTypeExpression,
+						Type:  astnode.NodeTypeExpression,
+						Debug: node.Debug,
 						Body: []*astnode.Node{
 							{
 								Type:        astnode.NodeTypeValue,
 								Kind:        "IDENTIFIER",
 								Value:       node.Content,
 								IsReference: true,
+								Debug:       node.Debug,
 							},
 						},
 					}
@@ -173,7 +178,9 @@ loop:
 			}
 
 			if node.Kind == "DYNAMIC" {
-				val, err := sn.ParseHTMLAttrValue(token.Debug, token.Value)
+				dg := *token.Debug
+				dg.Column++ // skip the opening quote
+				val, err := sn.ParseHTMLAttrValue(&dg, token.Value)
 				if err != nil {
 					return nil, err
 				}

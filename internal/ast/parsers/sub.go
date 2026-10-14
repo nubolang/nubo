@@ -17,6 +17,7 @@ func SubParser(ctx context.Context, p interface {
 		return nil, err
 	}
 
+	start := *inx
 	id, err := TypeWholeIDParser(ctx, tokens, inx)
 	if err != nil {
 		return nil, err
@@ -26,11 +27,12 @@ func SubParser(ctx context.Context, p interface {
 		return nil, err
 	}
 
+	dg := debugRange(tokens, start, *inx-1)
 	if strings.Count(id, ".") > 1 {
 		return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("expected 1 dot, got %d", strings.Count(id, ".")), tokens[*inx].Debug)
 	}
 
-	node, err := fnCallParser(ctx, p, id, tokens, inx)
+	node, err := fnCallParser(ctx, p, id, dg, tokens, inx)
 	if err != nil {
 		return nil, err
 	}
