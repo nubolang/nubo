@@ -75,7 +75,8 @@ loop:
 			}
 
 			dataset := &astnode.Node{
-				Type: astnode.NodeTypeDictField,
+				Type:  astnode.NodeTypeDictField,
+				Debug: key.Debug,
 				Value: &astnode.Node{
 					Type:  astnode.NodeTypeExpression,
 					Body:  []*astnode.Node{key},
@@ -126,7 +127,6 @@ loop:
 			}
 
 			if token.Type == lexer.TokenCloseBrace {
-				node.Debug = token.Debug
 				break loop
 			}
 

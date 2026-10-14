@@ -9,11 +9,13 @@ import (
 )
 
 func IdentifierParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
+	start := *inx
 	id, err := TypeWholeIDParser(ctx, tokens, inx)
 	if err != nil {
 		return nil, err
 	}
 
+	dg := debugRange(tokens, start, *inx)
 	if err := inxPP(tokens, inx); err != nil {
 		return nil, err
 	}
@@ -24,7 +26,7 @@ func IdentifierParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token
 	case lexer.TokenIncrement, lexer.TokenDecrement:
 		node := &astnode.Node{
 			Content: id,
-			Debug:   token.Debug,
+			Debug:   dg,
 		}
 		if token.Type == lexer.TokenIncrement {
 			node.Type = astnode.NodeTypeIncrement
@@ -37,6 +39,7 @@ func IdentifierParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token
 		node := &astnode.Node{
 			Type:    astnode.NodeTypeAssign,
 			Content: id,
+			Debug:   dg,
 		}
 
 		if err := inxPP(tokens, inx); err != nil {
@@ -53,9 +56,9 @@ func IdentifierParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token
 
 		return skipSemi(tokens, inx, node), nil
 	case lexer.TokenOpenParen:
-		return fnCallParser(ctx, sn, id, tokens, inx)
+		return fnCallParser(ctx, sn, id, dg, tokens, inx)
 	case lexer.TokenOpenBracket:
-		access, err := arrayKeyParser(ctx, sn, id, tokens, inx)
+		access, err := arrayKeyParser(ctx, sn, id, dg, tokens, inx)
 		if err != nil {
 			return nil, err
 		}
@@ -72,7 +75,7 @@ func IdentifierParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token
 		case lexer.TokenIncrement, lexer.TokenDecrement:
 			node := &astnode.Node{
 				Content: id,
-				Debug:   token.Debug,
+				Debug:   dg,
 			}
 			node.ArrayAccess = access.ArrayAccess
 
@@ -87,6 +90,7 @@ func IdentifierParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token
 			node := &astnode.Node{
 				Type:    astnode.NodeTypeAssign,
 				Content: id,
+				Debug:   dg,
 			}
 			node.ArrayAccess = access.ArrayAccess
 

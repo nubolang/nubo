@@ -45,11 +45,13 @@ func TypeParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.
 	}
 
 	if tokens[*inx].Type == lexer.TokenIdentifier || tokens[*inx].Type == lexer.TokenNil {
+		start := *inx
 		id, err := TypeWholeIDParser(ctx, tokens, inx)
 		if err != nil {
 			return nil, err
 		}
 		node.Content = id
+		node.Debug = debugRange(tokens, start, *inx)
 
 		switch node.Content {
 		case "dict":
@@ -60,6 +62,7 @@ func TypeParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.
 			node.Debug = dict.Debug
 			return multiType(dict, ctx, tokens, inx)
 		case "ref":
+			dg := node.Debug
 			if err := inxPP(tokens, inx); err != nil {
 				return nil, err
 			}
@@ -68,6 +71,7 @@ func TypeParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.
 				return nil, err
 			}
 			node.Kind = "REF"
+			node.Debug = dg
 			return multiType(node, ctx, tokens, inx)
 		}
 
@@ -75,7 +79,6 @@ func TypeParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.
 
 		if *inx < len(tokens) && tokens[*inx].Type == lexer.TokenQuestion {
 			node.Flags = append(node.Flags, "OPTIONAL")
-			node.Debug = tokens[*inx].Debug
 			*inx++
 		}
 
@@ -89,7 +92,6 @@ func TypeParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.
 			return nil, err
 		}
 		node.Body = append(node.Body, typ)
-		node.Debug = typ.Debug
 		node.Kind = "LIST"
 		return multiType(node, ctx, tokens, inx)
 	}

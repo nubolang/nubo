@@ -5,10 +5,11 @@ import (
 	"fmt"
 
 	"github.com/nubolang/nubo/internal/ast/astnode"
+	"github.com/nubolang/nubo/internal/debug"
 	"github.com/nubolang/nubo/internal/lexer"
 )
 
-func fnCallParser(ctx context.Context, attrParser Parser_HTML, id string, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
+func fnCallParser(ctx context.Context, attrParser Parser_HTML, id string, dg *debug.Debug, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
 	token := tokens[*inx]
 	if token.Type != lexer.TokenOpenParen {
 		return nil, newErr(ErrUnexpectedToken, fmt.Sprintf("expected '(' but got %s", token.Type), token.Debug)
@@ -17,7 +18,7 @@ func fnCallParser(ctx context.Context, attrParser Parser_HTML, id string, tokens
 	fn := &astnode.Node{
 		Type:    astnode.NodeTypeFunctionCall,
 		Content: id,
-		Debug:   token.Debug,
+		Debug:   dg,
 	}
 
 	if err := inxPP(tokens, inx); err != nil {
@@ -64,7 +65,6 @@ loop:
 						fn.Args = append(fn.Args, node)
 						currentTokens = nil
 					}
-					fn.Debug = token.Debug
 					*inx++
 					break loop
 				}
@@ -193,18 +193,19 @@ loop:
 }
 
 func fnChildParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
-	debug := tokens[*inx].Debug
+	start := *inx
 	id, err := TypeWholeIDParser(ctx, tokens, inx)
 	if err != nil {
 		return nil, err
 	}
 
+	dg := debugRange(tokens, start, *inx)
 	if next, err := inxPPeak(tokens, inx); err == nil {
 		if err := inxPP(tokens, inx); err != nil {
 			return nil, err
 		}
 		if next.Type == lexer.TokenOpenParen {
-			return fnCallParser(ctx, sn, id, tokens, inx)
+			return fnCallParser(ctx, sn, id, dg, tokens, inx)
 		}
 	}
 
@@ -212,7 +213,7 @@ func fnChildParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, i
 		Type:    astnode.NodeTypeValue,
 		Content: id,
 		Kind:    "IDENTIFIER",
-		Debug:   debug,
+		Debug:   dg,
 	}, nil
 }
 

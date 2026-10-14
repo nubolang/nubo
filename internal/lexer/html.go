@@ -57,7 +57,7 @@ scanAttrs:
 	}
 
 	if selfClosing || html.VoidTags[tag] {
-		lx.add(TokenHtmlBlock, string(lx.input[start:lx.pos]), nil)
+		lx.addAt(TokenHtmlBlock, string(lx.input[start:lx.pos]), nil, start, startLine, startCol)
 		return nil
 	}
 
@@ -114,13 +114,14 @@ scanAttrs:
 
 	if depth != 0 {
 		return newErr(ErrSyntaxError, "Unterminated html block", &debug.Debug{
-			File:   lx.file,
-			Column: startCol,
-			Line:   startLine,
+			File:      lx.file,
+			Column:    startCol,
+			ColumnEnd: startCol,
+			Line:      startLine,
 		})
 	}
 
-	lx.add(TokenHtmlBlock, string(lx.input[start:lx.pos]), nil)
+	lx.addAt(TokenHtmlBlock, string(lx.input[start:lx.pos]), nil, start, startLine, startCol)
 	return nil
 }
 

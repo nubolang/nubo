@@ -60,7 +60,8 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 			id := "var_" + fmt.Sprintf("%d", inx)
 			inx++
 			if child.IsReference {
-				sb.WriteString(id + "()")
+				sb.WriteString(id)
+				sb.WriteString("()")
 				obFn := func() (any, error) {
 					obj, ok := i.GetObject(child.Value.(string))
 					if !ok {
@@ -132,7 +133,8 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 			}
 			id := "var_" + fmt.Sprintf("%d", inx)
 			inx++
-			sb.WriteString(id + "()")
+			sb.WriteString(id)
+			sb.WriteString("()")
 			env[id] = valueFn
 
 		case astnode.NodeTypeInlineFunction:
@@ -169,7 +171,8 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 			}
 			id := "var_" + fmt.Sprintf("%d", inx)
 			inx++
-			sb.WriteString(id + "()")
+			sb.WriteString(id)
+			sb.WriteString("()")
 			env[id] = stFn
 
 		default:

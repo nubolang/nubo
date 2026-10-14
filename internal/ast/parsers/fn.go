@@ -98,6 +98,7 @@ loop:
 		node.Body = append(node.Body, &astnode.Node{
 			Type:  astnode.NodeTypeReturn,
 			Value: body,
+			Debug: body.Debug,
 			Flags: astnode.AppendFlags{"NODEVALUE"},
 		})
 
@@ -165,7 +166,7 @@ bodyloop:
 			}
 
 			if token.Type == lexer.TokenOpenParen {
-				fnCall, err := fnCallParser(ctx, sn, "<inline>", tokens, inx)
+				fnCall, err := fnCallParser(ctx, sn, "<inline>", node.Debug, tokens, inx)
 				if err != nil {
 					return nil, err
 				}

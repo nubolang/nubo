@@ -90,7 +90,6 @@ func HTMLParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer.Tok
 					return nil, newErr(ErrUnexpectedToken, "unexpected token", token.Debug)
 				}
 
-				node.Debug = tok.Debug
 				*inx++
 				return node, nil
 			}
@@ -120,6 +119,7 @@ func HTMLParser(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer.Tok
 func parseTextNodes(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer.Token, inx *int) ([]*astnode.Node, error) {
 	var children []*astnode.Node
 	var content strings.Builder
+	var contentDebug *debug.Debug
 
 	flushContent := func() {
 		raw := content.String()
@@ -127,8 +127,10 @@ func parseTextNodes(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer
 			children = append(children, &astnode.Node{
 				Type:    astnode.NodeTypeElementRawText,
 				Content: normalizeTextSpace(raw),
+				Debug:   contentDebug,
 			})
 			content.Reset()
+			contentDebug = nil
 		}
 	}
 
@@ -158,6 +160,9 @@ textloop:
 				break textloop
 
 			default:
+				if contentDebug == nil {
+					contentDebug = tok.Debug
+				}
 				content.WriteString(tok.Value)
 				*inx++
 			}
@@ -170,6 +175,10 @@ textloop:
 }
 
 func parseDynamicText(ctx context.Context, sn HTMLAttrValueParser, tokens []*lexer.Token, inx *int, isUnescaped bool) (*astnode.Node, error) {
+	startDebug := tokens[*inx].Debug
+	dg := *startDebug
+	dg.Column = startDebug.ColumnEnd + 1
+	dg.ColumnEnd = dg.Column
 	var (
 		b     strings.Builder
 		debug *debug.Debug
@@ -183,7 +192,11 @@ func parseDynamicText(ctx context.Context, sn HTMLAttrValueParser, tokens []*lex
 		default:
 			tok := tokens[*inx]
 			debug = tok.Debug
-			b.WriteString(tok.Text())
+			source, ok := tok.Map["source"].(string)
+			if !ok {
+				source = tok.Text()
+			}
+			b.WriteString(source)
 
 			if tok.Type == lexer.TokenOpenBrace || tok.Type == lexer.TokenUnescapedBrace {
 				braceCount++
@@ -201,13 +214,14 @@ func parseDynamicText(ctx context.Context, sn HTMLAttrValueParser, tokens []*lex
 					if strings.TrimSpace(text) == "" {
 						return nil, nil
 					}
-					value, err := sn.ParseHTMLAttrValue(debug, text)
+					value, err := sn.ParseHTMLAttrValue(&dg, text)
 					if err != nil {
 						return nil, err
 					}
 					node := &astnode.Node{
 						Type:  astnode.NodeTypeElementDynamicText,
 						Value: value,
+						Debug: startDebug,
 					}
 					node.Flags.Append("NODEVALUE")
 					if isUnescaped {

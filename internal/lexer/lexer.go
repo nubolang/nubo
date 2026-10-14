@@ -6,7 +6,6 @@ import (
 	"slices"
 	"strings"
 	"unicode"
-	"unicode/utf8"
 
 	"github.com/nubolang/nubo/internal/debug"
 )
@@ -78,13 +77,16 @@ func (lx *Lexer) advance() {
 }
 
 func (lx *Lexer) add(t TokenType, v string, extra map[string]any) {
-	end := lx.col + utf8.RuneCountInString(v) - 1
-	tok := &Token{Type: t, Value: v, Map: extra, Debug: &debug.Debug{Line: lx.line, Column: lx.col, ColumnEnd: end, File: lx.file}}
-	lx.tokens = append(lx.tokens, tok)
+	lx.tokens = append(lx.tokens, newToken(t, v, v, extra, lx.file, lx.line, lx.col))
+}
+
+func (lx *Lexer) addAt(t TokenType, v string, extra map[string]any, start, line, col int) {
+	source := string(lx.input[start:lx.pos])
+	lx.tokens = append(lx.tokens, newToken(t, v, source, extra, lx.file, line, col))
 }
 
 func (lx *Lexer) newErr(base error, err string) error {
-	return newErr(base, err, &debug.Debug{Line: lx.line, Column: lx.col, File: lx.file})
+	return newErr(base, err, &debug.Debug{Line: lx.line, Column: lx.col, ColumnEnd: lx.col, File: lx.file})
 }
 
 // ---------- public entry ----------
@@ -115,9 +117,9 @@ func (lx *Lexer) Parse() ([]*Token, error) {
 					return nil, err
 				}
 			} else if lx.peek(1) == '>' {
+				lx.add(TokenSelfClosingTag, "/>", nil)
 				lx.advance() // consume '/'
 				lx.advance() // consume '>'
-				lx.add(TokenSelfClosingTag, "/>", nil)
 			} else {
 				lx.add(TokenSlash, "/", nil)
 				lx.advance()
@@ -142,6 +144,9 @@ func (lx *Lexer) Parse() ([]*Token, error) {
 				lx.add(TokenPlus, "+", nil)
 				lx.advance()
 			}
+		case '%':
+			lx.add(TokenPercent, "%", nil)
+			lx.advance()
 		case '-':
 			switch lx.peek(1) {
 			case '-':
@@ -258,7 +263,7 @@ func (lx *Lexer) Parse() ([]*Token, error) {
 // ---------- specialised lexers ----------
 
 func (lx *Lexer) lexSingleLineComment() error {
-	startCol := lx.col
+	start, startLine, startCol := lx.pos, lx.line, lx.col
 	lx.advance()
 	lx.advance() // skip "//"
 	var sb strings.Builder
@@ -267,17 +272,17 @@ func (lx *Lexer) lexSingleLineComment() error {
 		sb.WriteRune(lx.curr())
 		lx.advance()
 	}
-	lx.add(TokenSingleLineComment, sb.String(), nil)
+	lx.addAt(TokenSingleLineComment, sb.String(), nil, start, startLine, startCol)
 	// newline token (kept for debug parity with old impl)
 	if lx.curr() == '\n' {
 		lx.add(TokenNewLine, "\n", nil)
 		lx.advance()
 	}
-	_ = startCol // col already correct due to advance
 	return nil
 }
 
 func (lx *Lexer) lexMultiLineComment() error {
+	start, startLine, startCol := lx.pos, lx.line, lx.col
 	lx.advance()
 	lx.advance() // skip "/*"
 	var sb strings.Builder
@@ -287,26 +292,26 @@ func (lx *Lexer) lexMultiLineComment() error {
 			sb.WriteString("*/")
 			lx.advance()
 			lx.advance()
-			lx.add(TokenMultiLineComment, sb.String(), nil)
+			lx.addAt(TokenMultiLineComment, sb.String(), nil, start, startLine, startCol)
 			return nil
 		}
 		sb.WriteRune(lx.curr())
 		lx.advance()
 	}
-	return newErr(ErrSyntaxError, "unterminated multi‑line comment", &debug.Debug{Line: lx.line, Column: lx.col, File: lx.file})
+	return newErr(ErrSyntaxError, "unterminated multi‑line comment", &debug.Debug{Line: startLine, Column: startCol, ColumnEnd: startCol, File: lx.file})
 }
 
 func (lx *Lexer) lexString() error {
+	start, startLine, startCol := lx.pos, lx.line, lx.col
 	quote := lx.curr()
 	lx.advance() // skip opening quote
-	startLine, startCol := lx.line, lx.col
 	var sb strings.Builder
 	for lx.curr() != 0 {
 		if lx.curr() == '\\' { // escape
 			sb.WriteRune(lx.curr())
 			lx.advance()
 			if lx.curr() == 0 {
-				return newErr(ErrSyntaxError, "incomplete escape sequence", &debug.Debug{Line: lx.line, Column: lx.col, File: lx.file})
+				return newErr(ErrSyntaxError, "incomplete escape sequence", &debug.Debug{Line: lx.line, Column: lx.col, ColumnEnd: lx.col, File: lx.file})
 			}
 			sb.WriteRune(lx.curr())
 			lx.advance()
@@ -316,28 +321,28 @@ func (lx *Lexer) lexString() error {
 			lx.advance() // consume closing quote
 			strVal, err := escapeString(sb.String(), quote)
 			if err != nil {
-				return newErr(ErrSyntaxError, err.Error(), &debug.Debug{Line: startLine, Column: startCol, File: lx.file})
+				return newErr(ErrSyntaxError, err.Error(), &debug.Debug{Line: startLine, Column: startCol, ColumnEnd: startCol, File: lx.file})
 			}
-			lx.add(TokenString, strVal, map[string]any{"quote": string(quote)})
+			lx.addAt(TokenString, strVal, map[string]any{"quote": string(quote)}, start, startLine, startCol)
 			return nil
 		}
 		sb.WriteRune(lx.curr())
 		lx.advance()
 	}
-	return newErr(ErrSyntaxError, "missing closing quote", &debug.Debug{Line: startLine, Column: startCol, File: lx.file})
+	return newErr(ErrSyntaxError, "missing closing quote", &debug.Debug{Line: startLine, Column: startCol, ColumnEnd: startCol, File: lx.file})
 }
 
 func (lx *Lexer) lexIdentifierOrKeyword() {
-	startPos := lx.pos
+	startPos, startLine, startCol := lx.pos, lx.line, lx.col
 	for unicode.IsLetter(lx.curr()) || unicode.IsDigit(lx.curr()) || lx.curr() == '_' {
 		lx.advance()
 	}
 	value := string(lx.input[startPos:lx.pos])
-	lx.add(lx.getIdentType(value), value, nil)
+	lx.addAt(lx.getIdentType(value), value, nil, startPos, startLine, startCol)
 }
 
 func (lx *Lexer) lexNumber() error {
-	startPos := lx.pos
+	startPos, startLine, startCol := lx.pos, lx.line, lx.col
 	isFloat := false
 
 	if lx.curr() == '0' && slices.Contains([]rune{'b', 'B', 'o', 'O', 'x', 'X'}, lx.peek(1)) {
@@ -351,19 +356,19 @@ func (lx *Lexer) lexNumber() error {
 		}
 		if lx.curr() == '.' {
 			if isFloat {
-				return newErr(ErrSyntaxError, "invalid number format", &debug.Debug{Line: lx.line, Column: lx.col, File: lx.file})
+				return newErr(ErrSyntaxError, "invalid number format", &debug.Debug{Line: lx.line, Column: lx.col, ColumnEnd: lx.col, File: lx.file})
 			}
 			isFloat = true
 		}
 		lx.advance()
 	}
 	value := strings.ReplaceAll(string(lx.input[startPos:lx.pos]), "_", "")
-	lx.add(TokenNumber, value, map[string]any{"isFloat": isFloat, "base": 10})
+	lx.addAt(TokenNumber, value, map[string]any{"isFloat": isFloat, "base": 10}, startPos, startLine, startCol)
 	return nil
 }
 
 func (lx *Lexer) lexPrefixedNumber() error {
-	startPos := lx.pos
+	startPos, startLine, startCol := lx.pos, lx.line, lx.col
 
 	lx.advance()
 
@@ -389,7 +394,7 @@ func (lx *Lexer) lexPrefixedNumber() error {
 	}
 
 	value := strings.ReplaceAll(string(lx.input[startPos+2:lx.pos]), "_", "")
-	lx.add(TokenNumber, value, map[string]any{"isFloat": false, "base": base})
+	lx.addAt(TokenNumber, value, map[string]any{"isFloat": false, "base": base}, startPos, startLine, startCol)
 	return nil
 }
 

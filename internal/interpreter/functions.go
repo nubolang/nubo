@@ -156,9 +156,16 @@ func isEmptyListFallbackLiteral(node *astnode.Node) bool {
 }
 
 func (i *Interpreter) handleFunctionCall(node *astnode.Node) (language.Object, error) {
-	if node.Content == "xdbg" {
-		zap.L().Debug("interpreter.function.call.xdbg", zap.Uint("id", i.ID))
-		return xdbg(node)
+	switch node.Content {
+	case "ref":
+		zap.L().Debug("interpreter.function.call.ref", zap.Uint("id", i.ID))
+		return ref(i, node)
+	case "_callsite":
+		zap.L().Debug("interpreter.function.call._callsite", zap.Uint("id", i.ID))
+		return _callsite(node)
+	case "_id":
+		zap.L().Debug("interpreter.function.call._id", zap.Uint("id", i.ID))
+		return _id(i, node)
 	}
 
 	zap.L().Debug("interpreter.function.call.start", zap.Uint("id", i.ID), zap.String("name", node.Content))

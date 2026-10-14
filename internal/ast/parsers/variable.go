@@ -76,7 +76,6 @@ func VariableParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, 
 
 		node.Value = value
 		node.Flags.Append("NODEVALUE")
-		node.Debug = value.Debug
 	}
 
 	return skipSemi(tokens, inx, node), nil

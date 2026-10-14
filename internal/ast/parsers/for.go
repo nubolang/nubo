@@ -29,6 +29,7 @@ func ForParser(ctx context.Context, p Parser_HTML, tokens []*lexer.Token, inx *i
 		Type:  astnode.NodeTypeValue,
 		Kind:  "IDENTIFIER",
 		Value: token.Value,
+		Debug: token.Debug,
 	}
 
 	if err := inxPP(tokens, inx); err != nil {
@@ -51,6 +52,7 @@ func ForParser(ctx context.Context, p Parser_HTML, tokens []*lexer.Token, inx *i
 			Type:  astnode.NodeTypeValue,
 			Kind:  "IDENTIFIER",
 			Value: token.Value,
+			Debug: token.Debug,
 		}
 
 		if err := inxPP(tokens, inx); err != nil {
@@ -131,7 +133,6 @@ bodyloop:
 				braceCount--
 				if braceCount == 0 {
 					*inx++
-					node.Debug = token.Debug
 					break bodyloop
 				}
 			} else if token.Type == lexer.TokenOpenBrace {

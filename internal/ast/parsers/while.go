@@ -83,7 +83,6 @@ bodyloop:
 			if token.Type == lexer.TokenCloseBrace {
 				braceCount--
 				if braceCount == 0 {
-					node.Debug = token.Debug
 					*inx++
 					break bodyloop
 				}

@@ -23,7 +23,6 @@ func SpawnParser(ctx context.Context, p Parser_HTML, tokens []*lexer.Token, inx 
 	}
 
 	node.Children = append(node.Children, value)
-	node.Debug = value.Debug
 
 	return node, nil
 }
