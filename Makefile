@@ -1,5 +1,8 @@
 .PHONY: build build-all run prepare format serve
 
+SW ?= 0
+STOPWATCH := $(if $(filter 1 true yes,$(SW)),--stopwatch,)
+
 build:
 	@go build -o bin/nubo ./cmd/nubo
 	@echo "🚀 Build complete"
@@ -15,13 +18,13 @@ build-all:
 	@echo "🚀 Cross-platform build complete (darwin/linux/windows)"
 
 run: build
-	@./bin/nubo ./example/v2/$(FILE).nubo --dev --loglevel=WARN --nocolor
+	@./bin/nubo ./example/v2/$(FILE).nubo --dev --loglevel=DEBUG --nocolor $(STOPWATCH)
 
 runinfo: build
-	@./bin/nubo ./example/v2/$(FILE).nubo --dev --loglevel=INFO
+	@./bin/nubo ./example/v2/$(FILE).nubo --dev --loglevel=INFO $(STOPWATCH)
 
 runex: build
-	@./bin/nubo ./examples/$(FILE).nubo --dev --loglevel=INFO
+	@./bin/nubo ./examples/$(FILE).nubo --dev --loglevel=INFO $(STOPWATCH)
 
 prepare: build
 	@./bin/nubo prepare ./example/v2 --dev
@@ -33,4 +36,4 @@ serve: build
 	@./bin/nubo serve ./example/v2/$(FOLDER) --dev --loglevel=WARN
 
 smoketest: build
-	@./bin/nubo ./tests/run_all.nubo
+	@./bin/nubo ./tests/run_all.nubo --dev
