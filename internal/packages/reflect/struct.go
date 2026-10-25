@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"sync"
 
 	"github.com/nubolang/nubo/internal/debug"
 	"github.com/nubolang/nubo/language"
@@ -11,8 +12,11 @@ import (
 )
 
 var reflStruct *language.Struct
+var reflStructMu sync.Mutex
 
 func StructReflect(dg *debug.Debug, ctx context.Context) language.Object {
+	reflStructMu.Lock()
+	defer reflStructMu.Unlock()
 	if reflStruct != nil {
 		return reflStruct
 	}
@@ -277,6 +281,7 @@ func StructReflect(dg *debug.Debug, ctx context.Context) language.Object {
 		return language.Nil, nil
 	}))
 
+	installOperations(set, reflStruct.Type())
 	return reflStruct
 }
 

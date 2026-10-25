@@ -214,3 +214,7 @@ func (s *StructInstance) BucketSet(key string, value any) {
 	}
 	s.bucket[key] = value
 }
+
+func (s *StructInstance) Definition() *Struct {
+	return s.base
+}

@@ -86,7 +86,7 @@ func _typeFn(ctx native.FnCtx) (language.Object, error) {
 	if err != nil {
 		return nil, err
 	}
-	return language.NewString(obj.TypeString(), nil), nil
+	return language.NewString(obj.Type().String(), nil), nil
 }
 
 func typeFn(ctx native.FnCtx) (language.Object, error) {
@@ -632,12 +632,24 @@ func typecheckFn(a *n.Args) (any, error) {
 		return nil, fmt.Errorf("typ argument is required")
 	}
 
+	val := a.Name("value")
+	if val == nil {
+		return nil, fmt.Errorf("value argument is required")
+	}
+
+	if description, ok := typArg.(*language.String); ok {
+		return description.Data == val.Type().String(), nil
+	}
+
 	var target *language.Type
 
-	if typeObj, ok := typArg.(*language.TypeObject); ok && typeObj != nil && typeObj.Data != nil {
+	if definition, ok := typArg.(*language.Struct); ok {
+		target = definition.Type().DeepClone()
+		target.BaseType = language.ObjectTypeStructInstance
+	} else if typeObj, ok := typArg.(*language.TypeObject); ok && typeObj != nil && typeObj.Data != nil {
 		target = typeObj.Data
 	} else if fn, ok := typArg.(*language.Function); ok && fn != nil {
-		// Allow conversion/constructor functions like `int`, `string`, `User` as type descriptors.
+		// Preserve conversion functions and other typed functions as return-type descriptors.
 		if fn.ReturnType != nil {
 			target = fn.ReturnType
 		} else if fnType := fn.Type(); fnType != nil && fnType.Base() == language.ObjectTypeFunction && fnType.Value != nil {
@@ -646,12 +658,7 @@ func typecheckFn(a *n.Args) (any, error) {
 	}
 
 	if target == nil {
-		return nil, fmt.Errorf("typ argument must be a type object or typed function")
-	}
-
-	val := a.Name("value")
-	if val == nil {
-		return nil, fmt.Errorf("value argument is required")
+		return nil, fmt.Errorf("typ argument must be a type object, struct definition, typed function, or type description string")
 	}
 
 	return language.TypeCheck(target, val.Type()), nil

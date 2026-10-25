@@ -1,0 +1,7 @@
+const remains = 100 % 33
+
+if remains != (100 - 3*33) {
+    panic("Invalid result")
+} else {
+    println("100 % 33 =", remains)
+}

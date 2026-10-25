@@ -114,11 +114,11 @@ func (t *Type) String() string {
 	default:
 		return t.BaseType.String() + next
 	case ObjectTypeType:
-		return t.ID + next
+		return t.BaseType.String() + next
 	case ObjectTypeNil:
 		return "nil"
 	case ObjectTypeString:
-		return t.Content
+		return t.Content + next
 	case ObjectTypeFunction:
 		args := make([]string, len(t.Args))
 		for i, arg := range t.Args {
@@ -286,6 +286,16 @@ func (t *Type) DeepClone() *Type {
 		ID:       t.ID,
 	}
 
+	if t.Iface != nil {
+		clone.Iface = &IfaceType{Functions: make([]IfaceTypeFn, len(t.Iface.Functions))}
+		for i, fn := range t.Iface.Functions {
+			args := make([]*Type, len(fn.Args))
+			for j, arg := range fn.Args {
+				args[j] = arg.DeepClone()
+			}
+			clone.Iface.Functions[i] = IfaceTypeFn{Name: fn.Name, Args: args, Returns: fn.Returns.DeepClone()}
+		}
+	}
 	if t.Key != nil {
 		clone.Key = t.Key.DeepClone()
 	}

@@ -1,0 +1,10 @@
+let i = 10
+let j = ref(i)
+
+i++
+
+println(i, j)
+println(_id(i), _id(j))
+
+
+println(_callsite())
