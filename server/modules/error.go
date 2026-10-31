@@ -23,8 +23,14 @@ func NewError(code int, message string) (language.Object, error) {
 		return nil, fmt.Errorf("@server/error has no prototype")
 	}
 
-	proto.SetObject(context.Background(), "status", language.NewInt(int64(code), nil))
-	proto.SetObject(context.Background(), "message", language.NewString(message, nil))
+	ctx := context.Background()
+	if err := proto.SetObject(ctx, "status", language.NewInt(int64(code), nil)); err != nil {
+		return nil, err
+	}
+
+	if err := proto.SetObject(ctx, "message", language.NewString(message, nil)); err != nil {
+		return nil, err
+	}
 
 	return inst, nil
 }

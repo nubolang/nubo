@@ -1,0 +1,79 @@
+let cleared = [1, 2, 3]
+let seen: []int = []
+let indexes: []int = []
+
+for index, value in cleared {
+    indexes.push(index)
+    seen.push(value)
+    cleared.clear()
+}
+
+expect(seen.join(",") == "1,2,3", "clear should preserve the loop's original entries")
+expect(indexes.join(",") == "0,1,2", "clear should preserve the original indexes")
+expect(cleared.length() == 0, "clear should still update the source")
+
+let popped = [1, 2, 3]
+seen.clear()
+
+for value in popped {
+    seen.push(value)
+    popped.pop()
+}
+
+expect(seen.join(",") == "1,2,3", "pop should not shorten the active iteration")
+expect(popped.length() == 0, "pop should still remove entries")
+
+let deleted = [1, 2, 3]
+seen.clear()
+
+for value in deleted {
+    seen.push(value)
+    deleted.del(0)
+}
+
+expect(seen.join(",") == "1,2,3", "delete should not skip entries")
+expect(deleted.length() == 0, "delete should still update the source")
+
+let changed = [1, 2, 3]
+seen.clear()
+
+for index, value in changed {
+    seen.push(value)
+
+    if index == 0 {
+        changed[1] = 20
+        changed.reverse()
+        changed.push(4)
+    }
+}
+
+expect(seen.join(",") == "1,2,3", "replacement, reverse, and push should preserve the active iteration")
+expect(changed.join(",") == "3,20,1,4", "loop mutations should remain applied")
+
+seen.clear()
+for value in changed {
+    seen.push(value)
+}
+expect(seen.join(",") == "3,20,1,4", "new loops should see the updated list")
+
+struct IterationItem {
+    value: int
+}
+
+let first = IterationItem()
+let second = IterationItem()
+let objects = [first, second]
+seen.clear()
+
+for index, item in objects {
+    if index == 0 {
+        second.value = 9
+        objects.clear()
+    }
+
+    seen.push(item.value)
+}
+
+expect(seen.join(",") == "0,9", "iteration should keep contained objects shared")
+
+return true

@@ -10,6 +10,10 @@ import (
 )
 
 func TypeParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.Node, error) {
+	if *inx >= len(tokens) {
+		return nil, parserEOF(tokens)
+	}
+
 	node := &astnode.Node{
 		Type:  astnode.NodeTypeType,
 		Debug: tokens[*inx].Debug,
@@ -33,8 +37,12 @@ func TypeParser(ctx context.Context, tokens []*lexer.Token, inx *int) (*astnode.
 			return nil, err
 		}
 
+		if *inx >= len(tokens) {
+			return nil, parserEOF(tokens)
+		}
+
 		if tokens[*inx].Type != lexer.TokenCloseParen {
-			return nil, fmt.Errorf("expected close paren after type")
+			return nil, newErr(ErrUnexpectedToken, "expected close paren after type", tokens[*inx].Debug)
 		}
 
 		if err := inxPP(tokens, inx); err != nil {
@@ -301,6 +309,10 @@ loop:
 			}
 
 			node.Args = append(node.Args, typ)
+
+			if *inx >= len(tokens) {
+				return parserEOF(tokens)
+			}
 
 			token := tokens[*inx]
 

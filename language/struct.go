@@ -20,12 +20,24 @@ type StructDefinition struct {
 }
 
 type Struct struct {
-	Name       string
-	structType *Type
-	Data       []StructField
-	prototype  *StructPrototype
-	debug      *debug.Debug
-	privateMap map[string]struct{}
+	Name        string
+	structType  *Type
+	Data        []StructField
+	prototype   *StructPrototype
+	debug       *debug.Debug
+	privateMap  map[string]struct{}
+	userDefined bool
+}
+
+func NewUserStruct(name string, debug *debug.Debug) *Struct {
+	s := NewStructBetter(name, debug)
+	s.userDefined = true
+
+	return s
+}
+
+func (s *Struct) UserDefined() bool {
+	return s.userDefined
 }
 
 func NewStruct(name string, fields []StructField, debug *debug.Debug) *Struct {

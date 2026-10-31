@@ -1,0 +1,57 @@
+let items: []int = []
+
+items.push(2)
+items.unshift(1)
+items.insert(2, 4)
+items.insert(2, 3)
+expect(items.join(",") == "1,2,3,4", "insertion should preserve order")
+
+items.reverse()
+expect(items.join(",") == "4,3,2,1", "reverse should update the list")
+expect(items.pop() == 1, "pop should return the last entry")
+expect(items.shift() == 4, "shift should return the first entry")
+
+items.del(0)
+items[0] = 7
+expect(items.join(",") == "7", "delete and indexed assignment should update the list")
+
+catch negativeInsert {
+    items.insert(-1, 9)
+}
+expect(!isNil(negativeInsert), "negative insert indexes should fail")
+
+catch pastEndInsert {
+    items.insert(2, 9)
+}
+expect(!isNil(pastEndInsert), "insert beyond the end should fail")
+
+catch negativeDelete {
+    items.del(-1)
+}
+expect(!isNil(negativeDelete), "negative delete indexes should fail")
+
+catch pastEndDelete {
+    items.del(1)
+}
+expect(!isNil(pastEndDelete), "delete at the end should fail")
+expect(items.join(",") == "7", "failed mutations should preserve the entries")
+
+items.clear()
+items.reverse()
+expect(items.length() == 0, "clear and reverse should support empty lists")
+
+catch emptyPop {
+    items.pop()
+}
+expect(!isNil(emptyPop), "pop on an empty list should fail")
+
+catch emptyShift {
+    items.shift()
+}
+expect(!isNil(emptyShift), "shift on an empty list should fail")
+
+items.insert(0, 8)
+items.push(9)
+expect(items.join(",") == "8,9", "failed mutations should release their locks")
+
+return true

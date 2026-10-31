@@ -310,7 +310,7 @@ loop:
 			}
 
 			if bracketCount != 0 {
-				return nil, fmt.Errorf("unclosed [ in array access")
+				return nil, newErr(ErrUnexpectedEOF, "unclosed [ in array access", dg)
 			}
 
 			exprTokens := tokens[start+1 : *inx-1]

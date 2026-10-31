@@ -1,0 +1,100 @@
+import { Portal } from "@std/thread"
+
+let cloneCalls = 0
+
+struct RecursiveClone {
+    value: int
+    fail: bool
+}
+
+impl RecursiveClone {
+    fn __clone__(self: RecursiveClone) RecursiveClone {
+        cloneCalls++
+
+        let original = clone(self)
+
+        if self.fail {
+            panic("clone failed after recursion")
+        }
+
+        let copied = RecursiveClone()
+        copied.value = original.value
+        return copied
+    }
+}
+
+let source = RecursiveClone()
+source.value = 7
+
+let first = clone(source)
+let second = clone(source)
+
+expect(cloneCalls == 2, "recursive cloning should not poison later clones")
+expect(first.value == 7 && second.value == 7, "recursive clone fallback should preserve the value")
+expect(_id(first) != _id(source), "the outer clone hook should still produce its copy")
+expect(_id(second) != _id(first), "each outer clone should run its hook")
+
+source.fail = true
+
+catch firstError {
+    let copied = clone(source)
+}
+
+catch secondError {
+    let copied = clone(source)
+}
+
+expect(!isNil(firstError) && !isNil(secondError), "recursive failures should remain catchable")
+
+source.fail = false
+let recovered = clone(source)
+expect(cloneCalls == 5 && recovered.value == 7, "failed recursive clones should unwind their guard")
+
+let entered = Portal(2)
+let release = Portal(2)
+let finished = Portal(2)
+
+struct ConcurrentClone {
+    value: int
+}
+
+impl ConcurrentClone {
+    fn __clone__(self: ConcurrentClone) ConcurrentClone {
+        entered.send(self.value)
+        release.receive(5000)
+
+        let copied = ConcurrentClone()
+        copied.value = self.value
+        return copied
+    }
+}
+
+let left = ConcurrentClone()
+let right = ConcurrentClone()
+left.value = 1
+right.value = 2
+
+spawn fn() void {
+    let copied = clone(left)
+    finished.send(copied.value)
+}()
+
+expect(entered.receive(5000) == 1, "the first clone should enter its hook")
+
+spawn fn() void {
+    let copied = clone(right)
+    finished.send(copied.value)
+}()
+
+expect(entered.receive(5000) == 2, "a concurrent clone of the same type should enter its own hook")
+
+release.send(true)
+release.send(true)
+
+let completed: []int = []
+completed.push(finished.receive(5000))
+completed.push(finished.receive(5000))
+
+expect(completed.includes(1) && completed.includes(2), "both concurrent clones should finish")
+
+return true

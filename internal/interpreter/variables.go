@@ -71,9 +71,14 @@ func (i *Interpreter) handleVariableDecl(parent *astnode.Node) error {
 		return typeError("expected %s, got %s", typ.String(), value.Type().String()).WithDebug(parent.Debug)
 	}
 
-	zap.L().Debug("interpreter.variables.declare", zap.Uint("id", i.ID), zap.String("name", variableName), zap.Any("value", value), zap.Bool("mutable", mutable))
+	zap.L().Debug("interpreter.variables.declare", zap.Uint("id", i.ID), zap.String("name", variableName), zap.Stringer("value", loggedValue{i.ctx, value}), zap.Bool("mutable", mutable))
 
-	if err := i.Declare(variableName, cloneForBinding(value), typ, mutable); err != nil {
+	bound, err := i.cloneBinding(value)
+	if err != nil {
+		return wrapRunExc(err, node.Debug)
+	}
+
+	if err := i.Declare(variableName, bound, typ, mutable); err != nil {
 		return wrapRunExc(err, node.Debug)
 	}
 	return nil
@@ -89,15 +94,19 @@ func (i *Interpreter) handleAssignment(node *astnode.Node) error {
 		node = node.Value.(*astnode.Node)
 	}
 
-	value, err := i.eval(node)
+	value, err := i.evalValue(node)
 	if err != nil {
 		return wrapRunExc(err, node.Debug)
 	}
 
-	zap.L().Debug("interpreter.variables.assign", zap.Uint("id", i.ID), zap.String("name", variableName), zap.Any("value", value))
+	zap.L().Debug("interpreter.variables.assign", zap.Uint("id", i.ID), zap.String("name", variableName), zap.Stringer("value", loggedValue{i.ctx, value}))
 
 	if len(arrayAccess) > 0 {
-		lookUp, ok := i.GetObject(variableName)
+		lookUp, ok, err := i.lookupObject(variableName)
+		if err != nil {
+			return wrapRunExc(err, node.Debug)
+		}
+
 		if !ok {
 			return runExc("undefined variable %s", variableName).WithDebug(node.Debug)
 		}
@@ -112,7 +121,11 @@ func (i *Interpreter) handleAssignment(node *astnode.Node) error {
 }
 
 func (i *Interpreter) handleIncrement(node *astnode.Node) error {
-	value, ok := i.GetObject(node.Content)
+	value, ok, err := i.lookupObject(node.Content)
+	if err != nil {
+		return wrapRunExc(err, node.Debug)
+	}
+
 	if !ok {
 		return runExc("variable %q not declared", node.Content).WithDebug(node.Debug)
 	}
@@ -138,7 +151,11 @@ func (i *Interpreter) handleIncrement(node *astnode.Node) error {
 }
 
 func (i *Interpreter) handleDecrement(node *astnode.Node) error {
-	value, ok := i.GetObject(node.Content)
+	value, ok, err := i.lookupObject(node.Content)
+	if err != nil {
+		return wrapRunExc(err, node.Debug)
+	}
+
 	if !ok {
 		return runExc("variable %q not declared", node.Content).WithDebug(node.Debug)
 	}
@@ -157,20 +174,24 @@ func (i *Interpreter) handleDecrement(node *astnode.Node) error {
 		return runExc("cannot decrement variable %q: bad implementation for decrement()", node.Content).WithDebug(node.Debug)
 	}
 
-	_, err := decrFn.Data(i.ctx, nil)
+	_, err = decrFn.Data(i.ctx, nil)
 	return err
 }
 
 func (i *Interpreter) setAccess(current language.Object, access []*astnode.Node, value language.Object) error {
 	for _, part := range access[:len(access)-1] {
-		obj, err := i.eval(part)
+		obj, err := i.evalValue(part)
 		if err != nil {
-			return wrapRunExc(err, current.Debug())
+			return wrapRunExc(err, part.Debug)
+		}
+
+		if err := requireValue(current, part.Debug); err != nil {
+			return err
 		}
 
 		proto := current.GetPrototype()
 		if proto == nil {
-			return runExc("undefined property %q", obj.String()).WithDebug(current.Debug())
+			return runExc("undefined property %q", language.Stringify(i.ctx, obj)).WithDebug(current.Debug())
 		}
 
 		if current.GetPrototype() == nil {
@@ -187,23 +208,31 @@ func (i *Interpreter) setAccess(current language.Object, access []*astnode.Node,
 			return runExc("cannot operate on variable: bad implementation for __get__()").WithDebug(obj.Debug())
 		}
 
-		value, err := getterFn.Data(i.ctx, []language.Object{obj})
+		value, err := callHook(i.ctx, getterFn, []language.Object{obj})
 		if err != nil {
 			return wrapRunExc(err, obj.Debug())
+		}
+
+		if err := requireValue(value, part.Debug); err != nil {
+			return err
 		}
 
 		current = value
 	}
 
 	last := access[len(access)-1]
-	obj, err := i.eval(last)
+	obj, err := i.evalValue(last)
 	if err != nil {
-		return wrapRunExc(err, current.Debug())
+		return wrapRunExc(err, last.Debug)
+	}
+
+	if err := requireValue(current, last.Debug); err != nil {
+		return err
 	}
 
 	proto := current.GetPrototype()
 	if proto == nil {
-		return runExc("undefined property %s", obj.String()).WithDebug(current.Debug())
+		return runExc("undefined property %s", language.Stringify(i.ctx, obj)).WithDebug(current.Debug())
 	}
 
 	setter, ok := proto.GetObject(i.ctx, "__set__")
@@ -216,7 +245,7 @@ func (i *Interpreter) setAccess(current language.Object, access []*astnode.Node,
 		return runExc("cannot operate on variable: bad implementation for __set__()").WithDebug(obj.Debug())
 	}
 
-	if _, err = setterFn.Data(i.ctx, []language.Object{obj, value}); err != nil {
+	if _, err = callHook(i.ctx, setterFn, []language.Object{obj, value}); err != nil {
 		return wrapRunExc(err, obj.Debug())
 	}
 

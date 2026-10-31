@@ -63,10 +63,19 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 				sb.WriteString(id)
 				sb.WriteString("()")
 				obFn := func() (any, error) {
-					obj, ok := i.GetObject(child.Value.(string))
+					obj, ok, err := i.lookupObject(child.Value.(string))
+					if err != nil {
+						return nil, wrapRunExc(err, child.Debug)
+					}
+
 					if !ok {
 						return nil, undefinedVariable(child.Value.(string)).WithDebug(node.Debug)
 					}
+
+					if err := requireValue(obj, child.Debug); err != nil {
+						return nil, err
+					}
+
 					if len(node.Body) == 1 {
 						if len(node.Body[0].ArrayAccess) > 0 {
 							if ob, err := i.checkGetter(obj, child); err != nil {
@@ -92,6 +101,11 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 								if err != nil {
 									return nil, exception.From(err, obj.Debug(), "function call failed: @err")
 								}
+
+								if err := requireValue(value, child.Debug); err != nil {
+									return nil, err
+								}
+
 								obj = value
 							}
 						}
@@ -126,6 +140,11 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 				if len(node.Body) == 1 {
 					return value, nil
 				}
+
+				if err := requireValue(value, child.Debug); err != nil {
+					return nil, err
+				}
+
 				if isNotEvaluable(value.Type().Base()) {
 					return nil, cannotOperateOn(value.Type()).WithDebug(value.Debug())
 				}
@@ -164,7 +183,7 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 						if err != nil {
 							return "", exception.From(err, ch.Debug, "", "template literal evaluation failed: @err")
 						}
-						st.WriteString(val.String())
+						st.WriteString(language.Stringify(i.ctx, val))
 					}
 				}
 				return st.String(), nil
@@ -303,7 +322,7 @@ func (i *Interpreter) evalList(node *astnode.Node, typ *language.Type) (language
 	)
 
 	for j, child := range node.Children {
-		obj, err := i.eval(child)
+		obj, err := i.evalValue(child)
 		if err != nil {
 			return nil, exception.From(err, child.Debug, "failed to evaluate list element: @err")
 		}
@@ -356,12 +375,12 @@ func (i *Interpreter) evalDict(node *astnode.Node, keyType, valueType *language.
 			return nil, runExc("invalid dict entry").WithDebug(pair.Debug)
 		}
 
-		keyObj, err := i.eval(keyNode)
+		keyObj, err := i.evalValue(keyNode)
 		if err != nil {
 			return nil, exception.From(err, keyNode.Debug, "failed to evaluate dict key: @err")
 		}
 
-		valueObj, err := i.eval(pair.Children[0])
+		valueObj, err := i.evalValue(pair.Children[0])
 		if err != nil {
 			return nil, exception.From(err, pair.Debug, "failed to evaluate dict value: @err")
 		}
@@ -407,9 +426,12 @@ func (i *Interpreter) evalDict(node *astnode.Node, keyType, valueType *language.
 }
 
 func (i *Interpreter) checkGetter(obj language.Object, node *astnode.Node) (language.Object, error) {
-	base := obj
+	if err := requireValue(obj, node.Debug); err != nil {
+		return nil, err
+	}
+
 	for _, child := range node.ArrayAccess {
-		val, err := i.eval(child)
+		val, err := i.evalValue(child)
 		if err != nil {
 			return nil, exception.From(err, child.Debug, "failed to access getter: @err")
 		}
@@ -428,16 +450,16 @@ func (i *Interpreter) checkGetter(obj language.Object, node *astnode.Node) (lang
 			return nil, cannotOperateOn(obj.Type()).WithDebug(obj.Debug())
 		}
 
-		value, err := getterFn.Data(i.ctx, []language.Object{val})
+		value, err := callHook(i.ctx, getterFn, []language.Object{val})
 		if err != nil {
 			return nil, exception.From(err, child.Debug, "function call failed: @err")
 		}
 
-		obj = value
-	}
+		if err := requireValue(value, child.Debug); err != nil {
+			return nil, err
+		}
 
-	if obj == nil {
-		return nil, cannotOperateOn(base.Type()).WithDebug(node.Debug)
+		obj = value
 	}
 
 	return obj, nil

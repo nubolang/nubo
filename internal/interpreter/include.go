@@ -28,7 +28,7 @@ func (ir *Interpreter) includeValue(node *astnode.Node) (language.Object, error)
 		return nil, wrapRunExc(err, node.Debug)
 	}
 
-	fileName := value.String()
+	fileName := language.Stringify(ir.ctx, value)
 	zap.L().Debug("interpreter.include.file", zap.Uint("id", ir.ID), zap.String("fileName", fileName))
 
 	var path string

@@ -38,7 +38,7 @@ func (i *Interpreter) handleFunctionDecl(node *astnode.Node, ret ...bool) (langu
 		}
 
 		if arg.FallbackValue != nil {
-			val, err := i.eval(arg.FallbackValue)
+			val, err := i.evalValue(arg.FallbackValue)
 			if err != nil {
 				zap.L().Error("interpreter.function.declare.argFallback", zap.Uint("id", i.ID), zap.String("name", node.Content), zap.String("arg", arg.Content), zap.Error(err))
 				return nil, exception.From(err, arg.Debug, "failed to evaluate fallback value: @err")
@@ -170,7 +170,11 @@ func (i *Interpreter) handleFunctionCall(node *astnode.Node) (language.Object, e
 
 	zap.L().Debug("interpreter.function.call.start", zap.Uint("id", i.ID), zap.String("name", node.Content))
 
-	fn, ok := i.GetObject(node.Content)
+	fn, ok, err := i.lookupObject(node.Content)
+	if err != nil {
+		return nil, wrapRunExc(err, node.Debug)
+	}
+
 	if !ok {
 		err := exception.Create("undefined function: %s(...)", node.Content).WithDebug(node.Debug).WithLevel(exception.LevelRuntime)
 		zap.L().Error("interpreter.function.call.undefined", zap.Uint("id", i.ID), zap.String("name", node.Content), zap.Error(err))
@@ -198,22 +202,21 @@ func (i *Interpreter) handleFunctionCall(node *astnode.Node) (language.Object, e
 		namedArgs = make(map[string]language.Object)
 	)
 	for j, arg := range node.Args {
-		value, err := i.eval(arg)
+		value, err := i.evalValue(arg)
 		if err != nil {
 			zap.L().Error("interpreter.function.call.argEval", zap.Uint("id", i.ID), zap.String("name", node.Content), zap.Int("index", j), zap.Error(err))
 			return nil, exception.From(err, arg.Debug, "failed to evaluate argument: @err")
 		}
 
-		if value == nil {
-			err := exception.Create("argument %d is expected to be a value, got void", j+1).WithDebug(node.Debug)
-			zap.L().Error("interpreter.function.call.argVoid", zap.Uint("id", i.ID), zap.String("name", node.Content), zap.Int("index", j), zap.Error(err))
-			return nil, err
+		bound, err := i.cloneBinding(value)
+		if err != nil {
+			return nil, wrapRunExc(err, arg.Debug)
 		}
 
 		if arg.Kind == "NAMED_ARG" {
-			namedArgs[arg.ArgName] = cloneForBinding(value)
+			namedArgs[arg.ArgName] = bound
 		} else {
-			args = append(args, cloneForBinding(value))
+			args = append(args, bound)
 		}
 	}
 
@@ -224,7 +227,7 @@ func (i *Interpreter) handleFunctionCall(node *astnode.Node) (language.Object, e
 		return nil, err
 	}
 
-	value, err := okFn.Call(i.ctx, args, namedArgs)
+	value, err := callNamedFunction(i.ctx, okFn, node.Content, args, namedArgs)
 	if err != nil {
 		zap.L().Error("interpreter.function.call.execError", zap.Uint("id", i.ID), zap.String("name", node.Content), zap.Error(err))
 		return nil, exception.From(err, node.Debug, fmt.Sprintf("error calling function %s: @err", node.Content))
@@ -256,6 +259,10 @@ func (i *Interpreter) handleFunctionCall(node *astnode.Node) (language.Object, e
 
 func (i *Interpreter) getValueFromObjByNode(value language.Object, node *astnode.Node) (language.Object, error) {
 	zap.L().Debug("interpreter.function.access.start", zap.Uint("id", i.ID), zap.String("valueType", logObjectType(value)), zap.Int("nodeType", int(node.Type)), zap.String("content", node.Content))
+
+	if err := requireValue(value, node.Debug); err != nil {
+		return nil, err
+	}
 
 	objID := node.Content
 	if strings.Contains(objID, ".") {
@@ -315,7 +322,7 @@ func (i *Interpreter) getValueFromObjByNode(value language.Object, node *astnode
 
 		var args = make([]language.Object, len(node.Args))
 		for j, arg := range node.Args {
-			value, err := i.eval(arg)
+			value, err := i.evalValue(arg)
 			if err != nil {
 				zap.L().Error("interpreter.function.access.fnArgEval", zap.Uint("id", i.ID), zap.String("function", node.Content), zap.Int("index", j), zap.Error(err))
 				return nil, exception.From(err, arg.Debug)
@@ -330,7 +337,7 @@ func (i *Interpreter) getValueFromObjByNode(value language.Object, node *astnode
 			return nil, err
 		}
 
-		value, err := okFn.Data(i.ctx, args)
+		value, err := callNamedFunction(i.ctx, okFn, objID, args)
 		if err != nil {
 			zap.L().Error("interpreter.function.access.fnExec", zap.Uint("id", i.ID), zap.String("function", node.Content), zap.Error(err))
 			return nil, exception.From(err, node.Debug)
@@ -446,19 +453,18 @@ func (i *Interpreter) createInlineFunction(node *astnode.Node) (language.Object,
 	if node.Flags.Contains("SELFCALL") {
 		var args = make([]language.Object, len(node.Children))
 		for j, arg := range node.Children {
-			value, err := i.eval(arg)
+			value, err := i.evalValue(arg)
 			if err != nil {
 				zap.L().Error("interpreter.function.inline.selfCallEval", zap.Uint("id", i.ID), zap.Int("index", j), zap.Error(err))
 				return nil, exception.From(err, arg.Debug, "cannot evaluate argument")
 			}
 
-			if value == nil {
-				err := typeError("argument %d is void, expected to be a value", j+1).WithDebug(node.Debug)
-				zap.L().Error("interpreter.function.inline.selfCallVoid", zap.Uint("id", i.ID), zap.Int("index", j), zap.Error(err))
-				return nil, err
+			bound, err := i.cloneBinding(value)
+			if err != nil {
+				return nil, wrapRunExc(err, arg.Debug)
 			}
 
-			args[j] = cloneForBinding(value)
+			args[j] = bound
 		}
 
 		ob, err := fn.Data(i.ctx, args)

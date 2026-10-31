@@ -38,7 +38,7 @@ func (i *Interpreter) evaluateElement(node *astnode.Node) (language.Object, erro
 
 		if arg.Kind == "DYNAMIC" && arg.Value != nil {
 			valNode := arg.Value.(*astnode.Node)
-			val, err := i.eval(valNode)
+			val, err := i.evalValue(valNode)
 			if err != nil {
 				zap.L().Error("interpreter.element.attr.dynamic.error", zap.Uint("id", i.ID), zap.String("name", attr.Name), zap.Error(err))
 				return nil, exception.From(err, arg.Debug, "failed to evaluate dynamic area")
@@ -90,10 +90,10 @@ func (i *Interpreter) evaluateElement(node *astnode.Node) (language.Object, erro
 
 			elem.Children = append(elem.Children, language.ElementChild{
 				Type:      astnode.NodeTypeElementRawText,
-				Content:   val.String(),
+				Content:   language.Stringify(i.ctx, val),
 				IsEscaped: !child.Flags.Contains("UNESCAPED"),
 			})
-			zap.L().Debug("interpreter.element.child.dynamic.append", zap.Uint("id", i.ID), zap.String("content", logObjectString(val)))
+			zap.L().Debug("interpreter.element.child.dynamic.append", zap.Uint("id", i.ID), zap.String("content", language.Stringify(i.ctx, val)))
 		}
 	}
 
@@ -103,7 +103,11 @@ func (i *Interpreter) evaluateElement(node *astnode.Node) (language.Object, erro
 		return language.NewElement(elem, node.Debug), nil
 	}
 
-	ob, ok := i.GetObject(tagName)
+	ob, ok, err := i.lookupObject(tagName)
+	if err != nil {
+		return nil, wrapRunExc(err, node.Debug)
+	}
+
 	if !ok {
 		zap.L().Debug("interpreter.element.return.notFunction", zap.Uint("id", i.ID), zap.String("tagName", tagName))
 		return language.NewElement(elem, node.Debug), nil

@@ -1,0 +1,77 @@
+let eachSource = [1, 2, 3]
+let visited: []int = []
+
+eachSource.each(fn(value: int) void {
+    visited.push(value)
+    eachSource[1] = 20
+    eachSource.push(4)
+})
+
+expect(visited.join(",") == "1,2,3", "each should visit the original entries")
+expect(len(eachSource) == 6, "each should preserve callback writes")
+expect(eachSource[1] == 20, "each should allow indexed writes")
+
+let mapSource = [1, 2, 3]
+
+let mapped = mapSource.map(fn(value: int) int {
+    mapSource[1] = 20
+    mapSource.reverse()
+    return value * 2
+})
+
+expect(mapped.join(",") == "2,4,6", "map should preserve snapshot order")
+expect(mapSource[1] == 20, "map should allow indexed writes")
+
+let filterSource = [1, 2, 3]
+
+let filtered = filterSource.filter(fn(value: int) bool {
+    if value == 1 {
+        filterSource[1] = 20
+        filterSource.clear()
+    }
+
+    return value != 2
+})
+
+expect(filtered.join(",") == "1,3", "filter should keep visiting after clear")
+expect(len(filterSource) == 0, "filter should preserve clear")
+
+struct JoinValue {}
+
+let joinCalls = 0
+
+impl JoinValue {
+    fn __string__(self: JoinValue) string {
+        joinCalls = joinCalls + 1
+        joinSource[0] = self
+        joinSource.push(self)
+        return "item"
+    }
+}
+
+let item = JoinValue()
+let joinSource = [item, item]
+let joined = joinSource.join(",")
+
+expect(joined == "item,item", "join should use the original entries")
+expect(joinCalls == 2, "join should stringify each original entry once")
+expect(len(joinSource) == 4, "string hooks should be able to mutate the list")
+
+let errorSource = [1, 2, 3]
+let errorCalls = 0
+
+catch callbackError {
+    errorSource.each(fn(value: int) void {
+        errorCalls = errorCalls + 1
+        errorSource[0] = value
+        panic("callback failed")
+    })
+}
+
+expect(!isNil(callbackError), "callback errors should propagate")
+expect(errorCalls == 1, "each should stop after a callback error")
+
+errorSource[0] = 9
+expect(errorSource[0] == 9, "callback errors should not leave the list locked")
+
+return true

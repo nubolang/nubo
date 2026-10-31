@@ -17,12 +17,12 @@ func (i *Interpreter) handleIf(node *astnode.Node) (language.Object, error) {
 	}
 
 	condition := func() (bool, error) {
-		ok, err := i.eval(node.Args[0])
+		ok, err := i.evalValue(node.Args[0])
 		if err != nil {
 			zap.L().Error("interpreter.if.condition.evalError", zap.Uint("id", i.ID), zap.Error(err))
 			return false, exception.From(err, node.Args[0].Debug, "failed to evaluate condition: @err")
 		}
-		if ok.Type() != language.TypeBool {
+		if ok.Type().Base() != language.ObjectTypeBool {
 			err := typeError("condition expected to be type bool, got %s with value: %s", ok.Type(), ok.Value()).WithDebug(ok.Debug())
 			zap.L().Error("interpreter.if.condition.typeMismatch", zap.Uint("id", i.ID), zap.Error(err))
 			return false, err

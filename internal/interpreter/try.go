@@ -25,13 +25,15 @@ func (i *Interpreter) handleTry(node *astnode.Node) (language.Object, error) {
 			stack             []language.Object
 		)
 
+		source := node.Debug
+
 		if ok {
 			base = excp.Base
 			msg = excp.Message
-			file = excp.Debug.File
-			line = excp.Debug.Line
-			column = excp.Debug.Column
-			columnEnd = excp.Debug.ColumnEnd
+
+			if excp.Debug != nil {
+				source = excp.Debug
+			}
 
 			for _, frame := range excp.StackTrace {
 				stackDict, err := n.Dict(map[any]any{
@@ -46,6 +48,15 @@ func (i *Interpreter) handleTry(node *astnode.Node) (language.Object, error) {
 				}
 				stack = append(stack, stackDict)
 			}
+		} else {
+			msg = err.Error()
+		}
+
+		if source != nil {
+			file = source.File
+			line = source.Line
+			column = source.Column
+			columnEnd = source.ColumnEnd
 		}
 
 		metaData, err := n.Dict(map[any]any{

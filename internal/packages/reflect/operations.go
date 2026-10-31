@@ -33,7 +33,11 @@ func installOperations(set func(string, language.Object), mirrorType *language.T
 			return nil, fmt.Errorf("field %q not found", name)
 		}
 		ctx := reflectionAccess(a)
-		value := bindingCopy(a.Name("value"))
+		value, err := bindingCopy(ctx, a.Name("value"))
+		if err != nil {
+			return nil, err
+		}
+
 		if err := instance.GetPrototype().SetObject(ctx, name, value); err != nil {
 			return nil, err
 		}
@@ -132,11 +136,12 @@ func reflectionAccess(a *n.Args) context.Context {
 	return context.WithValue(ctx, "unlock_struct_private", false)
 }
 
-func bindingCopy(obj language.Object) language.Object {
+func bindingCopy(ctx context.Context, obj language.Object) (language.Object, error) {
 	if obj.Type().Base() == language.ObjectTypeStructInstance {
-		return obj
+		return obj, nil
 	}
-	return obj.Clone()
+
+	return language.Clone(ctx, obj)
 }
 
 func invoke(ctx context.Context, fn *language.Function, values []language.Object) (language.Object, error) {
@@ -145,7 +150,12 @@ func invoke(ctx context.Context, fn *language.Function, values []language.Object
 	}
 	args := make([]language.Object, len(values))
 	for i, value := range values {
-		args[i] = bindingCopy(value)
+		bound, err := bindingCopy(ctx, value)
+		if err != nil {
+			return nil, err
+		}
+
+		args[i] = bound
 	}
 	result, err := fn.Data(ctx, args)
 	if err != nil {

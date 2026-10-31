@@ -1,6 +1,7 @@
 package language
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -56,9 +57,13 @@ func (i *List) TypeString() string {
 }
 
 func (i *List) String() string {
+	return Stringify(context.Background(), i)
+}
+
+func (i *List) stringWithContext(ctx context.Context) string {
 	var itemsString []string
 	for _, item := range i.Data {
-		itemsString = append(itemsString, item.String())
+		itemsString = append(itemsString, Stringify(ctx, item))
 	}
 
 	return fmt.Sprintf("[%s]", strings.Join(itemsString, ", "))
@@ -84,17 +89,15 @@ func (i *List) Clone() Object {
 }
 
 func (i *List) Iterator() func() (Object, Object, bool) {
-	var (
-		inx     = 0
-		listLen = len(i.Data)
-	)
+	items := i.GetPrototype().(*ListPrototype).callbackItems()
+	inx := 0
 
 	return func() (Object, Object, bool) {
-		if inx >= listLen {
+		if inx >= len(items) {
 			return nil, nil, false
 		}
 
-		value := i.Data[inx]
+		value := items[inx]
 		key := NewInt(int64(inx), i.debug)
 
 		inx++

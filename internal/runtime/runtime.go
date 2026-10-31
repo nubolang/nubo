@@ -203,6 +203,13 @@ func (r *Runtime) RemoveInterpreter(id uint) {
 	defer r.mu.Unlock()
 	delete(r.interpreters, id)
 	delete(r.returnMap, id)
+
+	for file, interpreterID := range r.filemap {
+		if interpreterID == id {
+			delete(r.filemap, file)
+		}
+	}
+
 	zap.L().Debug("runtime.interpreter.remove", zap.Uint("id", id))
 }
 
@@ -216,10 +223,15 @@ func (r *Runtime) FindInterpreter(file string) (*interpreter.Interpreter, bool) 
 	defer r.mu.RUnlock()
 
 	for path, id := range r.filemap {
+		instance := r.interpreters[id]
+		if instance == nil {
+			continue
+		}
+
 		existingInfo, err := os.Stat(path)
 		if err == nil && os.SameFile(existingInfo, info) {
 			zap.L().Debug("runtime.interpreter.find", zap.Uint("id", id), zap.String("file", file))
-			return r.interpreters[id], true
+			return instance, true
 		}
 	}
 	zap.L().Debug("runtime.interpreter.miss", zap.String("file", file))

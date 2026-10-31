@@ -26,7 +26,7 @@ func rangeFn(args *n.Args) (any, error) {
 		return nil, debug.NewError(fmt.Errorf("Range error"), "step cannot be 0", stepObj.Debug())
 	}
 
-	if stopObj.Type() == n.TNil {
+	if stopObj.Type().Base() == language.ObjectTypeNil {
 		stop = start
 		start = 0
 	} else {

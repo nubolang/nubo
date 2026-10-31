@@ -1,0 +1,179 @@
+fn expectVoid(action: fn() -> void) void {
+    catch err {
+        action()
+    }
+
+    expect(!isNil(err), "using void as a value should fail")
+
+    let message = err.message
+    expect(message.includes("void"), "void errors should explain the missing value")
+}
+
+fn checkVoid(nothing: fn() -> void) void {
+    nothing()
+
+    expectVoid(fn() void {
+        let value = nothing()
+    })
+
+    let target: any = 7
+
+    expectVoid(fn() void {
+        target = nothing()
+    })
+    expect(target == 7, "failed assignment should preserve the variable")
+
+    let items = [1]
+
+    expectVoid(fn() void {
+        items[0] = nothing()
+    })
+    expect(items[0] == 1, "failed assignment should preserve the list entry")
+
+    let mapping = dict[string, any] { value: 3 }
+
+    expectVoid(fn() void {
+        mapping.value = nothing()
+    })
+    expect(mapping.value == 3, "failed assignment should preserve the dictionary entry")
+
+    expectVoid(fn() void {
+        let value = [nothing()]
+    })
+
+    expectVoid(fn() void {
+        let value = dict[string, any] { missing: nothing() }
+    })
+
+    expectVoid(fn() void {
+        let value = nothing() + 1
+    })
+
+    expectVoid(fn() void {
+        if nothing() {}
+    })
+
+    expectVoid(fn() void {
+        while nothing() {}
+    })
+
+    expectVoid(fn() void {
+        for value in nothing() {}
+    })
+
+    expectVoid(fn() void {
+        let value = ref(nothing())
+    })
+
+    expectVoid(fn() void {
+        let value = _id(nothing())
+    })
+
+    expectVoid(fn() void {
+        let value = nothing().length()
+    })
+
+    expectVoid(fn() void {
+        let value = nothing()[0]
+    })
+
+    expectVoid(fn() void {
+        let value = items[nothing()]
+    })
+
+    expectVoid(fn() void {
+        items[nothing()] = 2
+    })
+
+    expectVoid(fn() void {
+        items.push(nothing())
+    })
+
+    expectVoid(fn() void {
+        items.map(fn(value: int) void {
+            nothing()
+        })
+    })
+
+    expectVoid(fn() void {
+        let value = range(nothing())
+    })
+
+    expectVoid(fn() void {
+        fn fallback(value: any = nothing()) void {}
+    })
+
+    expectVoid(fn() void {
+        let element = <div :title="nothing()"></div>
+    })
+
+    items.push(2)
+    expect(items.join(",") == "1,2", "void errors should leave the list usable")
+}
+
+fn empty() void {}
+
+fn explicitReturn() void {
+    return
+}
+
+checkVoid(empty)
+checkVoid(explicitReturn)
+
+struct VoidHooks {}
+
+impl VoidHooks {
+    fn __get__(self: VoidHooks, key: any) void {}
+
+    fn __value__(self: VoidHooks) void {}
+}
+
+let hooked = VoidHooks()
+
+expectVoid(fn() void {
+    let value = hooked.missing
+})
+
+expectVoid(fn() void {
+    let value = hooked[0][0]
+})
+
+expectVoid(fn() void {
+    hooked[0][0] = 1
+})
+
+expectVoid(fn() void {
+    let value = hooked + 1
+})
+
+struct Receiver {}
+
+impl Receiver {
+    fn accept(self: Receiver, value: any = 7) void {}
+}
+
+expectVoid(fn() void {
+    Receiver().accept(empty())
+})
+
+expectVoid(fn() void {
+    let result = fn(value: any) int { return 1 }(empty())
+})
+
+let mapped = [1]
+
+expectVoid(fn() void {
+    mapped.map(fn(value: int) void {
+        return
+    })
+})
+
+let allowed: any = nil
+let nilItems = [nil]
+let nilMapping = dict[string, any] { value: nil }
+
+expect(isNil(allowed), "explicit nil should remain assignable")
+expect(isNil(nilItems[0]), "explicit nil should remain valid in lists")
+expect(isNil(nilMapping.value), "explicit nil should remain valid in dictionaries")
+
+return true

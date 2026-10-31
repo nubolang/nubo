@@ -22,8 +22,8 @@ func GetBuiltins() map[string]language.Object {
 	ctx := context.Background()
 
 	return map[string]language.Object{
-		"println":   native.NewFunction(printlnFn),
-		"print":     native.NewFunction(printFn),
+		"println":   language.NewFunction(printlnFn, nil),
+		"print":     language.NewFunction(printFn, nil),
 		"type":      native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeString, typeFn),
 		"_type":     native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeString, _typeFn),
 		"memsize":   native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeInt, memsizeFn),
@@ -34,7 +34,7 @@ func GetBuiltins() map[string]language.Object {
 		"exit":      native.NewTypedFunction(ctx, native.OneArg("code", language.TypeInt, language.NewInt(0, nil)), language.TypeVoid, exitFn),
 		"range":     getRangeStruct(),
 		"env":       n.Function(n.Describe(n.Arg("name", n.TString), n.Arg("value", n.Nullable(n.TString), language.Nil)).Returns(n.Nullable(n.TString)), envFn),
-		"concat":    native.NewFunction(concatFn),
+		"concat":    language.NewFunction(concatFn, nil),
 		"len":       n.Function(n.Describe(n.Arg("object", n.TAny)).Returns(n.TInt), lenFn),
 		"typecheck": n.Function(n.Describe(n.Arg("typ", n.TAny), n.Arg("value", n.TAny)).Returns(n.TBool), typecheckFn),
 
@@ -57,25 +57,24 @@ func GetBuiltins() map[string]language.Object {
 		"highlight": n.Function(n.Describe(n.Arg("code", n.TString), n.Arg("mode", n.TString, n.String("console"))).Returns(n.TString), hlFn),
 		"regex":     regex(),
 
-		// Debug
-		"xdbg":        native.NewFunction(xdbgFn),
+		// Version
 		"__version__": n.String(version.Version),
 	}
 }
 
-func printlnFn(args []language.Object) (language.Object, error) {
+func printlnFn(ctx context.Context, args []language.Object) (language.Object, error) {
 	var out []string
 	for _, arg := range args {
-		out = append(out, arg.String())
+		out = append(out, language.Stringify(ctx, arg))
 	}
 	fmt.Println(strings.Join(out, " "))
 	return nil, nil
 }
 
-func printFn(args []language.Object) (language.Object, error) {
+func printFn(ctx context.Context, args []language.Object) (language.Object, error) {
 	var out []string
 	for _, arg := range args {
-		out = append(out, arg.String())
+		out = append(out, language.Stringify(ctx, arg))
 	}
 	fmt.Print(strings.Join(out, " "))
 	return nil, nil
@@ -137,13 +136,29 @@ func stringFn(ctx native.FnCtx) (language.Object, error) {
 	if obj.Type().Compare(language.NewListType(language.TypeByte)) {
 		li := obj.Value().([]language.Object)
 		var values = make([]byte, len(li))
+		allBytes := true
+
 		for i, item := range li {
-			values[i] = item.Value().(byte)
+			if item == nil {
+				allBytes = false
+				break
+			}
+
+			value, ok := item.Value().(byte)
+			if !ok {
+				allBytes = false
+				break
+			}
+
+			values[i] = value
 		}
-		return language.NewString(string(values), obj.Debug()), nil
+
+		if allBytes {
+			return language.NewString(string(values), obj.Debug()), nil
+		}
 	}
 
-	return language.NewString(obj.String(), obj.Debug()), nil
+	return language.NewString(language.Stringify(ctx.Context(), obj), obj.Debug()), nil
 }
 
 func intFn(ctx native.FnCtx) (language.Object, error) {
@@ -189,20 +204,20 @@ func intReal(obj language.Object) (language.Object, error) {
 		convertErr = debug.NewError(fmt.Errorf("Type error"), fmt.Sprintf("Cannot convert %s to int", obj.Type()), obj.Debug())
 	)
 
-	switch obj.Type() {
-	case language.TypeInt:
+	switch obj.Type().Base() {
+	case language.ObjectTypeInt:
 		value = obj.Value().(int64)
-	case language.TypeFloat:
+	case language.ObjectTypeFloat:
 		value = int64(obj.Value().(float64))
-	case language.TypeBool:
+	case language.ObjectTypeBool:
 		if obj.Value().(bool) {
 			value = 1
 		}
-	case language.TypeChar:
+	case language.ObjectTypeChar:
 		value = int64(obj.Value().(rune))
-	case language.TypeByte:
+	case language.ObjectTypeByte:
 		value = int64(obj.Value().(byte))
-	case language.TypeString:
+	case language.ObjectTypeString:
 		strVal := obj.Value().(string)
 		val, err := strconv.Atoi(strVal)
 		if err != nil {
@@ -256,22 +271,22 @@ func floatFn(ctx native.FnCtx) (language.Object, error) {
 		convertErr = debug.NewError(fmt.Errorf("Type error"), fmt.Sprintf("Cannot convert %s to float", obj.Type()), obj.Debug())
 	)
 
-	switch obj.Type() {
-	case language.TypeFloat:
+	switch obj.Type().Base() {
+	case language.ObjectTypeFloat:
 		value = obj.Value().(float64)
-	case language.TypeInt:
+	case language.ObjectTypeInt:
 		value = float64(obj.Value().(int64))
-	case language.TypeBool:
+	case language.ObjectTypeBool:
 		if obj.Value().(bool) {
 			value = 1.0
 		} else {
 			value = 0.0
 		}
-	case language.TypeChar:
+	case language.ObjectTypeChar:
 		value = float64(obj.Value().(rune))
-	case language.TypeByte:
+	case language.ObjectTypeByte:
 		value = float64(obj.Value().(byte))
-	case language.TypeString:
+	case language.ObjectTypeString:
 		strVal := obj.Value().(string)
 		val, err := strconv.ParseFloat(strVal, 64)
 		if err != nil {
@@ -294,18 +309,18 @@ func boolFn(ctx native.FnCtx) (language.Object, error) {
 	var value bool
 	convertErr := debug.NewError(fmt.Errorf("Type error"), fmt.Sprintf("Cannot convert %s to bool", obj.Type()), obj.Debug())
 
-	switch obj.Type() {
-	case language.TypeBool:
+	switch obj.Type().Base() {
+	case language.ObjectTypeBool:
 		value = obj.Value().(bool)
-	case language.TypeInt:
+	case language.ObjectTypeInt:
 		value = obj.Value().(int64) != 0
-	case language.TypeFloat:
+	case language.ObjectTypeFloat:
 		value = obj.Value().(float64) != 0
-	case language.TypeChar:
+	case language.ObjectTypeChar:
 		value = obj.Value().(rune) != 0
-	case language.TypeByte:
+	case language.ObjectTypeByte:
 		value = obj.Value().(byte) != 0
-	case language.TypeString:
+	case language.ObjectTypeString:
 		strVal := strings.ToLower(strings.TrimSpace(obj.Value().(string)))
 		if strVal == "true" || strVal == "1" {
 			value = true
@@ -330,34 +345,34 @@ func byteFn(ctx native.FnCtx) (language.Object, error) {
 	var value byte
 	convertErr := debug.NewError(fmt.Errorf("Type error"), fmt.Sprintf("Cannot convert %s to byte", obj.Type()), obj.Debug())
 
-	switch obj.Type() {
-	case language.TypeByte:
+	switch obj.Type().Base() {
+	case language.ObjectTypeByte:
 		value = obj.Value().(byte)
-	case language.TypeChar:
+	case language.ObjectTypeChar:
 		r := obj.Value().(rune)
 		if r > 255 {
 			return nil, convertErr
 		}
 		value = byte(r)
-	case language.TypeInt:
+	case language.ObjectTypeInt:
 		i := obj.Value().(int64)
 		if i < 0 || i > 255 {
 			return nil, convertErr
 		}
 		value = byte(i)
-	case language.TypeFloat:
+	case language.ObjectTypeFloat:
 		f := obj.Value().(float64)
 		if f < 0 || f > 255 {
 			return nil, convertErr
 		}
 		value = byte(int64(f))
-	case language.TypeBool:
+	case language.ObjectTypeBool:
 		if obj.Value().(bool) {
 			value = 1
 		} else {
 			value = 0
 		}
-	case language.TypeString:
+	case language.ObjectTypeString:
 		str := obj.Value().(string)
 		if len(str) != 1 {
 			return nil, convertErr
@@ -383,7 +398,7 @@ func bytesFn(ctx native.FnCtx) (language.Object, error) {
 	case language.TypeByte.BaseType:
 		values = append(values, language.NewByte(obj.Value().(byte), obj.Debug()))
 	case language.TypeString.BaseType:
-		bytes := []byte(obj.String())
+		bytes := []byte(language.Stringify(ctx.Context(), obj))
 		for _, b := range bytes {
 			values = append(values, language.NewByte(b, obj.Debug()))
 		}
@@ -392,34 +407,34 @@ func bytesFn(ctx native.FnCtx) (language.Object, error) {
 		for _, item := range list {
 			var val byte
 			itemConvertErr := debug.NewError(fmt.Errorf("Type error"), fmt.Sprintf("Cannot convert %s to byte", item.Type()), item.Debug())
-			switch item.Type() {
-			case language.TypeByte:
+			switch item.Type().Base() {
+			case language.ObjectTypeByte:
 				val = item.Value().(byte)
-			case language.TypeChar:
+			case language.ObjectTypeChar:
 				r := item.Value().(rune)
 				if r > 255 {
 					return nil, itemConvertErr
 				}
 				val = byte(r)
-			case language.TypeInt:
+			case language.ObjectTypeInt:
 				i := item.Value().(int64)
 				if i < 0 || i > 255 {
 					return nil, itemConvertErr
 				}
 				val = byte(i)
-			case language.TypeFloat:
+			case language.ObjectTypeFloat:
 				f := item.Value().(float64)
 				if f < 0 || f > 255 {
 					return nil, itemConvertErr
 				}
 				val = byte(int64(f))
-			case language.TypeBool:
+			case language.ObjectTypeBool:
 				if item.Value().(bool) {
 					val = 1
 				} else {
 					val = 0
 				}
-			case language.TypeString:
+			case language.ObjectTypeString:
 				str := item.Value().(string)
 				if len(str) != 1 {
 					return nil, itemConvertErr
@@ -446,30 +461,30 @@ func charFn(ctx native.FnCtx) (language.Object, error) {
 	var value rune
 	convertErr := debug.NewError(fmt.Errorf("Type error"), fmt.Sprintf("Cannot convert %s to char", obj.Type()), obj.Debug())
 
-	switch obj.Type() {
-	case language.TypeChar:
+	switch obj.Type().Base() {
+	case language.ObjectTypeChar:
 		value = obj.Value().(rune)
-	case language.TypeByte:
+	case language.ObjectTypeByte:
 		value = rune(obj.Value().(byte))
-	case language.TypeInt:
+	case language.ObjectTypeInt:
 		i := obj.Value().(int64)
 		if i < 0 || i > 0x10FFFF { // Unicode range
 			return nil, convertErr
 		}
 		value = rune(i)
-	case language.TypeFloat:
+	case language.ObjectTypeFloat:
 		f := obj.Value().(float64)
 		if f < 0 || f > 0x10FFFF {
 			return nil, convertErr
 		}
 		value = rune(int64(f))
-	case language.TypeBool:
+	case language.ObjectTypeBool:
 		if obj.Value().(bool) {
 			value = '1'
 		} else {
 			value = '0'
 		}
-	case language.TypeString:
+	case language.ObjectTypeString:
 		str := obj.Value().(string)
 		runes := []rune(str)
 		if len(runes) != 1 {
@@ -489,7 +504,7 @@ func cloneFn(ctx native.FnCtx) (language.Object, error) {
 		return nil, err
 	}
 
-	return obj.Clone(), nil
+	return language.Clone(ctx.Context(), obj)
 }
 
 func exitFn(ctx native.FnCtx) (language.Object, error) {
@@ -550,7 +565,7 @@ func isNilFn(a *n.Args) (any, error) {
 	return obj.Value() == nil, nil
 }
 
-func concatFn(args []language.Object) (language.Object, error) {
+func concatFn(ctx context.Context, args []language.Object) (language.Object, error) {
 	var dg *debug.Debug
 	if len(args) > 0 {
 		dg = args[0].Debug()
@@ -558,18 +573,9 @@ func concatFn(args []language.Object) (language.Object, error) {
 
 	var out []string
 	for _, arg := range args {
-		out = append(out, arg.String())
+		out = append(out, language.Stringify(ctx, arg))
 	}
 	return n.String(strings.Join(out, ""), dg), nil
-}
-
-func xdbgFn(args []language.Object) (language.Object, error) {
-	var out []string
-	for _, arg := range args {
-		out = append(out, arg.String())
-	}
-	fmt.Print(strings.Join(out, " "))
-	return nil, nil
 }
 
 func hlFn(ctx *n.Args) (any, error) {

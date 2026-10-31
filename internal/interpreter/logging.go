@@ -1,6 +1,10 @@
 package interpreter
 
-import "github.com/nubolang/nubo/language"
+import (
+	"context"
+
+	"github.com/nubolang/nubo/language"
+)
 
 // logObjectType returns a human readable type string without
 // dereferencing nil language.Object values.
@@ -15,11 +19,11 @@ func logObjectType(obj language.Object) string {
 	return typ.String()
 }
 
-// logObjectString returns a printable representation of a language.Object
-// and gracefully handles nil values.
-func logObjectString(obj language.Object) string {
-	if obj == nil {
-		return "<nil>"
-	}
-	return obj.String()
+type loggedValue struct {
+	ctx context.Context
+	obj language.Object
+}
+
+func (v loggedValue) String() string {
+	return language.Stringify(v.ctx, v.obj)
 }

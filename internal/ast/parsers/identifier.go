@@ -51,6 +51,10 @@ func IdentifierParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token
 			return nil, err
 		}
 
+		if expr.Type == astnode.NodeTypeExpression && len(expr.Body) == 0 {
+			return nil, newErr(ErrUnexpectedToken, "expected a value after '='", expr.Debug)
+		}
+
 		node.Value = expr
 		node.Flags.Append("NODEVALUE")
 
@@ -63,7 +67,7 @@ func IdentifierParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token
 			return nil, err
 		}
 
-		if *inx > len(tokens) {
+		if *inx >= len(tokens) {
 			return nil, newErr(ErrUnexpectedEOF, "unexpected end of input", token.Debug)
 		}
 
@@ -101,6 +105,10 @@ func IdentifierParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token
 			expr, err := ValueParser(ctx, sn, tokens, inx)
 			if err != nil {
 				return nil, err
+			}
+
+			if expr.Type == astnode.NodeTypeExpression && len(expr.Body) == 0 {
+				return nil, newErr(ErrUnexpectedToken, "expected a value after '='", expr.Debug)
 			}
 
 			node.Value = expr

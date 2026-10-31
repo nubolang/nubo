@@ -16,12 +16,12 @@ func (i *Interpreter) handleWhile(node *astnode.Node) (language.Object, error) {
 	}
 
 	condition := func() (bool, error) {
-		ok, err := i.eval(node.Args[0])
+		ok, err := i.evalValue(node.Args[0])
 		if err != nil {
 			zap.L().Error("interpreter.while.condition.evalError", zap.Uint("id", i.ID), zap.Error(err))
 			return false, wrapRunExc(err, node.Debug)
 		}
-		if ok.Type() != language.TypeBool {
+		if ok.Type().Base() != language.ObjectTypeBool {
 			err := valueExc("expected bool, got %s with value %s", ok.Type(), ok.Value()).WithDebug(ok.Debug())
 			zap.L().Error("interpreter.while.condition.typeMismatch", zap.Uint("id", i.ID), zap.Error(err))
 			return false, err

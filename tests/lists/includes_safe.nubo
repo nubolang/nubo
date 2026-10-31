@@ -1,0 +1,48 @@
+let numbers = [1, 2, 3]
+expect(numbers.includes(2), "includes should find primitive values")
+expect(!numbers.includes(4), "includes should reject missing values")
+expect(!numbers.includes(2.0), "includes should preserve numeric kind comparisons")
+
+let values: []any = []
+let nested = [1, 2]
+let callback = fn() void {}
+values.push(ref(nested))
+values.push(ref(callback))
+values.push(nil)
+values.push(7)
+
+expect(values.includes(7), "primitive searches should safely skip lists and functions")
+expect(values.includes(nil), "includes should still find nil")
+
+catch listError {
+    values.includes(ref(nested))
+}
+expect(!isNil(listError), "list comparisons should return a Nubo error")
+let listMessage = listError.message
+expect(listMessage.includes("includes cannot compare"), "list comparison errors should explain the unsupported operation")
+
+catch functionError {
+    values.includes(ref(callback))
+}
+expect(!isNil(functionError), "function comparisons should return a Nubo error")
+
+let cyclic: []any = []
+cyclic.push(ref(cyclic))
+
+catch cycleError {
+    cyclic.includes(ref(cyclic))
+}
+expect(!isNil(cycleError), "cyclic lists should return a comparison error")
+
+struct Item {}
+let item = Item()
+let other = Item()
+let objects = [item]
+
+expect(objects.includes(ref(item)), "struct identity comparisons should still work")
+expect(!objects.includes(ref(other)), "different struct instances should remain distinct")
+
+values.push(8)
+expect(values.includes(8), "a failed comparison should leave the list usable")
+
+return true

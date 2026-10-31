@@ -17,7 +17,7 @@ var TStringByte = n.TUnion(n.TString, n.TTList(n.TByte))
 
 // helper
 func toBytes(value language.Object) ([]byte, error) {
-	if value.Type() == language.TypeString {
+	if value.Type().Base() == language.ObjectTypeString {
 		return []byte(value.String()), nil
 	}
 

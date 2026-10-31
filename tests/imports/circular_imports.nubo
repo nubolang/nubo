@@ -1,0 +1,28 @@
+catch selfError {
+    import self from "./circular_imports"
+}
+
+expect(!isNil(selfError), "self-import should return a Nubo error")
+expect(selfError.message == "Circular import: circular_imports.nubo → circular_imports.nubo", "self-import should show its cycle")
+
+catch cycleError {
+    import cycle from "../helpers/cycles/a"
+}
+
+expect(!isNil(cycleError), "mutual imports should return a Nubo error")
+expect(cycleError.message == "Circular import: a.nubo → b.nubo → a.nubo", "mutual imports should show their cycle")
+
+catch retryError {
+    import cycle from "../helpers/cycles/a"
+}
+
+expect(!isNil(retryError), "failed imports should remain retryable")
+expect(retryError.message == cycleError.message, "retry should report the same cycle")
+
+import left from "../helpers/cycles/left"
+import right from "../helpers/cycles/right"
+
+expect(left.value() == 7, "left should resolve the shared dependency")
+expect(right.value() == 7, "shared dependencies should not count as cycles")
+
+return true

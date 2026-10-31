@@ -34,10 +34,6 @@ func getParsedBodyNodes(ctx context.Context, tokens []*lexer.Token, inx *int, sn
 }
 
 func getBraceBodyParse(ctx context.Context, tokens []*lexer.Token, inx *int, p parser) ([]*astnode.Node, error) {
-	if err := inxPP(tokens, inx); err != nil {
-		return nil, err
-	}
-
 	token := tokens[*inx]
 
 	var (

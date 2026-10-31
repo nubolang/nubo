@@ -50,7 +50,7 @@ func Create(format string, args ...any) *Expection {
 func From(err error, dg *debug.Debug, otherwise ...string) *Expection {
 	var exception *Expection
 	if errors.As(err, &exception) {
-		return exception.WithTrace(dg)
+		return exception.WithDebug(dg)
 	}
 
 	if err == nil {
@@ -82,6 +82,10 @@ func From(err error, dg *debug.Debug, otherwise ...string) *Expection {
 func (e *Expection) WithBase(err error) *Expection {
 	e.base = err
 	return e
+}
+
+func (e *Expection) Unwrap() error {
+	return e.base
 }
 
 func (e *Expection) WithLevel(level Level) *Expection {
@@ -119,6 +123,10 @@ func (e *Expection) WithTrace(trace *debug.Debug) *Expection {
 func (e *Expection) WithStatusCode(code int) *Expection {
 	e.statusCode = code
 	return e
+}
+
+func (e *Expection) StatusCode() int {
+	return e.statusCode
 }
 
 func (e *Expection) Error() string {

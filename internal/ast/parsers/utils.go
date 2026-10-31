@@ -16,6 +16,30 @@ import (
 
 var white = []lexer.TokenType{lexer.TokenWhiteSpace, lexer.TokenSingleLineComment, lexer.TokenMultiLineComment}
 
+func endDebug(tokens []*lexer.Token) *debug.Debug {
+	if len(tokens) == 0 {
+		return nil
+	}
+
+	return tokens[len(tokens)-1].Debug
+}
+
+func parserEOF(tokens []*lexer.Token) error {
+	return newErr(ErrUnexpectedEOF, "unexpected end of input", endDebug(tokens))
+}
+
+func skipLineBreaks(tokens []*lexer.Token, inx *int) error {
+	for *inx < len(tokens) && (isWhite(tokens[*inx]) || tokens[*inx].Type == lexer.TokenNewLine) {
+		*inx++
+	}
+
+	if *inx >= len(tokens) {
+		return parserEOF(tokens)
+	}
+
+	return nil
+}
+
 func isWhite(token *lexer.Token) bool {
 	return slices.Contains(white, token.Type)
 }
@@ -53,7 +77,7 @@ func debugOffset(dg *debug.Debug, text string, offset int) *debug.Debug {
 
 func inxPPIf(tokens []*lexer.Token, inx *int) error {
 	if *inx >= len(tokens) {
-		return exception.Create("unexpected end of input").WithDebug(tokens[*inx-1].Debug).WithLevel(exception.LevelSemantic)
+		return exception.Create("unexpected end of input").WithDebug(endDebug(tokens)).WithLevel(exception.LevelSemantic)
 	}
 
 	if slices.Contains(white, tokens[*inx].Type) {
@@ -71,7 +95,7 @@ func inxPP(tokens []*lexer.Token, inx *int) error {
 		}
 		fn := runtime.FuncForPC(pc)
 
-		start := max(0, *inx-5)
+		start := min(len(tokens), max(0, *inx-5))
 		end := min(len(tokens), *inx+1)
 
 		var shortContext string
@@ -87,11 +111,11 @@ func inxPP(tokens []*lexer.Token, inx *int) error {
 	if *inx >= len(tokens) {
 		if os.Getenv("NUBO_DEV") == strconv.FormatBool(true) {
 			msg := fmt.Sprintf("unexpected end of input %s", reportCaller())
-			return debug.NewError(ErrSyntaxError, msg, tokens[*inx-1].Debug)
+			return debug.NewError(ErrSyntaxError, msg, endDebug(tokens))
 		}
 
 		msg := "language specific error (nubo internal ast package misfunction [use flag --dev for more details]) (RECOMMENDED: use other syntax as this is not supported yet)"
-		return debug.NewError(ErrSyntaxError, msg, tokens[*inx-1].Debug)
+		return debug.NewError(ErrSyntaxError, msg, endDebug(tokens))
 	}
 	*inx++
 
@@ -101,7 +125,7 @@ func inxPP(tokens []*lexer.Token, inx *int) error {
 
 	if *inx >= len(tokens) {
 		msg := fmt.Sprintf("unexpected end of input [%s]", reportCaller())
-		return debug.NewError(ErrSyntaxError, msg, tokens[*inx-1].Debug)
+		return debug.NewError(ErrSyntaxError, msg, endDebug(tokens))
 	}
 
 	return nil
@@ -119,7 +143,7 @@ func inxNlPP(tokens []*lexer.Token, inx *int) error {
 
 	if *inx >= len(tokens) {
 		msg := fmt.Sprintf("unexpected end of input [%s]", reportCaller())
-		return debug.NewError(ErrSyntaxError, msg, tokens[*inx-1].Debug)
+		return debug.NewError(ErrSyntaxError, msg, endDebug(tokens))
 	}
 
 	*inx++
@@ -130,7 +154,7 @@ func inxNlPP(tokens []*lexer.Token, inx *int) error {
 
 	if *inx >= len(tokens) {
 		msg := fmt.Sprintf("unexpected end of input [%s]", reportCaller())
-		return debug.NewError(ErrSyntaxError, msg, tokens[*inx-1].Debug)
+		return debug.NewError(ErrSyntaxError, msg, endDebug(tokens))
 	}
 
 	return nil
@@ -181,7 +205,7 @@ func inxPPeak(tokens []*lexer.Token, inx *int) (*lexer.Token, error) {
 	msg := "unexpected end of input"
 
 	if i >= len(tokens) {
-		return nil, debug.NewError(ErrSyntaxError, msg, tokens[*inx-1].Debug)
+		return nil, debug.NewError(ErrSyntaxError, msg, endDebug(tokens))
 	}
 
 	i++
@@ -191,7 +215,7 @@ func inxPPeak(tokens []*lexer.Token, inx *int) (*lexer.Token, error) {
 	}
 
 	if i >= len(tokens) {
-		return nil, debug.NewError(ErrSyntaxError, msg, tokens[*inx-1].Debug)
+		return nil, debug.NewError(ErrSyntaxError, msg, endDebug(tokens))
 	}
 
 	return tokens[i], nil

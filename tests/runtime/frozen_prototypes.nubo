@@ -1,0 +1,128 @@
+fn expectFrozen(err: any) void {
+    expect(!isNil(err), "built-in prototype writes should fail")
+
+    let message = err.message
+    expect(message.includes("cannot modify built-in prototype"), "prototype writes should return a clear error")
+}
+
+const fixed = 10
+let mutable = 20
+let alias = ref(mutable)
+
+catch constError {
+    fixed.probe = fn() void {}
+}
+expectFrozen(constError)
+
+catch letError {
+    mutable.probe = fn() void {}
+}
+expectFrozen(letError)
+
+catch refError {
+    alias.increment = fn() void {}
+}
+expectFrozen(refError)
+
+let items = [1]
+
+catch listError {
+    items.push = fn(value: any) void {}
+}
+expectFrozen(listError)
+
+items[0] = 2
+items.push(3)
+expect(items.join(",") == "2,3", "list data should stay writable")
+
+let text = "hello"
+
+catch stringError {
+    text.length = fn() int { return 0 }
+}
+expectFrozen(stringError)
+expect(text.length() == 5, "string methods should stay unchanged")
+
+let output = fn() void {}
+
+catch functionError {
+    output.probe = fn() void {}
+}
+expectFrozen(functionError)
+
+let mapping = dict[string, any] {}
+
+catch dictError {
+    mapping.__get__ = fn(key: string) any { return nil }
+}
+expectFrozen(dictError)
+
+mapping.name = "Nubo"
+mapping["other"] = 7
+expect(mapping.name == "Nubo", "dictionary properties should still write data")
+expect(mapping["other"] == 7, "dictionary indexing should still write data")
+
+let element = <div></div>
+
+catch htmlError {
+    element.setAttribute = fn(name: string, value: any) void {}
+}
+expectFrozen(htmlError)
+
+element.title = "hello"
+expect(element.getAttribute("title") == "hello", "HTML attributes should stay writable")
+
+let NativeRange = range
+
+catch nativeError {
+    NativeRange.probe = fn() void {}
+}
+expectFrozen(nativeError)
+
+catch implError {
+    impl NativeRange {
+        fn probe() void {}
+    }
+}
+expect(!isNil(implError), "native structs must reject impl blocks")
+
+let native = range(3)
+
+catch nativeInstanceError {
+    native.__iterate__ = fn() void {}
+}
+expectFrozen(nativeInstanceError)
+
+native.stop = 4
+expect(native.stop == 4, "native struct fields should stay writable")
+
+struct Editable {
+    value: int
+}
+
+impl Editable {
+    fn read(self: Editable) int {
+        return self.value
+    }
+}
+
+const custom = Editable()
+let customRef = ref(custom)
+customRef.value = 9
+
+expect(custom.read() == 9, "custom struct fields and impl methods should keep working")
+
+catch nestedError {
+    custom.value.probe = fn() void {}
+}
+expectFrozen(nestedError)
+
+Editable.probe = fn(self: Editable) int {
+    return self.value
+}
+
+let extended = Editable()
+extended.value = 12
+expect(extended.probe() == 12, "custom structs should allow prototype methods")
+
+return true

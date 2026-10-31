@@ -95,10 +95,6 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.sem <- struct{}{}
 	defer func() { <-s.sem }()
 
-	if os.Getenv("NUBO_DEV") == "true" && s.isDir {
-		_ = s.router.Reload()
-	}
-
 	defer func() {
 		if rcv := recover(); rcv != nil {
 			stack := debug.Stack()
@@ -123,6 +119,13 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Set the version header
 	w.Header().Set("Server", "Nubo/"+version.Version)
+
+	if os.Getenv("NUBO_DEV") == "true" && s.isDir {
+		if err := s.router.Reload(); err != nil {
+			s.handleError(fmt.Errorf("reload routes: %w", err), w, r)
+			return
+		}
+	}
 
 	var file string
 
@@ -176,7 +179,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Sync and output the generated data
 	if err := res.Sync(); err != nil {
-		zap.L().Error("server.response.sync", zap.String("path", r.URL.Path), zap.Error(err))
+		logServerError("server.response.sync", err, r, http.StatusInternalServerError)
 	}
 	zap.L().Debug("server.response.sync", zap.String("path", r.URL.Path))
 }

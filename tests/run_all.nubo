@@ -26,6 +26,10 @@ let tests: []string = [
     "lists/list_any_mixed",
     "lists/set_and_loop",
     "lists/nested_lists",
+    "lists/callback_reentry",
+    "lists/mutations",
+    "lists/iteration_mutation",
+    "lists/includes_safe",
 
     // dicts
     "dicts/basic_dict",
@@ -40,6 +44,7 @@ let tests: []string = [
 
     // control flow
     "control_flow/if_else",
+    "control_flow/inline_blocks",
     "control_flow/while_loop",
     "control_flow/for_list",
     "control_flow/for_dict",
@@ -66,11 +71,15 @@ let tests: []string = [
     "structs/value_hook",
     "structs/get_set_hooks",
     "structs/clone_hook",
+    "structs/clone_errors",
+    "structs/clone_recursion",
+    "structs/hook_recursion",
 
     // imports
     "imports/import_object",
     "imports/import_destructured",
     "imports/import_without_extension",
+    "imports/circular_imports",
 
     // include
     "include/include_string_literal",
@@ -80,6 +89,10 @@ let tests: []string = [
 
     // runtime
     "runtime/runtime_vars",
+    "runtime/cyclic_values",
+    "runtime/type_bindings",
+    "runtime/frozen_prototypes",
+    "runtime/void_values",
 
     // builtins
     "builtins/print_type_inspect",
@@ -103,17 +116,22 @@ let tests: []string = [
 
     // concurrency
     "concurrency/spawn_smoke",
+    "concurrency/spawn_errors",
 
     // html
     "html/html_value",
     "html/raw_html_value",
     "html/component_context",
+    "html/attribute_clone_reentry",
 
     // syntax
-    "syntax/struct_impl_iface_type"
+    "syntax/struct_impl_iface_type",
+    "syntax/parser_eof",
+    "syntax/multiline"
 ]
 
-let passed = 0
+const passed = 0
+const failedTests: []dict[string, any] = []
 
 println("Running Nubo language feature tests...")
 println("")
@@ -121,11 +139,24 @@ println("")
 for file in tests {
     println("▶ " + file)
 
-    include file
+    catch err {
+        include file;
 
-    passed = passed + 1
-    println("✓ " + file)
-    println("")
+        passed++
+        println("✓ " + file)
+        println("")
+    }
+
+    if !isNil(err) {
+        failedTests.push({err: err, file: file})
+    }
 }
 
 println("All tests executed: " + string(passed) + "/" + string(len(tests)))
+if passed != len(tests) {
+    println()
+    println("Some tests failed:")
+    for failed in failedTests {
+        println(`${failed.file}: ${failed.err}`)
+    }
+}

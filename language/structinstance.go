@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"sync"
 
 	"github.com/nubolang/nubo/internal/debug"
 	"go.uber.org/zap"
@@ -16,33 +15,6 @@ type StructInstance struct {
 	prototype *StructPrototype
 	bucket    map[string]any
 	debug     *debug.Debug
-}
-
-var (
-	structCloneMu    sync.Mutex
-	structCloneDepth = map[string]int{}
-)
-
-func beginStructClone(typeID string) bool {
-	structCloneMu.Lock()
-	defer structCloneMu.Unlock()
-
-	depth := structCloneDepth[typeID]
-	structCloneDepth[typeID] = depth + 1
-	return depth == 0
-}
-
-func endStructClone(typeID string) {
-	structCloneMu.Lock()
-	defer structCloneMu.Unlock()
-
-	depth := structCloneDepth[typeID]
-	if depth <= 1 {
-		delete(structCloneDepth, typeID)
-		return
-	}
-
-	structCloneDepth[typeID] = depth - 1
 }
 
 func NewStructInstance(base *Struct, name string, debug *debug.Debug) (*StructInstance, error) {
@@ -99,12 +71,16 @@ func (i *StructInstance) TypeString() string {
 }
 
 func (i *StructInstance) String() string {
+	return Stringify(context.Background(), i)
+}
+
+func (i *StructInstance) stringWithContext(ctx context.Context) string {
 	if proto := i.GetPrototype(); proto != nil {
-		if str, ok := proto.GetObject(context.Background(), "__string__"); ok {
+		if str, ok := proto.GetObject(ctx, "__string__"); ok {
 			if strFn, ok := str.(*Function); ok {
-				if len(strFn.ArgTypes) == 0 && strFn.ReturnType.Compare(TypeString) {
-					if s, err := strFn.Data(context.Background(), nil); err == nil {
-						return s.String()
+				if len(strFn.ArgTypes) == 0 && strFn.ReturnType != nil && strFn.ReturnType.Compare(TypeString) {
+					if s, err := strFn.Data(ctx, nil); err == nil && s != nil {
+						return Stringify(ctx, s)
 					}
 				}
 			}
@@ -117,11 +93,11 @@ func (i *StructInstance) String() string {
 
 	var items = make([]string, len(i.base.Data))
 	for inx, field := range i.base.Data {
-		ob, ok := i.GetPrototype().GetObject(StructAllowPrivateCtx(context.Background()), field.Name)
+		ob, ok := i.GetPrototype().GetObject(StructAllowPrivateCtx(ctx), field.Name)
 		if !ok {
 			items[inx] = fmt.Sprintf("%s: <invalid>", field.Name)
 		} else {
-			items[inx] = fmt.Sprintf("%s: %s", field.Name, indentString(ob.String(), "\t"))
+			items[inx] = fmt.Sprintf("%s: %s", field.Name, indentString(Stringify(ctx, ob), "\t"))
 		}
 
 		if _, ok := i.base.privateMap[field.Name]; ok {
@@ -149,33 +125,40 @@ func (i *StructInstance) Debug() *debug.Debug {
 }
 
 func (i *StructInstance) Clone() Object {
+	return cloneOrOriginal(i)
+}
+
+func (i *StructInstance) clone(ctx context.Context) (Object, error) {
 	proto := i.GetPrototype()
 	if proto == nil {
-		return i
+		return i, nil
 	}
 
-	typeID := i.base.structType.ID
-	if !beginStructClone(typeID) {
-		return i
+	ctx, leave, ok := enterStructClone(ctx, i.base.structType.ID)
+	if !ok {
+		return i, nil
 	}
-	defer endStructClone(typeID)
+	defer leave()
 
-	cl, ok := proto.GetObject(context.Background(), "__clone__")
+	cl, ok := proto.GetObject(ctx, "__clone__")
 	if ok {
 		clFn, ok := cl.(*Function)
 		if !ok {
-			zap.L().Fatal(i.String(), zap.String("warn", " __clone__ should be a function"))
-			return i
+			return nil, fmt.Errorf("__clone__ should be a function")
 		}
-		cl, err := clFn.Data(context.Background(), nil)
+		cl, err := clFn.Data(ctx, nil)
 		if err != nil {
-			zap.L().Fatal(i.String(), zap.String("error", err.Error()))
-			return i
+			return nil, err
 		}
-		return cl
+
+		if cl == nil || cl.Type().Base() == ObjectTypeSignal || cl.Type().Base() == ObjectTypeVoid {
+			return nil, fmt.Errorf("__clone__ expected a value, got void")
+		}
+
+		return cl, nil
 	}
 
-	return i
+	return i, nil
 }
 
 func (s *StructInstance) Iterator() func() (Object, Object, bool) {

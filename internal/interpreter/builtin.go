@@ -24,7 +24,7 @@ func ref(i *Interpreter, node *astnode.Node) (language.Object, error) {
 		return nil, n.Err("ref only accepts one argument", node.Debug)
 	}
 
-	value, err := i.eval(node.Args[0])
+	value, err := i.evalValue(node.Args[0])
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +37,7 @@ func _id(i *Interpreter, node *astnode.Node) (language.Object, error) {
 		return nil, n.Err("_id only accepts one argument", node.Debug)
 	}
 
-	value, err := i.eval(node.Args[0])
+	value, err := i.evalValue(node.Args[0])
 	if err != nil {
 		return nil, err
 	}

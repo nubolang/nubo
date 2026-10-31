@@ -1,0 +1,55 @@
+import hash from "@std/hash"
+import json from "@std/json"
+
+expect(int("12") == 12, "string-to-int conversion should stay unchanged")
+expect(int(2.5) == 2, "float-to-int conversion should stay unchanged")
+expect(float(2) == 2.0, "int-to-float conversion should stay unchanged")
+expect(bool("true"), "string-to-bool conversion should stay unchanged")
+expect(int(byte("A")) == 65, "byte conversion should stay unchanged")
+expect(char(65) == char("A"), "char conversion should stay unchanged")
+expect(string(bytes([65, 66])) == "AB", "byte-list conversion should stay unchanged")
+
+let count = 0
+while count < 2 {
+    if true {
+        count = count + 1
+    }
+}
+expect(count == 2, "conditions should recognize bool values")
+
+let total = 0
+for value in range(4) {
+    total = total + value
+}
+expect(total == 6, "range should recognize its omitted stop argument")
+
+let element = <div></div>
+element.setAttribute("title", "hello")
+expect(element.getAttribute("title") == "hello", "HTML should recognize string attributes")
+
+expect(hash.sha256("abc") == hash.sha256(bytes("abc")), "hashing should recognize strings")
+expect(json.stringify([1, 2]) == "[1,2]", "inferred list types should serialize normally")
+
+type Probe: iface {
+    probe() string
+}
+
+struct WithProbe {}
+struct WithoutProbe {}
+
+impl WithProbe {
+    fn probe(self: WithProbe) string {
+        return "first"
+    }
+}
+
+let first = WithProbe()
+let second = WithoutProbe()
+let alias = ref(first)
+
+expect(typecheck(Probe, alias), "interface checks should inspect the referenced object")
+expect(!typecheck(Probe, ref(second)), "another object should not inherit the first prototype")
+expect(typecheck(Probe, alias), "another type check should not replace the object binding")
+expect(alias.probe() == "first", "reference methods should stay available")
+
+return true

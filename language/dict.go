@@ -1,6 +1,7 @@
 package language
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -13,6 +14,22 @@ type Dict struct {
 	ValueType *Type
 	proto     *DictPrototype
 	debug     *debug.Debug
+}
+
+type dictItem struct {
+	key   Object
+	value Object
+}
+
+func (i *Dict) traversalItems() []dictItem {
+	items := make([]dictItem, 0, i.Data.Len())
+
+	i.Data.Iterate(func(key Object, value Object) bool {
+		items = append(items, dictItem{key: key, value: value})
+		return true
+	})
+
+	return items
 }
 
 func NewDict(keys []Object, values []Object, keyType *Type, valueType *Type, debug *debug.Debug) (*Dict, error) {
@@ -74,15 +91,18 @@ func (i *Dict) TypeString() string {
 }
 
 func (i *Dict) String() string {
+	return Stringify(context.Background(), i)
+}
+
+func (i *Dict) stringWithContext(ctx context.Context) string {
 	if i.Data.Len() == 0 {
 		return "dict{}"
 	}
 
 	var items []string
-	i.Data.Iterate(func(key Object, value Object) bool {
-		items = append(items, fmt.Sprintf("%v: %s", key, indentString(value.String(), "\t")))
-		return true
-	})
+	for _, item := range i.traversalItems() {
+		items = append(items, fmt.Sprintf("%s: %s", Stringify(ctx, item.key), indentString(Stringify(ctx, item.value), "\t")))
+	}
 
 	return fmt.Sprintf(
 		"dict{\n\t%s\n}",
@@ -106,19 +126,35 @@ func (i *Dict) Debug() *debug.Debug {
 }
 
 func (i *Dict) Clone() Object {
+	return cloneOrOriginal(i)
+}
+
+func (i *Dict) clone(ctx context.Context, active map[*Dict]*Dict) (*Dict, error) {
+	if cloned, ok := active[i]; ok {
+		return cloned, nil
+	}
+
 	m := NewOrderedMap()
-
-	i.Data.Iterate(func(key Object, value Object) bool {
-		m.Set(key, value.Clone())
-		return true
-	})
-
-	return &Dict{
+	cloned := &Dict{
 		Data:      m,
 		KeyType:   i.KeyType,
 		ValueType: i.ValueType,
 		debug:     i.debug,
 	}
+
+	active[i] = cloned
+	defer delete(active, i)
+
+	for _, item := range i.traversalItems() {
+		value, err := cloneObject(ctx, item.value, active)
+		if err != nil {
+			return nil, err
+		}
+
+		m.Set(item.key, value)
+	}
+
+	return cloned, nil
 }
 
 func (i *Dict) Iterator() func() (Object, Object, bool) {
