@@ -10,11 +10,20 @@ func (i *Interpreter) handleImpl(node *astnode.Node) error {
 	zap.L().Debug("interpreter.impl.start", zap.Uint("id", i.ID), zap.String("name", node.Content))
 
 	name := node.Content
-	definition, ok := i.GetObject(name)
+	definition, ok, err := i.lookupObject(name)
+	if err != nil {
+		return wrapRunExc(err, node.Debug)
+	}
+
 	if !ok || definition.Type().Base() != language.ObjectTypeStructDefinition {
 		err := runExc("cannot implement object %q", name).WithDebug(node.Debug)
 		zap.L().Error("interpreter.impl.undefined", zap.Uint("id", i.ID), zap.String("name", name), zap.Error(err))
 		return err
+	}
+
+	custom, _, _ := propertyAccess(definition, "")
+	if !custom {
+		return runExc("only user-defined structs can have an impl block").WithDebug(node.Debug)
 	}
 
 	proto, ok := definition.GetPrototype().(*language.StructPrototype)
@@ -31,6 +40,7 @@ func (i *Interpreter) handleImpl(node *astnode.Node) error {
 	}
 
 	proto.Unlock()
+	defer proto.Lock()
 
 	for _, child := range node.Body {
 		name := child.Content
@@ -56,7 +66,6 @@ func (i *Interpreter) handleImpl(node *astnode.Node) error {
 		}
 	}
 
-	proto.Lock()
 	proto.Implement()
 
 	zap.L().Debug("interpreter.impl.success", zap.Uint("id", i.ID), zap.String("name", node.Content))

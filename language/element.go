@@ -1,6 +1,7 @@
 package language
 
 import (
+	"context"
 	"fmt"
 	"html"
 	"strconv"
@@ -74,6 +75,10 @@ func (e *Element) TypeString() string {
 }
 
 func (e *Element) String() string {
+	return Stringify(context.Background(), e)
+}
+
+func (e *Element) stringWithContext(ctx context.Context) string {
 	if e.Data == nil {
 		return ""
 	}
@@ -93,7 +98,7 @@ func (e *Element) String() string {
 
 				var valueStr string
 				if arg.Value != nil {
-					valueStr = html.EscapeString(arg.Value.String())
+					valueStr = html.EscapeString(Stringify(ctx, arg.Value))
 				}
 
 				sb.WriteString(strconv.Quote(valueStr))
@@ -110,7 +115,7 @@ func (e *Element) String() string {
 
 			var valueStr string
 			if arg.Value != nil {
-				valueStr = html.EscapeString(arg.Value.String())
+				valueStr = html.EscapeString(Stringify(ctx, arg.Value))
 			}
 
 			sb.WriteString(strconv.Quote(valueStr))
@@ -127,7 +132,7 @@ func (e *Element) String() string {
 		switch child.Type {
 		case astnode.NodeTypeElement:
 			if child.Value != nil {
-				sb.WriteString(child.Value.String())
+				sb.WriteString(Stringify(ctx, child.Value))
 			}
 		case astnode.NodeTypeElementRawText:
 			if child.IsEscaped {

@@ -14,7 +14,7 @@ func (i *Interpreter) handleStruct(node *astnode.Node) error {
 	name := node.Content
 	body := make([]language.StructField, len(node.Body))
 
-	definition := language.NewStructBetter(name, node.Debug)
+	definition := language.NewUserStruct(name, node.Debug)
 
 	if err := i.Declare(name, definition, definition.Type(), false); err != nil {
 		zap.L().Error("interpreter.struct.declare.store", zap.Uint("id", i.ID), zap.String("name", name), zap.Error(err))
@@ -54,12 +54,17 @@ func (i *Interpreter) handleStructCreation(obj language.Object, node *astnode.No
 
 	var args = make([]language.Object, len(node.Args))
 	for j, arg := range node.Args {
-		value, err := i.eval(arg)
+		value, err := i.evalValue(arg)
 		if err != nil {
 			zap.L().Error("interpreter.struct.create.argEval", zap.Uint("id", i.ID), zap.Int("index", j), zap.Error(err))
 			return nil, wrapRunExc(err, arg.Debug)
 		}
-		args[j] = cloneForBinding(value)
+		bound, err := i.cloneBinding(value)
+		if err != nil {
+			return nil, wrapRunExc(err, arg.Debug)
+		}
+
+		args[j] = bound
 	}
 
 	instance, err := definition.NewInstance()
@@ -78,12 +83,17 @@ func (i *Interpreter) handleStructCreation(obj language.Object, node *astnode.No
 
 		var args = make([]language.Object, len(node.Args))
 		for j, arg := range node.Args {
-			value, err := i.eval(arg)
+			value, err := i.evalValue(arg)
 			if err != nil {
 				zap.L().Error("interpreter.struct.create.initArgEval", zap.Uint("id", i.ID), zap.Int("index", j), zap.Error(err))
 				return nil, wrapRunExc(err, arg.Debug)
 			}
-			args[j] = cloneForBinding(value)
+			bound, err := i.cloneBinding(value)
+			if err != nil {
+				return nil, wrapRunExc(err, arg.Debug)
+			}
+
+			args[j] = bound
 		}
 
 		var inst language.Object

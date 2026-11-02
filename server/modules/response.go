@@ -166,7 +166,7 @@ func (r *Response) fnJSON(ctx native.FnCtx) (language.Object, error) {
 		return nil, err
 	}
 
-	value, err := language.ToValue(data, true)
+	value, err := language.ToValueContext(ctx.Context(), data, true)
 	if err != nil {
 		return nil, err
 	}
@@ -206,7 +206,7 @@ func (r *Response) fnSetCookie(ctx native.FnCtx) (language.Object, error) {
 		Path:  pathObj.String(),
 	}
 
-	if maxAgeObj.Type() != n.TNil {
+	if maxAgeObj.Type().Base() != language.ObjectTypeNil {
 		cookie.MaxAge = int(maxAgeObj.Value().(int64))
 	}
 

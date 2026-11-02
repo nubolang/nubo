@@ -1,15 +1,9 @@
 package commands
 
 import (
-	"context"
-	"fmt"
 	"os"
 	"path/filepath"
-	"time"
 
-	"github.com/nubolang/nubo/internal/ast"
-	"github.com/nubolang/nubo/internal/formatter"
-	"github.com/nubolang/nubo/internal/lexer"
 	"github.com/spf13/cobra"
 )
 
@@ -26,53 +20,56 @@ func init() {
 }
 
 func execFormat(cmd *cobra.Command, args []string) {
-	if len(args) == 0 {
-		cmd.Help()
-		return
-	}
+	cmd.PrintErr("Format currently unavailable")
+	/*
+		if len(args) == 0 {
+			cmd.Help()
+			return
+		}
 
-	files, err := getFilesFromArgs(args)
-	if err != nil {
-		cmd.PrintErrln(err)
-		return
-	}
-
-	for _, path := range files {
-		file, err := os.Open(path)
+		files, err := getFilesFromArgs(args)
 		if err != nil {
 			cmd.PrintErrln(err)
 			return
 		}
 
-		lx, err := lexer.New(file, path)
-		if err != nil {
-			cmd.PrintErrln(err)
-			return
+		for _, path := range files {
+			file, err := os.Open(path)
+			if err != nil {
+				cmd.PrintErrln(err)
+				return
+			}
+
+			lx, err := lexer.New(file, path)
+			if err != nil {
+				cmd.PrintErrln(err)
+				return
+			}
+
+			tokens, err := lx.Parse()
+			file.Close()
+			if err != nil {
+				cmd.PrintErrln(err)
+				return
+			}
+
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+			parser := ast.New(ctx, time.Second*5)
+			nodes, err := parser.Parse(tokens)
+
+			cancel()
+			if err != nil {
+				cmd.PrintErrln(err)
+				return
+			}
+
+			nFmt := formatter.New(nodes)
+			content := nFmt.Format()
+
+			os.WriteFile(path, []byte(content), os.ModePerm)
+			fmt.Println("Formatted", path)
 		}
-
-		tokens, err := lx.Parse()
-		file.Close()
-		if err != nil {
-			cmd.PrintErrln(err)
-			return
-		}
-
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-		parser := ast.New(ctx, time.Second*5)
-		nodes, err := parser.Parse(tokens)
-
-		cancel()
-		if err != nil {
-			cmd.PrintErrln(err)
-			return
-		}
-
-		nFmt := formatter.New(nodes)
-		content := nFmt.Format()
-
-		os.WriteFile(path, []byte(content), os.ModePerm)
-		fmt.Println("Formatted", path)
-	}
+	*/
 }
 
 func getFilesFromArgs(args []string) ([]string, error) {

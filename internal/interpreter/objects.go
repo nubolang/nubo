@@ -1,6 +1,8 @@
 package interpreter
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"hash/fnv"
 	"strings"
@@ -38,7 +40,7 @@ func (i *Interpreter) Assign(name string, value language.Object) error {
 	zap.L().Debug("interpreter.objects.assign", zap.Uint("id", i.ID), zap.String("name", name))
 
 	if strings.Contains(name, ".") {
-		return i.assignNested(name, value, 0)
+		return i.assignNested(i.ctx, name, value, 0)
 	}
 
 	assignErr := i.assignInCurrentScope(name, value)
@@ -87,7 +89,7 @@ func (i *Interpreter) assignViaParent(name string, value language.Object, depth 
 	return wrapRunExc(err, value.Debug())
 }
 
-func (i *Interpreter) assignNested(name string, value language.Object, depth int) error {
+func (i *Interpreter) assignNested(ctx context.Context, name string, value language.Object, depth int) error {
 	if depth > maxScopeDepth {
 		return runExc("scope depth limit exceeded while assigning nested %q", name).WithDebug(value.Debug())
 	}
@@ -103,7 +105,7 @@ func (i *Interpreter) assignNested(name string, value language.Object, depth int
 	i.mu.RUnlock()
 	if !ok || obj.value == nil {
 		if i.parent != nil {
-			return i.parent.assignNested(name, value, depth+1)
+			return i.parent.assignNested(ctx, name, value, depth+1)
 		}
 		return runExc("undefined variable %q", parts[0]).WithDebug(value.Debug())
 	}
@@ -115,26 +117,52 @@ func (i *Interpreter) assignNested(name string, value language.Object, depth int
 			return runExc("undefined property %q", part).WithDebug(value.Debug())
 		}
 		var ok bool
-		current, ok = proto.GetObject(i.ctx, part)
+		current, ok = proto.GetObject(ctx, part)
 		if !ok || current == nil {
 			return runExc("undefined property %q", part).WithDebug(value.Debug())
 		}
 	}
 
 	lastKey := parts[len(parts)-1]
+	canModify, isField, canSet := propertyAccess(current, lastKey)
+	frozen := runExc("cannot modify built-in prototype property %q", name).WithDebug(value.Debug())
+
+	if !canModify && !isField && !canSet {
+		return frozen
+	}
+
 	proto := current.GetPrototype()
 	if proto == nil {
 		return runExc("no prototype for %q", name).WithDebug(value.Debug())
 	}
 
-	if setFn, ok := proto.GetObject(i.ctx, "__set__"); ok {
-		if callErr := i.callSetFunction(setFn, lastKey, value); callErr == nil {
-			zap.L().Debug("interpreter.objects.assignNested.prototype", zap.Uint("id", i.ID), zap.String("name", name))
-			return nil
+	if !canModify && !isField {
+		if _, exists := proto.GetObject(ctx, lastKey); exists {
+			return frozen
 		}
 	}
 
-	if err := proto.SetObject(i.ctx, lastKey, value); err == nil {
+	if setFn, ok := proto.GetObject(ctx, "__set__"); ok {
+		callErr := i.callSetFunction(ctx, setFn, lastKey, value)
+		if callErr == nil {
+			zap.L().Debug("interpreter.objects.assignNested.prototype", zap.Uint("id", i.ID), zap.String("name", name))
+			return nil
+		}
+
+		if errors.Is(callErr, errHookDepth) {
+			return callErr
+		}
+
+		if !canModify && !isField {
+			return wrapRunExc(callErr, value.Debug())
+		}
+	}
+
+	if !canModify && !isField {
+		return frozen
+	}
+
+	if err := proto.SetObject(ctx, lastKey, value); err == nil {
 		zap.L().Debug("interpreter.objects.assignNested.prototype", zap.Uint("id", i.ID), zap.String("name", name))
 		return nil
 	}
@@ -195,16 +223,18 @@ func (i *Interpreter) isConstInParent(name string) bool {
 }
 
 func (i *Interpreter) GetObject(name string) (language.Object, bool) {
-	return i.getObject(name, 0)
+	obj, ok, _ := i.lookupObject(name)
+
+	return obj, ok
 }
 
-func (i *Interpreter) getObject(name string, depth int) (language.Object, bool) {
-	return i.getObjectScoped(name, depth, true)
+func (i *Interpreter) lookupObject(name string) (language.Object, bool, error) {
+	return i.getObjectScoped(i.ctx, name, 0, true)
 }
 
-func (i *Interpreter) getObjectScoped(name string, depth int, allowParent bool) (language.Object, bool) {
+func (i *Interpreter) getObjectScoped(ctx context.Context, name string, depth int, allowParent bool) (language.Object, bool, error) {
 	if depth > maxScopeDepth {
-		return nil, false
+		return nil, false, nil
 	}
 
 	if strings.Contains(name, ".") {
@@ -214,8 +244,8 @@ func (i *Interpreter) getObjectScoped(name string, depth int, allowParent bool) 
 		imp, ok := i.imports[parts[0]]
 		i.mu.RUnlock()
 		if ok {
-			if ob, ok := imp.getObject(strings.Join(parts[1:], "."), depth+1); ok {
-				return ob, true
+			if ob, ok, err := imp.getObjectScoped(ctx, strings.Join(parts[1:], "."), depth+1, true); ok || err != nil {
+				return ob, ok, err
 			}
 		}
 
@@ -223,52 +253,61 @@ func (i *Interpreter) getObjectScoped(name string, depth int, allowParent bool) 
 		obj, ok := i.objects[hashKey(parts[0])]
 		i.mu.RUnlock()
 		if !ok || obj == nil || obj.value == nil {
-			return i.parentGetObjectScoped(name, depth+1, allowParent)
+			return i.parentGetObjectScoped(ctx, name, depth+1, allowParent)
 		}
 
 		current := obj.value
 		for _, part := range parts[1 : len(parts)-1] {
 			if current == nil {
-				return i.parentGetObjectScoped(name, depth+1, allowParent)
+				return i.parentGetObjectScoped(ctx, name, depth+1, allowParent)
 			}
 			proto := current.GetPrototype()
 			if proto == nil {
-				return i.parentGetObjectScoped(name, depth+1, allowParent)
+				return i.parentGetObjectScoped(ctx, name, depth+1, allowParent)
 			}
 			var ok bool
-			current, ok = proto.GetObject(i.ctx, part)
+			current, ok = proto.GetObject(ctx, part)
 			if !ok {
-				return i.parentGetObjectScoped(name, depth+1, allowParent)
+				return i.parentGetObjectScoped(ctx, name, depth+1, allowParent)
 			}
 		}
 
 		last := parts[len(parts)-1]
 		if current == nil {
-			return i.parentGetObjectScoped(name, depth+1, allowParent)
+			return i.parentGetObjectScoped(ctx, name, depth+1, allowParent)
 		}
 
 		proto := current.GetPrototype()
 		if proto == nil {
-			return i.parentGetObjectScoped(name, depth+1, allowParent)
+			return i.parentGetObjectScoped(ctx, name, depth+1, allowParent)
 		}
 
-		val, ok := proto.GetObject(i.ctx, last)
+		val, ok := proto.GetObject(ctx, last)
 		if ok {
-			return val, true
+			return val, true, nil
 		}
 
-		if getFn, ok := proto.GetObject(i.ctx, "__get__"); ok {
-			if res, err := i.callGetFunction(getFn, last); err == nil {
-				return res, true
+		if getFn, ok := proto.GetObject(ctx, "__get__"); ok {
+			res, err := i.callGetFunction(ctx, getFn, last)
+			if err == nil {
+				if err := requireValue(res, getFn.Debug()); err != nil {
+					return nil, false, err
+				}
+
+				return res, true, nil
+			}
+
+			if errors.Is(err, errHookDepth) {
+				return nil, false, err
 			}
 		}
 
-		return i.parentGetObjectScoped(name, depth+1, allowParent)
+		return i.parentGetObjectScoped(ctx, name, depth+1, allowParent)
 	}
 
 	// normal (non-nested) lookup
 	if obj, ok := i.runtime.GetBuiltin(name); ok {
-		return obj, true
+		return obj, true, nil
 	}
 
 	key := hashKey(name)
@@ -278,54 +317,54 @@ func (i *Interpreter) getObjectScoped(name string, depth int, allowParent bool) 
 
 	for e := head; e != nil; e = e.next {
 		if e.key == name {
-			return e.value, true
+			return e.value, true, nil
 		}
 	}
 
-	return i.parentGetObjectScoped(name, depth+1, allowParent)
+	return i.parentGetObjectScoped(ctx, name, depth+1, allowParent)
 }
 
-func (i *Interpreter) parentGetObject(name string, depth int) (language.Object, bool) {
-	return i.parentGetObjectScoped(name, depth, true)
-}
-
-func (i *Interpreter) parentGetObjectScoped(name string, depth int, allowParent bool) (language.Object, bool) {
+func (i *Interpreter) parentGetObjectScoped(ctx context.Context, name string, depth int, allowParent bool) (language.Object, bool, error) {
 	if depth > maxScopeDepth {
-		return nil, false
+		return nil, false, nil
 	}
 
 	if !allowParent {
-		return nil, false
+		return nil, false, nil
 	}
 
 	if i.parent == nil {
 		for _, inc := range i.includes {
-			if obj, ok := inc.getObjectScoped(name, depth+1, false); ok {
-				return obj, true
+			if obj, ok, err := inc.getObjectScoped(ctx, name, depth+1, false); ok || err != nil {
+				return obj, ok, err
 			}
 		}
-		return nil, false
+		return nil, false, nil
 	}
 
-	return i.parent.getObjectScoped(name, depth+1, allowParent)
+	return i.parent.getObjectScoped(ctx, name, depth+1, allowParent)
 }
 
-func (i *Interpreter) callGetFunction(fn language.Object, key string) (language.Object, error) {
+func (i *Interpreter) callGetFunction(ctx context.Context, fn language.Object, key string) (language.Object, error) {
 	callable, ok := fn.(*language.Function)
 	if !ok {
 		return nil, fmt.Errorf("not callable")
 	}
+
 	args := []language.Object{language.NewString(key, fn.Debug())}
-	return callable.Data(i.ctx, args)
+
+	return callHook(ctx, callable, args)
 }
 
-func (i *Interpreter) callSetFunction(fn language.Object, key string, value language.Object) error {
+func (i *Interpreter) callSetFunction(ctx context.Context, fn language.Object, key string, value language.Object) error {
 	callable, ok := fn.(*language.Function)
 	if !ok {
 		return fmt.Errorf("not callable")
 	}
+
 	args := []language.Object{language.NewString(key, fn.Debug()), value}
-	_, err := callable.Data(i.ctx, args)
+	_, err := callHook(ctx, callable, args)
+
 	return err
 }
 

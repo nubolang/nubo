@@ -25,7 +25,7 @@ func (i *Interpreter) handleFor(node *astnode.Node) (language.Object, error) {
 		return nil, err
 	}
 
-	expr, err := i.eval(node.Args[0])
+	expr, err := i.evalValue(node.Args[0])
 	if err != nil {
 		zap.L().Error("interpreter.for.expression.error", zap.Uint("id", i.ID), zap.Error(err))
 		return nil, exception.From(err, node.Debug, "failed to evaluate expression")

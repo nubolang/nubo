@@ -71,32 +71,22 @@ func NewTypedFunction(argTypes []FnArg, returnType *Type, data func(context.Cont
 	}
 
 	fn := func(ctx context.Context, args []Object) (Object, error) {
-		minRequiredArgs := 0
-		for _, arg := range argTypes {
-			if arg.Default() == nil {
-				minRequiredArgs++
-			}
-		}
-
-		if len(args) < minRequiredArgs {
-			return nil, fmt.Errorf("expected %d (minimum %d) arguments, got %d", len(argTypes), minRequiredArgs, len(args))
-		}
-
 		provideArgs := make([]Object, len(argTypes))
 		for i, argType := range argTypes {
+			var arg Object
 			if i < len(args) {
-				arg := args[i]
-				if !argType.Type().Compare(arg.Type()) {
-					return nil, fmt.Errorf("argument %d (%s) expected type %s, got %s", i+1, argType.Name(), argType.Type(), arg.Type())
-				}
-				provideArgs[i] = arg
-			} else {
-				if argType.Default() != nil {
-					provideArgs[i] = argType.Default()
-				} else {
-					return nil, fmt.Errorf("missing required argument %d (%s)", i+1, argType.Name())
-				}
+				arg = args[i]
 			}
+			if arg == nil {
+				arg = argType.Default()
+			}
+			if arg == nil {
+				return nil, fmt.Errorf("missing required argument %d (%s)", i+1, argType.Name())
+			}
+			if !argType.Type().Compare(arg.Type()) {
+				return nil, fmt.Errorf("argument %d (%s) expected type %s, got %s", i+1, argType.Name(), argType.Type(), arg.Type())
+			}
+			provideArgs[i] = arg
 		}
 
 		value, err := data(ctx, provideArgs)
@@ -226,5 +216,6 @@ func (i *Function) Clone() Object {
 		ReturnType: i.ReturnType,
 		typ:        i.typ,
 		debug:      i.debug,
+		ver:        i.ver,
 	}
 }

@@ -16,3 +16,11 @@ func cloneForBinding(value language.Object) language.Object {
 
 	return value.Clone()
 }
+
+func (i *Interpreter) cloneBinding(value language.Object) (language.Object, error) {
+	if value != nil && value.Type().Base() == language.ObjectTypeStructInstance {
+		return value, nil
+	}
+
+	return language.Clone(i.ctx, value)
+}

@@ -1,0 +1,115 @@
+fn expectHookLimit(err: any) void {
+    expect(!isNil(err), "recursive hooks should return a Nubo error")
+
+    let message = err.message
+    let trace = err.stackTrace
+
+    expect(message.includes("getter/setter recursion limit exceeded"), "hook depth errors should not be swallowed")
+    expect(len(trace) > 0, "hook depth errors should include a trace")
+}
+
+struct RecursiveHooks {
+    value: int
+}
+
+impl RecursiveHooks {
+    fn __get__(self: RecursiveHooks, key: string) int {
+        if key == "good" {
+            return 7
+        }
+
+        if key == "indexed" {
+            return self[key]
+        }
+
+        if key == "explicit" {
+            return self.__get__(key)
+        }
+
+        if key == "mixed" {
+            self.value = 9
+            return 0
+        }
+
+        return self.missing
+    }
+
+    fn __set__(self: RecursiveHooks, key: string, value: any) void {
+        if key == "indexed" {
+            self[key] = value
+        } else if key == "explicit" {
+            self.__set__(key, value)
+        } else if key == "mixed" {
+            let result = self.missing
+        } else {
+            self.value = value
+        }
+    }
+}
+
+let item = RecursiveHooks()
+
+catch propertyGet {
+    let value = item.missing
+}
+expectHookLimit(propertyGet)
+
+catch indexedGet {
+    let value = item["indexed"]
+}
+expectHookLimit(indexedGet)
+
+catch explicitGet {
+    let value = item.__get__("explicit")
+}
+expectHookLimit(explicitGet)
+
+catch propertySet {
+    item.value = 9
+}
+expectHookLimit(propertySet)
+
+catch indexedSet {
+    item["indexed"] = 9
+}
+expectHookLimit(indexedSet)
+
+catch explicitSet {
+    item.__set__("explicit", 9)
+}
+expectHookLimit(explicitSet)
+
+catch intermediateGet {
+    item["indexed"]["value"] = 9
+}
+expectHookLimit(intermediateGet)
+
+catch getterToSetter {
+    let value = item.mixed
+}
+expectHookLimit(getterToSetter)
+
+catch setterToGetter {
+    item.mixed = 9
+}
+expectHookLimit(setterToGetter)
+
+expect(item.value == 0, "failed setters must not fall back to direct writes")
+expect(item.good == 7, "hooks should recover after a depth error")
+
+struct Countdown {}
+
+impl Countdown {
+    fn __get__(self: Countdown, key: int) int {
+        if key == 0 {
+            return 7
+        }
+
+        return self[key - 1]
+    }
+}
+
+let countdown = Countdown()
+expect(countdown[10] == 7, "terminating hook recursion should still work")
+
+return true

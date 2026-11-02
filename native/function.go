@@ -11,6 +11,15 @@ import (
 type FnCtx struct {
 	typedArgs    []language.FnArg
 	providedArgs []language.Object
+	ctx          context.Context
+}
+
+func (ctx FnCtx) Context() context.Context {
+	if ctx.ctx == nil {
+		return context.Background()
+	}
+
+	return ctx.ctx
 }
 
 type FunctionWrapper func(ctx FnCtx) (language.Object, error)
@@ -39,6 +48,7 @@ func NewTypedFunction(ctx context.Context, typedArgs []language.FnArg, returnTyp
 		fnCtx := FnCtx{
 			typedArgs:    typedArgs,
 			providedArgs: args,
+			ctx:          ctx,
 		}
 
 		return fn(fnCtx)

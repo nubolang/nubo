@@ -56,6 +56,10 @@ func VariableParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, 
 		node.ValueType = typ
 	}
 
+	if *inx >= len(tokens) {
+		return nil, parserEOF(tokens)
+	}
+
 	token = tokens[*inx]
 	if slices.Contains(white, token.Type) {
 		if err := inxPP(tokens, inx); err != nil {
@@ -72,6 +76,10 @@ func VariableParser(ctx context.Context, sn Parser_HTML, tokens []*lexer.Token, 
 		value, err := ValueParser(ctx, sn, tokens, inx)
 		if err != nil {
 			return nil, err
+		}
+
+		if value.Type == astnode.NodeTypeExpression && len(value.Body) == 0 {
+			return nil, newErr(ErrUnexpectedToken, "expected a value after '='", value.Debug)
 		}
 
 		node.Value = value

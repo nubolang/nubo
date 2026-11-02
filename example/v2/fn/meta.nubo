@@ -1,0 +1,9 @@
+type num: int|float
+
+fn bmi(weight: num, height: num) num {
+    println(height ** 2)
+    return weight / (height ** 2)
+}
+
+println(bmi)
+println(bmi(65, 1.8))

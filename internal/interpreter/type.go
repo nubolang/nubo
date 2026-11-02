@@ -134,7 +134,11 @@ func (i *Interpreter) parseTypeNode(n *astnode.Node) (*language.Type, error) {
 
 	baseType, err := i.stringToType(n.Content, n.Debug)
 	if err != nil {
-		ob, ok := i.GetObject(n.Content)
+		ob, ok, err := i.lookupObject(n.Content)
+		if err != nil {
+			return nil, wrapRunExc(err, n.Debug)
+		}
+
 		if !ok || (ob.Type().Base() != language.ObjectTypeStructDefinition && ob.Type().Base() != language.ObjectTypeType) {
 			return nil, runExc("unknown type: %q", n.Content).WithDebug(n.Debug)
 		}

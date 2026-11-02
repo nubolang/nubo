@@ -72,7 +72,7 @@ loop:
 	node.Body = bodyNodes
 
 	last := *inx
-	if err := inxPP(tokens, inx); err == nil {
+	if err := skipLineBreaks(tokens, inx); err == nil {
 		token = tokens[*inx]
 		if token.Type == lexer.TokenElse {
 			els, err := elseParser(ctx, p, tokens, inx)
@@ -80,6 +80,8 @@ loop:
 				return nil, err
 			}
 			node.Children = els
+		} else {
+			*inx = last
 		}
 	} else {
 		*inx = last
@@ -92,7 +94,7 @@ func elseParser(ctx context.Context, p interface {
 	parser
 	HTMLAttrValueParser
 }, tokens []*lexer.Token, inx *int) ([]*astnode.Node, error) {
-	if err := inxPP(tokens, inx); err != nil {
+	if err := inxNlPP(tokens, inx); err != nil {
 		return nil, err
 	}
 

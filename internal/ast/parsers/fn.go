@@ -64,7 +64,7 @@ loop:
 
 	node.Args = args
 
-	if err := inxPP(tokens, inx); err != nil {
+	if err := inxNlPP(tokens, inx); err != nil {
 		return nil, err
 	}
 
@@ -76,10 +76,8 @@ loop:
 			return nil, err
 		}
 		node.ValueType = retType
-		if tokens[*inx].Type == lexer.TokenWhiteSpace {
-			if err := inxPP(tokens, inx); err != nil {
-				return nil, err
-			}
+		if err := skipLineBreaks(tokens, inx); err != nil {
+			return nil, err
 		}
 	}
 

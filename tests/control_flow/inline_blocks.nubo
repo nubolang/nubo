@@ -1,0 +1,15 @@
+if true {}
+
+let value = 0
+if true { value = 1 }
+expect(value == 1, "inline if should execute its first statement")
+
+if false { value = 2 }
+expect(value == 1, "false inline if should skip its body")
+
+if true {
+    value = 3
+}
+expect(value == 3, "multiline if should still work")
+
+return true

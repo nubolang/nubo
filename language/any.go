@@ -51,5 +51,5 @@ func (i *Any) Debug() *debug.Debug {
 }
 
 func (i *Any) Clone() Object {
-	return NewAny(i.Data.Clone(), i.debug)
+	return cloneOrOriginal(i)
 }

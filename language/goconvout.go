@@ -6,7 +6,17 @@ import (
 )
 
 func ToValue(obj Object, json ...bool) (any, error) {
+	return ToValueContext(context.Background(), obj, json...)
+}
+
+func ToValueContext(ctx context.Context, obj Object, json ...bool) (any, error) {
 	jsonMode := len(json) > 0 && json[0]
+
+	ctx, leave, err := enterTraversal(ctx, obj, valueTraversal)
+	if err != nil {
+		return nil, fmt.Errorf("cannot convert %T: %w", obj, err)
+	}
+	defer leave()
 
 	switch v := obj.(type) {
 	case *Int:
@@ -22,23 +32,19 @@ func ToValue(obj Object, json ...bool) (any, error) {
 		return v.Data, nil
 
 	case *List:
-		return listToValue(v, jsonMode)
+		return listToValue(ctx, v, jsonMode)
 
 	case *Dict:
-		if v.KeyType == TypeString || jsonMode {
+		if (v.KeyType != nil && v.KeyType.Base() == ObjectTypeString && v.KeyType.Next == nil) || jsonMode {
 			out := make(map[string]any)
 
-			err := v.Data.IterateErr(func(key Object, value Object) error {
-				val, err := ToValue(value, jsonMode)
+			for _, item := range v.traversalItems() {
+				val, err := ToValueContext(ctx, item.value, jsonMode)
 				if err != nil {
-					return err
+					return nil, err
 				}
 
-				out[key.String()] = val
-				return nil
-			})
-			if err != nil {
-				return nil, err
+				out[Stringify(ctx, item.key)] = val
 			}
 
 			return out, nil
@@ -46,29 +52,25 @@ func ToValue(obj Object, json ...bool) (any, error) {
 
 		out := make(map[any]any)
 
-		err := v.Data.IterateErr(func(key Object, value Object) error {
-			keyVal, err := ToValue(key, jsonMode)
+		for _, item := range v.traversalItems() {
+			keyVal, err := ToValueContext(ctx, item.key, jsonMode)
 			if err != nil {
-				return err
+				return nil, err
 			}
 
-			val, err := ToValue(value, jsonMode)
+			val, err := ToValueContext(ctx, item.value, jsonMode)
 			if err != nil {
-				return err
+				return nil, err
 			}
 
 			out[keyVal] = val
-			return nil
-		})
-		if err != nil {
-			return nil, err
 		}
 
 		return out, nil
 
 	case *StructInstance:
 		proto := obj.GetPrototype()
-		ctx := StructAllowPrivateCtx(context.Background())
+		ctx = StructAllowPrivateCtx(ctx)
 
 		fn, ok := proto.GetObject(ctx, "$convout")
 		if !ok {
@@ -85,7 +87,7 @@ func ToValue(obj Object, json ...bool) (any, error) {
 			return nil, err
 		}
 
-		return ToValue(converted, jsonMode)
+		return ToValueContext(ctx, converted, jsonMode)
 
 	case *NilObj:
 		return nil, nil
@@ -97,12 +99,12 @@ func ToValue(obj Object, json ...bool) (any, error) {
 
 // listToValue converts a runtime list into the most specific Go slice type possible.
 // In json mode it always returns []any, because JSON arrays are untyped.
-func listToValue(v *List, jsonMode bool) (any, error) {
+func listToValue(ctx context.Context, v *List, jsonMode bool) (any, error) {
 	if jsonMode {
 		out := make([]any, len(v.Data))
 
 		for i, elem := range v.Data {
-			val, err := ToValue(elem, jsonMode)
+			val, err := ToValueContext(ctx, elem, jsonMode)
 			if err != nil {
 				return nil, err
 			}
@@ -112,14 +114,19 @@ func listToValue(v *List, jsonMode bool) (any, error) {
 		return out, nil
 	}
 
-	switch v.ItemType {
-	case TypeString:
+	itemKind := ObjectTypeAny
+	if v.ItemType != nil && v.ItemType.Next == nil {
+		itemKind = v.ItemType.Base()
+	}
+
+	switch itemKind {
+	case ObjectTypeString:
 		out := make([]string, len(v.Data))
 
 		for i, elem := range v.Data {
 			str, ok := elem.(*String)
 			if !ok {
-				val, err := ToValue(elem, jsonMode)
+				val, err := ToValueContext(ctx, elem, jsonMode)
 				if err != nil {
 					return nil, err
 				}
@@ -137,13 +144,13 @@ func listToValue(v *List, jsonMode bool) (any, error) {
 
 		return out, nil
 
-	case TypeInt:
+	case ObjectTypeInt:
 		out := make([]int64, len(v.Data))
 
 		for i, elem := range v.Data {
 			num, ok := elem.(*Int)
 			if !ok {
-				val, err := ToValue(elem, jsonMode)
+				val, err := ToValueContext(ctx, elem, jsonMode)
 				if err != nil {
 					return nil, err
 				}
@@ -161,13 +168,13 @@ func listToValue(v *List, jsonMode bool) (any, error) {
 
 		return out, nil
 
-	case TypeFloat:
+	case ObjectTypeFloat:
 		out := make([]float64, len(v.Data))
 
 		for i, elem := range v.Data {
 			num, ok := elem.(*Float)
 			if !ok {
-				val, err := ToValue(elem, jsonMode)
+				val, err := ToValueContext(ctx, elem, jsonMode)
 				if err != nil {
 					return nil, err
 				}
@@ -185,13 +192,13 @@ func listToValue(v *List, jsonMode bool) (any, error) {
 
 		return out, nil
 
-	case TypeBool:
+	case ObjectTypeBool:
 		out := make([]bool, len(v.Data))
 
 		for i, elem := range v.Data {
 			b, ok := elem.(*Bool)
 			if !ok {
-				val, err := ToValue(elem, jsonMode)
+				val, err := ToValueContext(ctx, elem, jsonMode)
 				if err != nil {
 					return nil, err
 				}
@@ -213,7 +220,7 @@ func listToValue(v *List, jsonMode bool) (any, error) {
 		out := make([]any, len(v.Data))
 
 		for i, elem := range v.Data {
-			val, err := ToValue(elem, jsonMode)
+			val, err := ToValueContext(ctx, elem, jsonMode)
 			if err != nil {
 				return nil, err
 			}

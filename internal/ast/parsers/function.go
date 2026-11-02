@@ -45,6 +45,11 @@ loop:
 
 			var token = tokens[*inx]
 
+			if parenCount == 1 && braceCount == 0 && bracketCount == 0 && (isWhite(token) || token.Type == lexer.TokenNewLine) {
+				*inx++
+				continue loop
+			}
+
 			if token.Type == lexer.TokenCloseParen {
 				parenCount--
 				if parenCount == 0 {

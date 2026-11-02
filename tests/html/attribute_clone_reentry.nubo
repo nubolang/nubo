@@ -1,0 +1,50 @@
+let element = <div data-value="old" keep="keep"></div>
+let observed = ""
+let cloneCalls = 0
+
+struct AttributeValue {
+    version: int
+}
+
+impl AttributeValue {
+    fn __clone__(self: AttributeValue) AttributeValue {
+        cloneCalls = cloneCalls + 1
+        observed = element.getAttribute("dataValue")
+
+        element.setAttribute("nested", "hook")
+        element.setAttribute("dataValue", "inner")
+
+        let copied = AttributeValue()
+        copied.version = 2
+        return copied
+    }
+}
+
+let source = AttributeValue()
+source.version = 1
+
+element.setAttribute("dataValue", source)
+let first = element.getAttribute("dataValue")
+
+expect(observed == "old", "clone should read the attribute before the outer write")
+expect(first.version == 2, "setAttribute should store the clone result")
+expect(element.getAttribute("nested") == "hook", "nested attribute writes should survive")
+expect(element.getAttribute("keep") == "keep", "unrelated attributes should survive")
+
+element.setAttribute("dataValue", "old")
+element.__set__("dataValue", source)
+let second = element.getAttribute("dataValue")
+
+expect(observed == "old", "__set__ should allow clone re-entry")
+expect(second.version == 2, "__set__ should store the clone result")
+
+element.setAttribute("dataValue", "old")
+element["dataValue"] = source
+let third = element.getAttribute("dataValue")
+
+expect(observed == "old", "indexed assignment should allow clone re-entry")
+expect(third.version == 2, "indexed assignment should store the clone result")
+expect(source.version == 1, "the source object should stay unchanged")
+expect(cloneCalls == 3, "each attribute assignment should clone once")
+
+return true

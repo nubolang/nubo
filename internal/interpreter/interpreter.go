@@ -182,12 +182,29 @@ func (i *Interpreter) Detach() {
 }
 
 func (i *Interpreter) MustDetach() {
+	i.mustDetach(make(map[*Interpreter]bool))
+}
+
+func (i *Interpreter) mustDetach(visited map[*Interpreter]bool) {
+	if i == nil || visited[i] {
+		return
+	}
+
+	visited[i] = true
 	zap.L().Debug("interpreter.detach.must", zap.Uint("id", i.ID))
 
-	i.mu.Lock()
-	defer i.mu.Unlock()
+	// Release the lock before recursive cleanup.
+	i.mu.RLock()
+	unsubscribers := append([]events.UnsubscribeFunc(nil), i.unsub...)
+	children := make([]*Interpreter, 0, len(i.imports))
 
-	for _, unsub := range i.unsub {
+	for _, child := range i.imports {
+		children = append(children, child)
+	}
+
+	i.mu.RUnlock()
+
+	for _, unsub := range unsubscribers {
 		unsub()
 	}
 
@@ -195,8 +212,8 @@ func (i *Interpreter) MustDetach() {
 		i.runtime.RemoveInterpreter(i.ID)
 	}
 
-	for _, child := range i.imports {
-		child.MustDetach()
+	for _, child := range children {
+		child.mustDetach(visited)
 	}
 }
 

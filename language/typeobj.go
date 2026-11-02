@@ -35,7 +35,7 @@ func (t *TypeObject) TypeString() string {
 }
 
 func (t *TypeObject) String() string {
-	return t.Data.Content
+	return t.Data.String()
 }
 
 func (t *TypeObject) GetPrototype() Prototype {

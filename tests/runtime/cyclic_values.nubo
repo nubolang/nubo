@@ -1,0 +1,76 @@
+import json from "@std/json"
+
+fn expectCyclicJSON(err: any) void {
+    expect(!isNil(err), "cyclic JSON should return a Nubo error")
+
+    let message = err.message
+    expect(message.includes("cyclic value"), "JSON should explain the cycle")
+}
+
+let items: []any = []
+items.push(nil)
+items[0] = items
+
+let listText = string(items)
+expect(listText.includes("<cycle>"), "cyclic lists should print safely")
+
+let referenceText = string(ref(items))
+expect(referenceText.includes("<cycle>"), "references should not hide cycles")
+
+catch listError {
+    let serialized = json.stringify(items)
+}
+expectCyclicJSON(listError)
+
+let mapping = dict[string, any] {}
+mapping["self"] = mapping
+
+let dictText = string(mapping)
+expect(dictText.includes("<cycle>"), "cyclic dictionaries should print safely")
+
+catch dictError {
+    let serialized = json.stringify(mapping)
+}
+expectCyclicJSON(dictError)
+
+struct CircularNode {
+    next: any
+}
+
+let node = CircularNode()
+node.next = node
+
+let nodeText = string(node)
+expect(nodeText.includes("<cycle>"), "cyclic struct fields should print safely")
+
+catch structError {
+    let serialized = json.stringify(node)
+}
+expectCyclicJSON(structError)
+
+let element = <div></div>
+element.setChildren([element])
+
+let htmlText = string(element)
+expect(htmlText.includes("<cycle>"), "cyclic HTML children should print safely")
+
+struct RecursiveString {}
+
+impl RecursiveString {
+    fn __string__(self: RecursiveString) string {
+        return string(self)
+    }
+}
+
+let recursive = RecursiveString()
+expect(string(recursive) == "<cycle>", "string hooks should share traversal state")
+expect(concat(recursive) == "<cycle>", "concat should share traversal state")
+
+let shared = [1, 2]
+let repeated = [shared, shared]
+
+expect(string(repeated) == "[[1, 2], [1, 2]]", "shared values are not cycles")
+expect(json.stringify(repeated) == "[[1,2],[1,2]]", "shared values should serialize normally")
+expect(string(bytes("abc")) == "abc", "byte string conversion should stay unchanged")
+
+return true

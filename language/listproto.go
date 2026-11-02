@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
+	"slices"
 	"strings"
 	"sync"
 )
@@ -60,13 +62,12 @@ func NewListPrototype(base *List) *ListPrototype {
 	lp.SetObject(ctx, "join", NewTypedFunction([]FnArg{
 		&BasicFnArg{TypeVal: TypeString, NameVal: "sep"},
 	}, TypeString, func(ctx context.Context, o []Object) (Object, error) {
-		lp.mu.RLock()
-		defer lp.mu.RUnlock()
+		items := lp.callbackItems()
 
 		sep := o[0].Value().(string)
-		parts := make([]string, len(lp.base.Data))
-		for i, v := range lp.base.Data {
-			parts[i] = v.String()
+		parts := make([]string, len(items))
+		for i, v := range items {
+			parts[i] = Stringify(ctx, v)
 		}
 
 		return NewString(strings.Join(parts, sep), o[0].Debug()), nil
@@ -86,10 +87,7 @@ func NewListPrototype(base *List) *ListPrototype {
 	}, TypeVoid, func(ctx context.Context, o []Object) (Object, error) {
 		fn := o[0].(*Function)
 
-		lp.mu.RLock()
-		defer lp.mu.RUnlock()
-
-		for _, item := range lp.base.Data {
+		for _, item := range lp.callbackItems() {
 			_, err := fn.Data(ctx, []Object{item})
 			if err != nil {
 				return nil, err
@@ -105,15 +103,18 @@ func NewListPrototype(base *List) *ListPrototype {
 	}, TypeList, func(ctx context.Context, o []Object) (Object, error) {
 		fn := o[0].(*Function)
 
-		lp.mu.RLock()
-		defer lp.mu.RUnlock()
-
-		newItems := make([]Object, 0, len(lp.base.Data))
-		for _, item := range lp.base.Data {
+		items := lp.callbackItems()
+		newItems := make([]Object, 0, len(items))
+		for _, item := range items {
 			result, err := fn.Data(ctx, []Object{item})
 			if err != nil {
 				return nil, err
 			}
+
+			if result == nil || result.Type().Base() == ObjectTypeSignal || result.Type().Base() == ObjectTypeVoid {
+				return nil, fmt.Errorf("map callback expected a value, got void")
+			}
+
 			newItems = append(newItems, result)
 		}
 
@@ -125,11 +126,9 @@ func NewListPrototype(base *List) *ListPrototype {
 	}, TypeList, func(ctx context.Context, o []Object) (Object, error) {
 		fn := o[0].(*Function)
 
-		lp.mu.RLock()
-		defer lp.mu.RUnlock()
-
-		newItems := make([]Object, 0, len(lp.base.Data))
-		for _, item := range lp.base.Data {
+		items := lp.callbackItems()
+		newItems := make([]Object, 0, len(items))
+		for _, item := range items {
 			// Call the predicate function
 			result, err := fn.Data(ctx, []Object{item})
 			if err != nil {
@@ -159,7 +158,16 @@ func NewListPrototype(base *List) *ListPrototype {
 
 			search := o[0].Value()
 			for _, value := range lp.base.Data {
-				if search == value.Value() {
+				candidate := value.Value()
+				if reflect.TypeOf(search) != reflect.TypeOf(candidate) {
+					continue
+				}
+
+				if search != nil && (!reflect.ValueOf(search).Comparable() || !reflect.ValueOf(candidate).Comparable()) {
+					return nil, fmt.Errorf("includes cannot compare values of type %s", o[0].Type())
+				}
+
+				if search == candidate {
 					return NewBool(true, lp.base.Debug()), nil
 				}
 			}
@@ -169,8 +177,8 @@ func NewListPrototype(base *List) *ListPrototype {
 
 	lp.SetObject(ctx, "push", NewTypedFunction([]FnArg{&BasicFnArg{TypeVal: lp.base.ItemType, NameVal: "value"}}, TypeVoid,
 		func(ctx context.Context, o []Object) (Object, error) {
-			lp.mu.RLock()
-			defer lp.mu.RUnlock()
+			lp.mu.Lock()
+			defer lp.mu.Unlock()
 
 			base.Data = append(base.Data, o[0])
 			return nil, nil
@@ -182,8 +190,8 @@ func NewListPrototype(base *List) *ListPrototype {
 			&BasicFnArg{TypeVal: lp.base.ItemType, NameVal: "value"},
 		}, TypeVoid,
 		func(ctx context.Context, o []Object) (Object, error) {
-			lp.mu.RLock()
-			defer lp.mu.RUnlock()
+			lp.mu.Lock()
+			defer lp.mu.Unlock()
 
 			idx := int(o[0].Value().(int64))
 			val := o[1]
@@ -200,8 +208,8 @@ func NewListPrototype(base *List) *ListPrototype {
 			&BasicFnArg{TypeVal: TypeInt, NameVal: "index"},
 		}, TypeVoid,
 		func(ctx context.Context, o []Object) (Object, error) {
-			lp.mu.RLock()
-			defer lp.mu.RUnlock()
+			lp.mu.Lock()
+			defer lp.mu.Unlock()
 
 			idx := int(o[0].Value().(int64))
 			if idx < 0 || idx >= len(base.Data) {
@@ -214,8 +222,8 @@ func NewListPrototype(base *List) *ListPrototype {
 
 	lp.SetObject(ctx, "pop", NewTypedFunction(nil, lp.base.ItemType,
 		func(ctx context.Context, o []Object) (Object, error) {
-			lp.mu.RLock()
-			defer lp.mu.RUnlock()
+			lp.mu.Lock()
+			defer lp.mu.Unlock()
 
 			if len(base.Data) == 0 {
 				return nil, fmt.Errorf("list is empty")
@@ -228,8 +236,8 @@ func NewListPrototype(base *List) *ListPrototype {
 
 	lp.SetObject(ctx, "shift", NewTypedFunction(nil, lp.base.ItemType,
 		func(ctx context.Context, o []Object) (Object, error) {
-			lp.mu.RLock()
-			defer lp.mu.RUnlock()
+			lp.mu.Lock()
+			defer lp.mu.Unlock()
 
 			if len(base.Data) == 0 {
 				return nil, fmt.Errorf("list is empty")
@@ -244,8 +252,8 @@ func NewListPrototype(base *List) *ListPrototype {
 		[]FnArg{&BasicFnArg{TypeVal: lp.base.ItemType, NameVal: "value"}},
 		TypeVoid,
 		func(ctx context.Context, o []Object) (Object, error) {
-			lp.mu.RLock()
-			defer lp.mu.RUnlock()
+			lp.mu.Lock()
+			defer lp.mu.Unlock()
 
 			base.Data = append([]Object{o[0]}, base.Data...)
 			return nil, nil
@@ -273,8 +281,8 @@ func NewListPrototype(base *List) *ListPrototype {
 
 	lp.SetObject(ctx, "clear", NewTypedFunction(nil, TypeVoid,
 		func(ctx context.Context, o []Object) (Object, error) {
-			lp.mu.RLock()
-			defer lp.mu.RUnlock()
+			lp.mu.Lock()
+			defer lp.mu.Unlock()
 
 			base.Data = []Object{}
 			return nil, nil
@@ -283,8 +291,8 @@ func NewListPrototype(base *List) *ListPrototype {
 
 	lp.SetObject(ctx, "reverse", NewTypedFunction(nil, TypeVoid,
 		func(ctx context.Context, o []Object) (Object, error) {
-			lp.mu.RLock()
-			defer lp.mu.RUnlock()
+			lp.mu.Lock()
+			defer lp.mu.Unlock()
 
 			for i, j := 0, len(base.Data)-1; i < j; i, j = i+1, j-1 {
 				base.Data[i], base.Data[j] = base.Data[j], base.Data[i]
@@ -294,6 +302,14 @@ func NewListPrototype(base *List) *ListPrototype {
 	))
 
 	return lp
+}
+
+// Snapshot entries before callbacks; keep the objects shared.
+func (lp *ListPrototype) callbackItems() []Object {
+	lp.mu.RLock()
+	defer lp.mu.RUnlock()
+
+	return slices.Clone(lp.base.Data)
 }
 
 func (lp *ListPrototype) GetObject(ctx context.Context, name string) (Object, bool) {

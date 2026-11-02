@@ -1,6 +1,8 @@
 package interpreter
 
 import (
+	"context"
+	"fmt"
 	"log"
 
 	"github.com/nubolang/nubo/internal/ast/astnode"
@@ -9,15 +11,31 @@ import (
 )
 
 func (i *Interpreter) handleSpawn(node *astnode.Node) {
+	if err := i.runSpawn(node); err != nil {
+		zap.L().Error("interpreter.spawn.error", zap.Uint("id", i.ID), zap.Error(err))
+		log.Print(err)
+	}
+}
+
+func (i *Interpreter) runSpawn(node *astnode.Node) (err error) {
+	defer func() {
+		if recovered := recover(); recovered != nil {
+			err = wrapRunExc(fmt.Errorf("spawned function panicked: %v", recovered), node.Debug)
+		}
+	}()
+
 	ir := NewWithParent(i, ScopeFunction, "nubo_concurrent")
+	ir.ctx = language.NewCloneContext(context.WithValue(i.ctx, hookStackKey{}, (*hookFrame)(nil)))
+	defer ir.Detach()
+
 	ir.Declare("__concurrent__", language.NewBool(true, node.Debug), language.TypeBool, false)
 
 	zap.L().Debug("interpreter.spawn.start", zap.Uint("id", i.ID))
 	for _, node := range node.Children {
 		if _, err := ir.eval(node); err != nil {
-			zap.L().Error("interpreter.spawn.error", zap.Uint("id", i.ID), zap.Error(err))
-			i.Detach()
-			log.Fatal(err)
+			return wrapRunExc(err, node.Debug)
 		}
 	}
+
+	return nil
 }

@@ -116,6 +116,9 @@ type Object interface {
 }
 
 func withObject(ob Object, t *Type) *Type {
-	t.Object = ob
-	return t
+	// Bind the object without changing shared type metadata.
+	bound := *t
+	bound.Object = ob
+
+	return &bound
 }

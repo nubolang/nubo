@@ -47,7 +47,7 @@ func stringifyFn(ctx native.FnCtx) (language.Object, error) {
 		return nil, err
 	}
 
-	goValue, err := language.ToValue(value, true)
+	goValue, err := language.ToValueContext(ctx.Context(), value, true)
 	if err != nil {
 		return nil, err
 	}

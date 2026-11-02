@@ -1,0 +1,21 @@
+import http from "@std/http"
+import io from "@std/io"
+
+const client = http.create()
+client.baseUrl = "https://blog.mrtn.vip"
+println(inspect(client))
+
+const res = client.request("GET", "/api/posts")
+if res.status != 200: panic(`request failed with status code ${res.status}`)
+
+const posts: []html = []
+for post in res.json()["posts"] {
+    posts.push(<div :id="post.id">
+        <h1>{ post.title }</h1>
+        <p>{ post.description }</p>
+    </div>)
+}
+
+io.writeFile(__dir__+"/posts.html", <div>
+    !{ posts.join("") }
+</div>)

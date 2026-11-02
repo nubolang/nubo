@@ -1,0 +1,71 @@
+import reflect from "@std/reflect"
+
+struct Account {
+    name: string
+    private token: string
+}
+impl Account {
+    fn init(self: Account, name: string = "guest") void {
+        self.name = name
+        self.token = "secret"
+    }
+
+    fn greet(self: Account, prefix: string = "Hello") string {
+        return prefix + " " + self.name
+    }
+
+    fn rename(self: Account, name: string) void { self.name = name }
+
+    private fn secret(self: Account) string { return self.token }
+}
+
+const definition = reflect.Of(Account)
+const account = definition.new(["Martin"])
+const mirror = reflect.Of(account)
+
+expect(account.name == "Martin", "new must run init")
+expect(definition.new().name == "guest", "new must preserve default arguments")
+
+mirror.set("name", "Nubo")
+
+expect(account.name == "Nubo", "set must mutate original instance")
+expect(mirror.call("greet") == "Hello Nubo", "call must bind self and apply defaults")
+expect(mirror.call("greet", ["Welcome"]) == "Welcome Nubo", "call must pass arguments")
+expect(isNil(mirror.call("rename", ["Cloud"])), "void calls return nil")
+expect(account.name == "Cloud", "method side effects must persist")
+
+mirror.set("token", "updated", true)
+
+expect(mirror.call("secret", [], true) == "updated", "explicit private access must work")
+expect(reflect.Of("abcd").call("includes", ["bc"]), "call supports primitive methods")
+
+struct Empty {}
+expect(typecheck(Empty, reflect.Of(Empty).new()), "new supports structs without init")
+struct Box { value: int }
+
+impl Box {
+    fn init(self: Box, value: int) void {
+        self.value = value
+    }
+}
+
+expect(reflect.Of(Box).new([42]).value == 42, "new supports init returning self")
+
+type Greeter: iface { greet(prefix: string) string }
+type WrongGreeter: iface { greet(prefix: int) string }
+type PrivateContract: iface { secret() string }
+
+expect(mirror.implements(Greeter), "interface check must match bound signatures")
+expect(definition.implements(Greeter), "definitions support interface checks without init")
+expect(!mirror.implements(WrongGreeter), "interface check must reject wrong parameters")
+expect(!mirror.implements(PrivateContract), "private methods must not satisfy public contracts")
+
+type GreetingFunction: fn(string) -> string
+
+const shape: dict[string, any] = { "name": string, "greet": GreetingFunction }
+
+expect(mirror.implements(shape), "structural contracts support fields and methods")
+expect(!mirror.implements(dict[string, any] { "missing": int }), "missing fields must fail")
+expect(!mirror.implements(dict[string, any] { "name": int }), "wrong field types must fail")
+
+return true

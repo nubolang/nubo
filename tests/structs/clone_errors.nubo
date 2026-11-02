@@ -1,0 +1,73 @@
+struct FallibleClone {
+    fail: bool
+}
+
+impl FallibleClone {
+    fn __clone__(self: FallibleClone) FallibleClone {
+        if self.fail {
+            panic("clone failed")
+        }
+
+        return self
+    }
+}
+
+let item = FallibleClone()
+let container = dict[string, any] { item: item }
+item.fail = true
+
+catch firstError {
+    let copied = clone(item)
+}
+expect(!isNil(firstError), "clone failures should be catchable")
+let message = firstError.message
+expect(message.includes("clone failed"), "clone should preserve the hook's error")
+
+catch secondError {
+    let copied = clone(item)
+}
+expect(!isNil(secondError), "failed clones should unwind their guard")
+
+catch nestedError {
+    let copied = container
+}
+expect(!isNil(nestedError), "dictionary binding should propagate nested clone errors")
+
+let element = <div title="old"></div>
+
+catch attributeError {
+    element.setAttribute("title", item)
+}
+expect(!isNil(attributeError), "attribute clone failures should be catchable")
+expect(element.getAttribute("title") == "old", "failed cloning should preserve the attribute")
+
+struct InvalidClone {}
+InvalidClone.__clone__ = 1
+let invalid = InvalidClone()
+
+catch invalidError {
+    let copied = clone(invalid)
+}
+expect(!isNil(invalidError), "non-function clone hooks should return an error")
+
+struct VoidClone {}
+
+impl VoidClone {
+    fn __clone__(self: VoidClone) void {}
+}
+
+let empty = VoidClone()
+
+catch voidError {
+    let copied = clone(empty)
+}
+expect(!isNil(voidError), "void clone results should return an error")
+
+item.fail = false
+let recovered = clone(item)
+expect(!recovered.fail, "cloning should work after a caught failure")
+
+element.setAttribute("title", "new")
+expect(element.getAttribute("title") == "new", "failed cloning should leave the element usable")
+
+return true

@@ -1,6 +1,7 @@
 package language
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/nubolang/nubo/internal/debug"
@@ -31,7 +32,7 @@ func (i *Ref) TypeString() string {
 }
 
 func (i *Ref) String() string {
-	return i.Data.String()
+	return Stringify(context.Background(), i)
 }
 
 func (i *Ref) GetPrototype() Prototype {

@@ -94,6 +94,13 @@ func (ir *Interpreter) handleImport(node *astnode.Node) error {
 		return perr
 	}
 
+	importCtx, finishImport, err := ir.beginFileImport(path, node.Debug)
+	if err != nil {
+		return err
+	}
+
+	defer finishImport()
+
 	imported, ok := ir.runtime.FindInterpreter(path)
 	var importedReturn language.Object
 	if ok {
@@ -107,9 +114,11 @@ func (ir *Interpreter) handleImport(node *astnode.Node) error {
 			return exception.From(err, node.Debug, "failed to parse imported file: @err")
 		}
 
-		imported = New(ir.ctx, path, ir.runtime, true, ir.workdir)
+		imported = New(importCtx, path, ir.runtime, true, ir.workdir)
 		importedReturn, err = imported.Run(nodes)
 		if err != nil {
+			imported.MustDetach()
+
 			zap.L().Error("interpreter.import.execError", zap.Uint("id", ir.ID), zap.String("path", path), zap.Error(err))
 			return exception.From(err, node.Debug, "failed to execute imported file")
 		}
@@ -149,9 +158,13 @@ func (ir *Interpreter) handleImport(node *astnode.Node) error {
 
 			var value language.Object
 			if importedReturn != nil {
-				value, ok = ir.getImportObjectMember(importedReturn, child.Content)
+				value, ok, err = ir.getImportObjectMember(importedReturn, child.Content)
 			} else {
-				value, ok = imported.GetObject(child.Content)
+				value, ok, err = imported.getObjectScoped(ir.ctx, child.Content, 0, true)
+			}
+
+			if err != nil {
+				return wrapRunExc(err, child.Debug)
 			}
 			if !ok || value == nil {
 				err := exception.Create("failed to import ('%s') from %s", name, path).WithDebug(node.Debug)
@@ -170,32 +183,36 @@ func (ir *Interpreter) handleImport(node *astnode.Node) error {
 	return nil
 }
 
-func (ir *Interpreter) getImportObjectMember(obj language.Object, name string) (language.Object, bool) {
+func (ir *Interpreter) getImportObjectMember(obj language.Object, name string) (language.Object, bool, error) {
 	if obj == nil {
-		return nil, false
+		return nil, false, nil
 	}
 
 	proto := obj.GetPrototype()
 	if proto == nil {
-		return nil, false
+		return nil, false, nil
 	}
 
 	value, ok := proto.GetObject(ir.ctx, name)
 	if ok {
-		return value, true
+		return value, true, nil
 	}
 
 	getter, ok := proto.GetObject(ir.ctx, "__get__")
 	if !ok {
-		return nil, false
+		return nil, false, nil
 	}
 
-	value, err := ir.callGetFunction(getter, name)
+	value, err := ir.callGetFunction(ir.ctx, getter, name)
+	if errors.Is(err, errHookDepth) {
+		return nil, false, err
+	}
+
 	if err != nil {
-		return nil, false
+		return nil, false, nil
 	}
 
-	return value, value != nil
+	return value, value != nil, nil
 }
 
 func (ir *Interpreter) stdImport(node *astnode.Node, fileName string) error {

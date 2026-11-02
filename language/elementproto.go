@@ -25,22 +25,29 @@ func NewElementPrototype(base *Element) *ElementPrototype {
 		[]FnArg{&BasicFnArg{TypeVal: TypeString, NameVal: "name"}, &BasicFnArg{TypeVal: TypeAny, NameVal: "value"}},
 		TypeVoid,
 		func(ctx context.Context, o []Object) (Object, error) {
-			ep.mu.Lock()
-			defer ep.mu.Unlock()
-
 			val := o[1]
 
 			attr := Attribute{
 				Name: strcase.KebabCase(o[0].String()),
 			}
 
-			if val.Type() == TypeString {
+			if val.Type().Base() == ObjectTypeString {
 				attr.Kind = "TEXT"
 				attr.Value = NewString(val.String(), val.Debug())
 			} else {
 				attr.Kind = "DYNAMIC"
-				attr.Value = val.Clone()
+
+				cloned, err := Clone(ctx, val)
+				if err != nil {
+					return nil, err
+				}
+
+				attr.Value = cloned
 			}
+
+			// User hooks must finish before locking.
+			ep.mu.Lock()
+			defer ep.mu.Unlock()
 
 			// overwrite if exists
 			found := false

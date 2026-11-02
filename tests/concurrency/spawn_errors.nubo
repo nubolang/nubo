@@ -1,0 +1,21 @@
+import { Portal } from "@std/thread"
+
+let finished = Portal(2)
+
+spawn fn() void {
+    defer fn() void {
+        finished.send("failed worker unwound")
+    }()
+
+    panic("expected spawn smoke error")
+}()
+
+expect(finished.receive(5000) == "failed worker unwound", "failed workers should run deferred cleanup")
+
+spawn fn() void {
+    finished.send("other worker finished")
+}()
+
+expect(finished.receive(5000) == "other worker finished", "other workers should keep running")
+
+return true

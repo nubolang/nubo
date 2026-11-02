@@ -1,0 +1,25 @@
+catch indexedError {
+    include "../helpers/parser_eof/indexed"
+}
+expect(!isNil(indexedError), "unfinished indexed statements should return an error")
+
+catch assignmentError {
+    include "../helpers/parser_eof/assignment"
+}
+expect(!isNil(assignmentError), "assignments with no value before a newline should return an error")
+
+catch functionError {
+    include "../helpers/parser_eof/function"
+}
+expect(!isNil(functionError), "unfinished function declarations should return an error")
+
+catch retryError {
+    include "../helpers/parser_eof/function"
+}
+expect(!isNil(retryError), "repeated parsing failures should remain catchable")
+
+let valid = [1]
+valid[0] = 2
+expect(valid[0] == 2, "valid indexed assignment should still work")
+
+return true
