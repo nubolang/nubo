@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 )
 
 // Router represents a web router.
@@ -13,6 +14,7 @@ type Router struct {
 
 	// entries is a map of entries in the router.
 	entries map[string]Entry
+	mu      sync.RWMutex
 }
 
 // New creates a new Router instance.
@@ -25,9 +27,9 @@ func New(root string) *Router {
 
 // Reload reloads the router's entries.
 func (r *Router) Reload() error {
-	r.entries = make(map[string]Entry)
+	entries := make(map[string]Entry)
 
-	return filepath.Walk(r.root, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(r.root, func(path string, info os.FileInfo, err error) error {
 		if err != nil || info.IsDir() {
 			return err
 		}
@@ -73,7 +75,7 @@ func (r *Router) Reload() error {
 		}
 
 		// Store the Entry, which contains the parts
-		r.entries[routePath] = Entry{
+		entries[routePath] = Entry{
 			FilePath:     path,
 			Path:         rel,
 			IsExecutable: exec,
@@ -82,6 +84,16 @@ func (r *Router) Reload() error {
 
 		return nil
 	})
+	if err != nil {
+		return err
+	}
+
+	// Publish only complete route maps.
+	r.mu.Lock()
+	r.entries = entries
+	r.mu.Unlock()
+
+	return nil
 }
 
 func (r *Router) Match(url string) (*Route, bool) {
@@ -95,7 +107,11 @@ func (r *Router) Match(url string) (*Route, bool) {
 
 	var paramMatch *Route
 
-	for _, entry := range r.entries {
+	r.mu.RLock()
+	entries := r.entries
+	r.mu.RUnlock()
+
+	for _, entry := range entries {
 		routeParts := entry.Parts
 		if len(routeParts) != len(urlParts) {
 			continue

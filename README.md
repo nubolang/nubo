@@ -1,26 +1,68 @@
 # Nubo ☁️
 
-Nubo is a small programming language for building web apps, APIs, scripts, and tools.
+Nubo is a programming language for web apps, APIs, scripts, and tools. It combines readable syntax, typed values, HTML expressions, and a built-in HTTP server with file-based routing.
 
-It is designed to make server-side web development feel simple: write normal Nubo code, return HTML values, organize routes as files, and use a standard library instead of wiring everything from scratch.
+Write a script, serve a folder, or build a page with HTML directly in your code.
+
+[Documentation](https://nubo.mrtn.vip) · [Downloads](https://github.com/nubolang/nubo/releases) · [Examples](example/v2)
 
 > Nubo means “cloud” in Esperanto.
 
-## Why Nubo?
+## Install
 
-Nubo is built around a few simple ideas:
+Download a binary for your platform from [GitHub Releases](https://github.com/nubolang/nubo/releases), extract it if needed, and place `nubo` somewhere on your `PATH`. On Windows, use `nubo.exe`.
 
-- **Readable syntax** that is easy to learn.
-- **HTML as a language value**, not just strings.
-- **File-based routing** for web apps.
-- **Structs and methods** for clean application code.
-- **Typed values** without making simple code noisy.
-- **Standard libraries** for common web, system, database, component, and reflection tasks.
-- **Package imports** using simple names like `@nubolang/color`.
+Or install from source with Go 1.23.7 or newer:
 
-## A Small Taste
+```sh
+go install github.com/nubolang/nubo/cmd/nubo@latest
+```
 
-```nubo
+For Go installations, make sure your Go binary directory is on your `PATH`—normally `$(go env GOPATH)/bin`, or your configured `GOBIN`.
+
+Check the installation:
+
+```sh
+nubo --version
+```
+
+## Your first script
+
+Save this as `hello.nubo`:
+
+```rs
+fn greet(name: string) string {
+    return "Hello, " + name + "!"
+}
+
+println(greet("Nubo"))
+```
+
+Run it:
+
+```sh
+nubo hello.nubo
+```
+
+## A look at the language
+
+Use `let` for variables and `const` for bindings that cannot be reassigned. Types can be inferred or written explicitly.
+
+```rs
+const name = "Nubo"
+let total: int = 0
+let numbers = [1, 2, 3]
+
+for value in numbers {
+    total = total + value
+}
+
+println(name, total)
+```
+
+Structs define data; `impl` blocks define their methods:
+
+```rs
 struct User {
     name: string
 }
@@ -36,64 +78,107 @@ impl User {
 }
 
 let user = User("Martin")
-
 println(user.greet())
 ```
 
-## HTML Without String Templates
+Capture an error with `catch`, then inspect the result:
 
-Nubo can write HTML directly:
+```rs
+catch err {
+    panic("Something went wrong")
+}
 
-```nubo
+if !isNil(err) {
+    println(err.message)
+}
+```
+
+See the [language tests](tests) for examples of references, dictionaries, closures, interfaces, private members, and custom hooks.
+
+## Build a web app
+
+Create `public/index.nubo`:
+
+```tsx
+import response from "@server/response"
+
 let name = "Nubo"
 
-let page = <main>
-    <h1>Hello, { name }</h1>
-    <p>Build pages without turning HTML into strings.</p>
-</main>
-```
-
-Interpolated values are escaped by default. Trusted HTML can be inserted with `!{ ... }`.
-
-## Web Apps
-
-Nubo can serve a folder of `.nubo` files:
-
-```bash
-nubo serve public
-```
-
-Example route:
-
-```nubo
-import { write: writeResponse } from "@server/response"
-
-writeResponse(<main>
-    <h1>Hello from Nubo</h1>
+response.write(<main>
+    <h1>Hello, {name}!</h1>
+    <p>This page is written in Nubo.</p>
 </main>)
 ```
 
-Example structure:
+Start the development server:
 
-```txt
-public/
-  index.nubo
-  about.nubo
-  api/
-    users/
-      index.nubo
-      [id].nubo
+```sh
+nubo serve public --dev --addr :3000
 ```
+
+Open `http://localhost:3000`. HTML is a language value: you can store it in variables, return it from functions, and pass it to other functions. Interpolated text is escaped by default; `!{ ... }` inserts unescaped content.
+
+Routes follow the directory structure:
+
+| File | URL |
+| --- | --- |
+| `public/index.nubo` | `/` |
+| `public/about.nubo` | `/about` |
+| `public/api/users/index.nubo` | `/api/users` |
+| `public/api/users/[id].nubo` | `/api/users/42`, with `id = "42"` |
+| `public/style.css` | `/style.css` |
+
+The server also supports serving a single `.nubo` file. Use `@server/request` to read request information and `@server/response` to write HTML, JSON, headers, cookies, and redirects.
+
+For a JSON endpoint:
+
+```tsx
+import response from "@server/response"
+
+response.json(dict[string, any] {
+    message: "Hello from Nubo",
+    ok: true
+})
+```
+
+### Error pages and debugging
+
+Add `public/error.nubo` to customize error responses:
+
+```tsx
+import response from "@server/response"
+import error from "@server/error"
+
+response.write(<main>
+    <h1>{error.status}</h1>
+    <p>{error.message}</p>
+</main>)
+```
+
+If the error page fails, the server logs both failures and uses its built-in fallback. Development fallbacks show diagnostic details; production responses use generic messages for internal errors.
+
+Use `--dev` for route reloading and development diagnostics. Add `--loglevel=DEBUG` for detailed runtime logs.
 
 ## Packages
 
-Install a package:
+Standard-library imports use `@std/`:
 
-```bash
+```nubo
+import hash from "@std/hash"
+
+println(hash.sha256("hello"))
+```
+
+The standard library includes modules for JSON, HTTP, SQL, files, time, hashing, components, reflection, and more.
+
+Initialize a package and add a dependency:
+
+```sh
+nubo init
 nubo get github.com/nubolang/color
 ```
 
-Use it:
+Import it using its package name:
 
 ```nubo
 import color from "@nubolang/color"
@@ -101,37 +186,39 @@ import color from "@nubolang/color"
 println(color.green("success"))
 ```
 
-## Installation
+Run `nubo download` to download a project's declared dependencies. Local modules can be imported with relative paths, such as `import math from "./math"`.
 
-Install Go first, then install Nubo:
+## CLI reference
 
-```bash
-go install github.com/nubolang/nubo/cmd/nubo@latest
+| Command | Purpose |
+| --- | --- |
+| `nubo main.nubo` | Run a script |
+| `nubo serve public` | Serve a folder |
+| `nubo serve main.nubo` | Serve a single file |
+| `nubo init` | Initialize a package |
+| `nubo get <repository>` | Add a dependency |
+| `nubo download` | Download declared dependencies |
+| `nubo prepare <file\|folder>` | Prepare parsed files for reuse |
+| `nubo config` | Show the configuration path and current settings |
+
+Use `nubo --help` or `nubo <command> --help` for options. The `format` command is currently unavailable.
+
+## Working on Nubo
+
+From a checkout of this repository:
+
+```sh
+make build
+./bin/nubo hello.nubo
+
+go test ./...
+make smoketest
 ```
 
-Check it:
+`make build` writes the CLI to `bin/nubo`. The smoke suite runs Nubo examples registered in [tests/run_all.nubo](tests/run_all.nubo).
 
-```bash
-nubo --version
-```
+Nubo is under active development. Language behavior, APIs, and tooling may change between versions.
 
-## CLI
+## License
 
-```bash
-nubo file.nubo
-nubo serve public
-nubo init
-nubo get github.com/user/package
-nubo download
-nubo config
-```
-
-## Learn More
-
-Read the docs and guides:
-
-https://nubo.mrtn.vip
-
-## Status
-
-Nubo is under active development. The language, standard libraries, and tooling may change as the project grows.
+[Apache License 2.0](LICENSE).
