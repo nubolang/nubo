@@ -1,0 +1,57 @@
+let location = SourceLocation("example.nubo", 10, 5, 15)
+
+expect(string(location) == "example.nubo:10:5-15", "source location format mismatch")
+expect(string(SourceLocation("example.nubo", 10)) == "example.nubo:10", "optional columns mismatch")
+
+let root = Error("root")
+let problem: Error = Error("outer", root, location)
+
+expect(typecheck(Error, problem), "Error should be a built-in struct")
+expect(problem.base.message == "root", "error cause mismatch")
+expect(typecheck(SourceLocation, problem.metaData), "error metadata should be a source location")
+expect(string(problem).includes("Caused by: Error: root"), "error cause formatting mismatch")
+
+let other = Error("other")
+problem.stackTrace.push(location)
+
+expect(len(other.stackTrace) == 0, "errors should have independent stack traces")
+
+let frames: []SourceLocation = [location]
+let copied = Error("copied", nil, nil, frames)
+frames.push(location)
+
+expect(len(copied.stackTrace) == 1, "error should copy the supplied stack trace list")
+
+root.base = problem
+expect(string(problem).includes("<circular Error>"), "circular error causes should terminate")
+
+fn describe(value: Error) string {
+    return value.message
+}
+
+fn fail() void {
+    panic("caught error")
+}
+
+catch caught {
+    fail()
+}
+
+expect(typecheck(Error, caught), "catch should create an Error instance")
+expect(describe(caught) == "caught error", "caught Error should support type annotations")
+expect(typecheck(SourceLocation, caught.metaData), "caught metadata should be typed")
+expect(len(caught.stackTrace) > 0, "caught errors should retain stack frames")
+
+catch success {
+    let value = 7
+}
+
+expect(isNil(success), "successful catch should still produce nil")
+
+catch frozen {
+    Error.extra = 7
+}
+
+expect(!isNil(frozen), "built-in Error prototype should stay frozen")
+
+return true

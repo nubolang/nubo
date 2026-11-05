@@ -133,7 +133,7 @@ func (t *Type) String() string {
 	case ObjectTypeDict:
 		return fmt.Sprintf("dict[%s, %s]%s", t.Key.String(), t.Value.String(), next)
 	case ObjectTypeStructDefinition:
-		return fmt.Sprintf("(struct) %s%s", t.Content, next)
+		return fmt.Sprintf("%s%s", t.Content, next)
 	case ObjectTypeStructInstance:
 		return fmt.Sprintf("%s{}%s", t.Content, next)
 	case ObjectTypeIface:

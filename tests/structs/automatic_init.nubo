@@ -1,0 +1,105 @@
+struct Point {
+    x: int
+    private token: string
+    z: int
+}
+
+impl Point {
+    fn hasDefaultToken(self: Point) bool {
+        return self.token == ""
+    }
+}
+
+let named = Point(z: 5, x: 4)
+expect(named.x == 4 && named.z == 5, "named automatic initialization mismatch")
+
+let positional = Point(3, 4)
+expect(positional.x == 3 && positional.z == 4, "positional arguments should skip private fields")
+expect(positional.hasDefaultToken(), "private fields should retain their defaults")
+
+let mixed = Point(7, z: 8)
+expect(mixed.x == 7 && mixed.z == 8, "mixed automatic initialization mismatch")
+
+let defaults = Point(z: 9)
+expect(defaults.x == 0 && defaults.z == 9, "omitted fields should keep their defaults")
+
+let empty = Point()
+expect(empty.x == 0 && empty.z == 0, "empty construction should preserve defaults")
+
+let calls = 0
+
+fn nextValue() int {
+    calls++
+    return calls
+}
+
+let once = Point(z: nextValue(), x: nextValue())
+expect(calls == 2 && once.x == 2 && once.z == 1, "arguments should run once in source order")
+
+catch privateField {
+    let value = Point(token: "secret")
+}
+expect(!isNil(privateField), "automatic initialization should reject private fields")
+
+catch unknownField {
+    let value = Point(missing: 1)
+}
+expect(!isNil(unknownField), "automatic initialization should reject unknown fields")
+
+catch duplicateField {
+    let value = Point(1, x: 2)
+}
+expect(!isNil(duplicateField), "automatic initialization should reject positional and named duplicates")
+
+catch duplicateName {
+    let value = Point(x: 1, x: 2)
+}
+expect(!isNil(duplicateName), "automatic initialization should reject repeated names")
+
+catch excess {
+    let value = Point(1, 2, 3)
+}
+expect(!isNil(excess), "automatic initialization should reject excess arguments")
+
+catch wrongType {
+    let value = Point(x: "wrong")
+}
+expect(!isNil(wrongType), "automatic initialization should check field types")
+
+struct Bag {
+    items: []int
+    labels: dict[string, int]
+}
+
+let bag = Bag(items: [], labels: {})
+bag.items.push(7)
+
+let fresh = Bag()
+expect(len(fresh.items) == 0 && len(fresh.labels.keys()) == 0, "instances should have independent default collections")
+
+struct Link {
+    next: Link?
+    value: int
+}
+
+let root = Link(value: 1)
+let child = Link(root, 2)
+expect(_id(child.next) == _id(root) && child.value == 2, "recursive first field should remain a constructor argument")
+
+struct Explicit {
+    x: int
+}
+
+impl Explicit {
+    fn init(self: Explicit, value: int = 9) void {
+        self.x = value
+    }
+}
+
+let explicit = Explicit(value: 4)
+expect(explicit.x == 4, "explicit initializers should take precedence")
+
+struct Empty {}
+let nothing = Empty()
+
+return true

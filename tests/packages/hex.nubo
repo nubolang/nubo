@@ -1,0 +1,23 @@
+import hex from "@std/hex"
+import {encode} from "@std/hex"
+
+expect(hex.encode("Hello") == "48656c6c6f", "hex encode mismatch")
+expect(hex.decode("48656C6C6F") == "Hello", "hex decode mismatch")
+expect(encode("hé") == "68c3a9", "hex should encode UTF-8 text")
+expect(hex.decode(hex.encode("hé")) == "hé", "hex round trip mismatch")
+expect(hex.encode("") == "", "empty hex encode mismatch")
+expect(hex.decode("") == "", "empty hex decode mismatch")
+
+catch invalidHex {
+    hex.decode("not hex")
+}
+
+expect(!isNil(invalidHex), "invalid hex should raise a Nubo error")
+
+catch oddLength {
+    hex.decode("123")
+}
+
+expect(!isNil(oddLength), "odd hex length should raise a Nubo error")
+
+return true

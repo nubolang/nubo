@@ -8,6 +8,7 @@ import (
 
 type ExceptionData struct {
 	Base    string
+	Cause   error
 	Message string
 
 	Level      Level
@@ -15,22 +16,27 @@ type ExceptionData struct {
 	StackTrace []*debug.Debug
 }
 
+func (e *Expection) Details() *ExceptionData {
+	return &ExceptionData{
+		Cause:      e.base,
+		Message:    e.msg,
+		Level:      e.level,
+		Debug:      e.debug,
+		StackTrace: e.traceFrames(),
+	}
+}
+
 func Unwrap(err error) (*ExceptionData, bool) {
 	var excp *Expection
 	if errors.As(err, &excp) {
-		var base string
-		if excp.base != nil {
-			base = excp.base.Error()
+		data := excp.Details()
+		if data.Cause != nil {
+			data.Base = data.Cause.Error()
 		}
 
-		return &ExceptionData{
-			Base:       base,
-			Message:    excp.msg,
-			Level:      excp.level,
-			Debug:      excp.debug,
-			StackTrace: excp.traceFrames(),
-		}, true
+		return data, true
 	}
+
 	return nil, false
 }
 

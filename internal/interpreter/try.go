@@ -2,9 +2,7 @@ package interpreter
 
 import (
 	"github.com/nubolang/nubo/internal/ast/astnode"
-	"github.com/nubolang/nubo/internal/exception"
 	"github.com/nubolang/nubo/language"
-	"github.com/nubolang/nubo/native/n"
 	"go.uber.org/zap"
 )
 
@@ -15,84 +13,21 @@ func (i *Interpreter) handleTry(node *astnode.Node) (language.Object, error) {
 	if err != nil {
 		zap.L().Error("interpreter.try.body.error", zap.Uint("id", i.ID), zap.Error(err))
 
-		excp, ok := exception.Unwrap(err)
-		var (
-			base              string
-			msg               string
-			file              string
-			line              int
-			column, columnEnd int
-			stack             []language.Object
-		)
-
-		source := node.Debug
-
-		if ok {
-			base = excp.Base
-			msg = excp.Message
-
-			if excp.Debug != nil {
-				source = excp.Debug
-			}
-
-			for _, frame := range excp.StackTrace {
-				stackDict, err := n.Dict(map[any]any{
-					"file":      frame.File,
-					"line":      frame.Line,
-					"column":    frame.Column,
-					"columnEnd": frame.ColumnEnd,
-				})
-				if err != nil {
-					zap.L().Error("interpreter.try.stack.error", zap.Uint("id", i.ID), zap.Error(err))
-					return nil, wrapRunExc(err, node.Debug)
-				}
-				stack = append(stack, stackDict)
-			}
-		} else {
-			msg = err.Error()
+		caught, buildErr := language.ErrorFrom(err, node.Debug)
+		if buildErr != nil {
+			return nil, wrapRunExc(buildErr, node.Debug)
 		}
 
-		if source != nil {
-			file = source.File
-			line = source.Line
-			column = source.Column
-			columnEnd = source.ColumnEnd
-		}
-
-		metaData, err := n.Dict(map[any]any{
-			"file":      file,
-			"line":      line,
-			"column":    column,
-			"columnEnd": columnEnd,
-		})
-		if err != nil {
-			zap.L().Error("interpreter.try.metadata.error", zap.Uint("id", i.ID), zap.Error(err))
+		if err := i.Declare(node.Content, caught, language.Nullable(language.ErrorStruct().Type()), true); err != nil {
 			return nil, wrapRunExc(err, node.Debug)
 		}
 
-		dictErr, err := n.Dict(map[any]any{
-			"base":       base,
-			"message":    msg,
-			"metaData":   metaData,
-			"stackTrace": language.NewList(stack, language.TypeAny, node.Debug),
-		}, node.Debug)
-		if err != nil {
-			zap.L().Error("interpreter.try.dict.error", zap.Uint("id", i.ID), zap.Error(err))
-			return nil, wrapRunExc(err, node.Debug)
-		}
-
-		if err := i.Declare(node.Content, dictErr, language.TypeAny, true); err != nil {
-			zap.L().Error("interpreter.try.declare.error", zap.Uint("id", i.ID), zap.Error(err))
-			return nil, wrapRunExc(err, node.Debug)
-		}
-		zap.L().Debug("interpreter.try.catch", zap.Uint("id", i.ID), zap.String("variable", node.Content))
 		return nil, nil
 	}
 
-	if err := i.Declare(node.Content, language.Nil, language.TypeAny, true); err != nil {
-		zap.L().Error("interpreter.try.declare.nil", zap.Uint("id", i.ID), zap.Error(err))
+	if err := i.Declare(node.Content, language.Nil, language.Nullable(language.ErrorStruct().Type()), true); err != nil {
 		return nil, wrapRunExc(err, node.Debug)
 	}
-	zap.L().Debug("interpreter.try.success", zap.Uint("id", i.ID))
+
 	return ret, nil
 }

@@ -18,6 +18,7 @@ type entry struct {
 	value   language.Object
 	typ     *language.Type
 	mutable bool
+	private bool
 	next    *entry
 }
 

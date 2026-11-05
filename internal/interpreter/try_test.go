@@ -36,10 +36,9 @@ func TestCatchWithoutErrorSource(t *testing.T) {
 		get := func(obj language.Object, name string) language.Object {
 			t.Helper()
 
-			getter, _ := obj.GetPrototype().GetObject(ir.ctx, "__get__")
-			value, err := getter.(*language.Function).Call(ir.ctx, []language.Object{language.NewString(name, nil)})
-			if err != nil {
-				t.Fatal(err)
+			value, ok := obj.GetPrototype().GetObject(ir.ctx, name)
+			if !ok {
+				t.Fatalf("caught error has no field %q", name)
 			}
 
 			return value
@@ -49,11 +48,20 @@ func TestCatchWithoutErrorSource(t *testing.T) {
 			t.Fatalf("catch lost the original error: %s", message)
 		}
 
-		metadata := get(caught, "metaData")
-		wantFile := ""
-		if source != nil {
-			wantFile = source.File
+		instance, typed := caught.(*language.StructInstance)
+		if !typed || instance.Definition() != language.ErrorStruct() {
+			t.Fatal("catch should construct an Error instance")
 		}
+
+		metadata := get(caught, "metaData")
+		if source == nil {
+			if metadata != language.Nil {
+				t.Fatal("missing error source should produce nil metadata")
+			}
+			continue
+		}
+
+		wantFile := source.File
 
 		if got := get(metadata, "file").String(); got != wantFile {
 			t.Fatalf("caught file is %q, want %q", got, wantFile)

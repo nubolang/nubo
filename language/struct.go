@@ -158,8 +158,15 @@ func (i *Struct) TypeString() string {
 }
 
 func (i *Struct) String() string {
+	proto := i.prototype
+
+	if proto == nil {
+		return fmt.Sprintf("(struct) %s{}", i.Name)
+	}
+
 	objs := i.Data
-	if len(objs) == 0 {
+	setters := proto.setters
+	if len(objs)+len(setters) == 0 {
 		return fmt.Sprintf("(struct) %s{}", i.Name)
 	}
 
@@ -172,9 +179,18 @@ func (i *Struct) String() string {
 		items[i] = fmt.Sprintf("%s: %s", name, indentString(item.Type.String(), "\t"))
 	}
 
+	if len(items) == 0 {
+		return fmt.Sprintf(
+			"(struct) %s(%s {}",
+			i.Name,
+			proto.getInitFn(),
+		)
+	}
+
 	return fmt.Sprintf(
-		"(struct) %s{\n\t%s\n}",
+		"(struct) %s(%s {\n\t%s\n}",
 		i.Name,
+		proto.getInitFn(),
 		strings.Join(items, ",\n\t"),
 	)
 }

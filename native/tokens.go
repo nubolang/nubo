@@ -2,9 +2,11 @@ package native
 
 import (
 	"context"
+	"io"
 	"os"
 	"time"
 
+	"github.com/nubolang/nubo/config"
 	"github.com/nubolang/nubo/internal/ast"
 	"github.com/nubolang/nubo/internal/ast/astnode"
 	"github.com/nubolang/nubo/internal/dotfolder"
@@ -22,7 +24,20 @@ func NodesFromFile(path, lxPath string) ([]*astnode.Node, error) {
 	}
 	defer file.Close()
 
-	lx, err := lexer.New(file, lxPath)
+	nodes, err := NodesFromReader(file, lxPath)
+	if err != nil {
+		return nil, err
+	}
+
+	_ = dotfolder.SavePrepared(path, nodes)
+
+	return nodes, nil
+}
+
+func NodesFromReader(reader io.Reader, file string) ([]*astnode.Node, error) {
+	config.Verify()
+
+	lx, err := lexer.New(reader, file)
 	if err != nil {
 		return nil, err
 	}
@@ -34,14 +49,12 @@ func NodesFromFile(path, lxPath string) ([]*astnode.Node, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	parser := ast.New(ctx, time.Second*5)
+	parser := ast.New(ctx, time.Millisecond*time.Duration(config.Current.Syntax.Tokenizer.Context.Deadline))
 
 	nodes, err := parser.Parse(tokens)
 	if err != nil {
 		return nil, err
 	}
-
-	_ = dotfolder.SavePrepared(path, nodes)
 
 	return nodes, nil
 }

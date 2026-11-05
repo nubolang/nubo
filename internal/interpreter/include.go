@@ -6,7 +6,6 @@ import (
 
 	"github.com/nubolang/nubo/internal/ast/astnode"
 	"github.com/nubolang/nubo/language"
-	"github.com/nubolang/nubo/native"
 	"go.uber.org/zap"
 )
 
@@ -31,28 +30,27 @@ func (ir *Interpreter) includeValue(node *astnode.Node) (language.Object, error)
 	fileName := language.Stringify(ir.ctx, value)
 	zap.L().Debug("interpreter.include.file", zap.Uint("id", ir.ID), zap.String("fileName", fileName))
 
-	var path string
-	if filepath.IsAbs(fileName) {
-		path = filepath.Clean(fileName)
-	} else {
-		dir := filepath.Dir(ir.currentFile)
-		path = filepath.Join(dir, fileName)
-		path = filepath.Clean(path)
-	}
-
-	if filepath.Ext(path) == "" {
-		path += ".nubo"
+	path, err := ir.runtime.Source().Resolve(ir.currentFile, fileName)
+	if err != nil {
+		return nil, wrapRunExc(err, node.Debug)
 	}
 
 	zap.L().Debug("interpreter.include.path", zap.Uint("id", ir.ID), zap.String("path", path))
 
-	nodes, err := native.NodesFromFile(path, path)
+	includeCtx, finishInclude, err := ir.beginFileImport(path, node.Debug)
+	if err != nil {
+		return nil, err
+	}
+	defer finishInclude()
+
+	nodes, err := ir.runtime.Source().Nodes(path)
 	if err != nil {
 		zap.L().Error("interpreter.include.parseError", zap.Uint("id", ir.ID), zap.String("path", path), zap.Error(err))
 		return nil, wrapRunExc(runExc("failed to include file: %v", err), node.Debug)
 	}
 
 	inc := newInclude(ir, path)
+	inc.ctx = includeCtx
 
 	var interp = ir
 	for interp.parent != nil {

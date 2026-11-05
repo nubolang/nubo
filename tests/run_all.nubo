@@ -62,7 +62,9 @@ let tests: []string = [
 
     // structs
     "structs/basic_struct",
+    "structs/automatic_init",
     "structs/init_void",
+    "structs/named_arguments",
     "structs/init_return_self",
     "structs/methods_self",
     "structs/private_fields_methods",
@@ -101,6 +103,9 @@ let tests: []string = [
     "builtins/env_and_nil",
     "builtins/typecheck_valueof_ref",
 
+    // packages
+    "packages/hex",
+
     // reflect
     "reflect/values",
     "reflect/functions",
@@ -109,6 +114,7 @@ let tests: []string = [
 
     // errors
     "errors/catch_runtime_error",
+    "errors/error_type",
     "errors/panic_function",
 
     // defer

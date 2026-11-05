@@ -40,13 +40,44 @@ var packageList = []string{
 	"process", "sql", "time", "http", "system",
 	"hash", "component", "os", "iter",
 	"net/serial", "net/telnet", "net/ssh",
-	"plug", "reflect",
+	"plug", "reflect", "hex",
 }
 
-var (
-	allowList    []string
-	disallowList []string
-)
+func Names() []string {
+	return slices.Clone(packageList)
+}
+
+func Allowed(name string) bool {
+	config.Verify()
+
+	if config.Current.Runtime.Std.Disallow == ":all" || config.Current.Runtime.Std.Allow == "-" {
+		return false
+	}
+
+	if config.Current.Runtime.Std.Allow != ":all" && !slices.Contains(strings.Split(config.Current.Runtime.Std.Allow, ","), name) {
+		return false
+	}
+
+	return config.Current.Runtime.Std.Disallow == "-" || !slices.Contains(strings.Split(config.Current.Runtime.Std.Disallow, ","), name)
+}
+
+func IsBuiltin(name string) bool {
+	if name == "@std" {
+		return true
+	}
+
+	module, ok := strings.CutPrefix(name, BuiltInModulePrefix)
+	if !ok {
+		return false
+	}
+
+	switch module {
+	case "sql/driver/sqlite", "sql/driver/mysql", "sql/driver/postgres":
+		return true
+	}
+
+	return slices.Contains(packageList, module)
+}
 
 func ImportPackage(name string, dg *debug.Debug) (language.Object, bool) {
 	if name == "@std" {
@@ -67,28 +98,8 @@ func ImportPackage(name string, dg *debug.Debug) (language.Object, bool) {
 
 	name = strings.TrimPrefix(name, BuiltInModulePrefix)
 
-	if config.Current.Runtime.Std.Disallow == ":all" || config.Current.Runtime.Std.Allow == "-" {
+	if !Allowed(name) {
 		return nil, false
-	}
-
-	if config.Current.Runtime.Std.Allow != ":all" {
-		if allowList == nil {
-			allowList = strings.Split(config.Current.Runtime.Std.Allow, ",")
-		}
-
-		if !slices.Contains(allowList, name) {
-			return nil, false
-		}
-	}
-
-	if config.Current.Runtime.Std.Disallow != "-" {
-		if disallowList == nil {
-			disallowList = strings.Split(config.Current.Runtime.Std.Disallow, ",")
-		}
-
-		if slices.Contains(disallowList, name) {
-			return nil, false
-		}
 	}
 
 	switch name {

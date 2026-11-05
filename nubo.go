@@ -3,9 +3,11 @@ package nubo
 import (
 	"context"
 	"io"
+	"io/fs"
 	"strings"
 	"time"
 
+	"github.com/nubolang/nubo/config"
 	"github.com/nubolang/nubo/events"
 	"github.com/nubolang/nubo/internal/ast"
 	"github.com/nubolang/nubo/internal/ast/astnode"
@@ -26,9 +28,34 @@ func New() *Ctx {
 }
 
 func NewWithProvider(provider events.Provider) *Ctx {
+	config.Verify()
+
 	return &Ctx{
 		r: runtime.New(provider),
 	}
+}
+
+// NewWithFS reads scripts from files. A nil filesystem uses the host filesystem.
+func NewWithFS(files fs.FS) *Ctx {
+	config.Verify()
+
+	return &Ctx{
+		r: runtime.NewWithFS(events.NewDefaultProvider(), files),
+	}
+}
+
+func (c *Ctx) ExecFile(name string) (language.Object, error) {
+	file, err := c.r.Source().Resolve(".", name)
+	if err != nil {
+		return nil, err
+	}
+
+	nodes, err := c.r.Source().Nodes(file)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.r.Interpret(file, nodes)
 }
 
 func (c *Ctx) Tokenize(r io.Reader) ([]*lexer.Token, error) {

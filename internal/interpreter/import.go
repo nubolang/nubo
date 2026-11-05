@@ -3,7 +3,7 @@ package interpreter
 import (
 	"errors"
 	"fmt"
-	"os"
+	"io/fs"
 	"path/filepath"
 	"strings"
 
@@ -11,7 +11,6 @@ import (
 	"github.com/nubolang/nubo/internal/ast/astnode"
 	"github.com/nubolang/nubo/internal/exception"
 	"github.com/nubolang/nubo/language"
-	"github.com/nubolang/nubo/native"
 	"go.uber.org/zap"
 )
 
@@ -38,7 +37,7 @@ func (ir *Interpreter) handleImport(node *astnode.Node) error {
 	fileName := node.Value.(string)
 	zap.L().Debug("interpreter.import.source", zap.Uint("id", ir.ID), zap.String("name", node.Content), zap.String("source", fileName))
 
-	if strings.HasPrefix(fileName, "@std") || strings.HasPrefix(fileName, "@server") {
+	if fileName == "@native" || strings.HasPrefix(fileName, "@std") || strings.HasPrefix(fileName, "@server") {
 		if err := ir.stdImport(node, fileName); err != nil {
 			zap.L().Error("interpreter.import.stdError", zap.Uint("id", ir.ID), zap.String("name", node.Content), zap.Error(err))
 			return exception.From(err, node.Debug, "failed to import standard library module")
@@ -53,7 +52,7 @@ func (ir *Interpreter) handleImport(node *astnode.Node) error {
 		p, err := ir.runtime.GetPacker()
 		if err != nil {
 			zap.L().Error("interpreter.import.packer.registry", zap.Uint("id", ir.ID), zap.Error(err))
-			return exception.From(err, node.Debug, "failed to load packer registry")
+			return exception.From(err, node.Debug, "failed to load packer registry: @err")
 		}
 		name, err := p.ImportFile(fileName)
 		if err != nil {
@@ -63,35 +62,29 @@ func (ir *Interpreter) handleImport(node *astnode.Node) error {
 		fileName = name
 	}
 
-	var path string
-	if filepath.IsAbs(fileName) {
-		path = filepath.Clean(fileName)
-	} else {
-		path = fileName
+	current := ir.currentFile
+	if ir.runtime.Source().Disk() && !filepath.IsAbs(fileName) {
 		for oldPrefix, newPrefix := range config.Current.Runtime.Interpreter.Import.Prefix {
 			if rest, ok := strings.CutPrefix(fileName, oldPrefix); ok {
-				path = filepath.Join(newPrefix, rest)
-				break // allow only one match (not replacing replaced paths)
+				replacement := filepath.Join(newPrefix, rest)
+				if replacement != fileName {
+					fileName = replacement
+					current = "."
+				}
+				break
 			}
-		}
-
-		if path == fileName {
-			dir := filepath.Dir(ir.currentFile)
-			path = filepath.Join(dir, fileName)
-			path = filepath.Clean(path)
 		}
 	}
 
-	if filepath.Ext(path) == "" {
-		path += ".nubo"
+	path, err := ir.runtime.Source().Resolve(current, fileName)
+	if err != nil {
+		return exception.From(err, node.Debug, "failed to resolve imported file: @err")
 	}
 
 	zap.L().Debug("interpreter.import.path", zap.Uint("id", ir.ID), zap.String("name", node.Content), zap.String("path", path))
 
-	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
-		perr := runExc("imported file %s does not exists", path).WithDebug(node.Debug)
-		zap.L().Error("interpreter.import.missingFile", zap.Uint("id", ir.ID), zap.String("path", path), zap.Error(perr))
-		return perr
+	if _, err := ir.runtime.Source().Stat(path); errors.Is(err, fs.ErrNotExist) {
+		return runExc("imported file %s does not exists", path).WithDebug(node.Debug)
 	}
 
 	importCtx, finishImport, err := ir.beginFileImport(path, node.Debug)
@@ -108,7 +101,7 @@ func (ir *Interpreter) handleImport(node *astnode.Node) error {
 	}
 	if !ok {
 		zap.L().Debug("interpreter.import.load", zap.Uint("id", ir.ID), zap.String("path", path))
-		nodes, err := native.NodesFromFile(path, path)
+		nodes, err := ir.runtime.Source().Nodes(path)
 		if err != nil {
 			zap.L().Error("interpreter.import.parseError", zap.Uint("id", ir.ID), zap.String("path", path), zap.Error(err))
 			return exception.From(err, node.Debug, "failed to parse imported file: @err")
@@ -218,7 +211,11 @@ func (ir *Interpreter) getImportObjectMember(obj language.Object, name string) (
 func (ir *Interpreter) stdImport(node *astnode.Node, fileName string) error {
 	zap.L().Debug("interpreter.import.std.start", zap.Uint("id", ir.ID), zap.String("name", node.Content), zap.String("package", fileName))
 
-	obj, ok := ir.runtime.ImportPackage(fileName, node.Debug)
+	obj, ok, err := ir.runtime.ImportPackage(ir.ctx, fileName, node.Debug)
+	if err != nil {
+		return wrapRunExc(err, node.Debug)
+	}
+
 	if ok {
 		if node.Kind == "NONE" {
 			zap.L().Debug("interpreter.import.std.noop", zap.Uint("id", ir.ID), zap.String("name", node.Content))
@@ -229,6 +226,9 @@ func (ir *Interpreter) stdImport(node *astnode.Node, fileName string) error {
 			if err := ir.Declare(node.Content, obj, obj.Type(), false); err != nil {
 				zap.L().Error("interpreter.import.std.declare", zap.Uint("id", ir.ID), zap.String("name", node.Content), zap.Error(err))
 				return wrapRunExc(err, node.Debug)
+			}
+			if fileName == "@native" {
+				ir.hideExport(node.Content)
 			}
 			zap.L().Debug("interpreter.import.std.single", zap.Uint("id", ir.ID), zap.String("name", node.Content))
 			return nil
@@ -261,13 +261,17 @@ func (ir *Interpreter) stdImport(node *astnode.Node, fileName string) error {
 					return wrapRunExc(err, node.Debug)
 				}
 
+				if fileName == "@native" {
+					ir.hideExport(name)
+				}
+
 				zap.L().Debug("interpreter.import.std.multipleEntry", zap.Uint("id", ir.ID), zap.String("alias", name), zap.String("source", child.Content))
 			}
 
 			return nil
 		}
 	}
-	err := runExc("failed to import %s from @std", strings.TrimPrefix(fileName, "@std/")).WithDebug(node.Debug)
+	err = runExc("failed to import %s from @std", strings.TrimPrefix(fileName, "@std/")).WithDebug(node.Debug)
 	zap.L().Error("interpreter.import.std.notFound", zap.Uint("id", ir.ID), zap.String("package", fileName), zap.Error(err))
 	return err
 }
