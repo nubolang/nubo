@@ -3,6 +3,7 @@ package language
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 )
 
@@ -52,6 +53,11 @@ func (sp *StructPrototype) NewInstance(instance *StructInstance) (*StructPrototy
 		}
 	}
 
+	if _, exists := cloned.data["init"]; !exists {
+		// Already bound to this instance.
+		cloned.data["init"] = cloned.defaultInitializer()
+	}
+
 	err := cloned.SetObject(ctx, "$convout", NewTypedFunction([]FnArg{
 		&BasicFnArg{NameVal: "self", TypeVal: sp.base.Type()},
 	}, TypeAny, func(ctx context.Context, o []Object) (Object, error) {
@@ -81,6 +87,9 @@ func (sp *StructPrototype) NewInstance(instance *StructInstance) (*StructPrototy
 }
 
 func (s *StructPrototype) GetObject(ctx context.Context, name string) (Object, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
 	if _, ok := s.base.privateMap[name]; ok {
 		if val := ctx.Value("unlock_struct_private"); val == nil || val != true {
 			return nil, false
@@ -110,27 +119,7 @@ func (s *StructPrototype) SetObject(ctx context.Context, name string, value Obje
 
 	for _, field := range s.base.Data {
 		if field.Name == name {
-			if field.Type.Base() == ObjectTypeList {
-				if listValue, ok := value.(*List); ok && len(listValue.Data) == 0 {
-					if value.Type().Base() == ObjectTypeList && (value.Type().Element.Compare(TypeAny) || value.Type().Element.Compare(TypeVoid)) {
-						if typed := DefaultValue(field.Type); typed != nil {
-							value = typed
-						}
-					}
-				}
-			}
-
-			if field.Type.Base() == ObjectTypeDict {
-				if dictValue, ok := value.(*Dict); ok && dictValue.Data.Len() == 0 {
-					if value.Type().Base() == ObjectTypeDict &&
-						(value.Type().Key.Compare(TypeAny) || value.Type().Key.Compare(TypeVoid)) &&
-						(value.Type().Value.Compare(TypeAny) || value.Type().Value.Compare(TypeVoid)) {
-						if typed := DefaultValue(field.Type); typed != nil {
-							value = typed
-						}
-					}
-				}
-			}
+			value = structFieldValue(field.Type, value)
 
 			if !field.Type.Compare(value.Type()) {
 				return fmt.Errorf("type mismatch, expected %s, got %s", field.Type, value.Type())
@@ -211,6 +200,14 @@ func (s *StructPrototype) Lock() {
 
 func (s *StructPrototype) Unlock() {
 	s.locked = false
+}
+
+func (s *StructPrototype) getInitFn() string {
+	fn, ok := s.setters["init"]
+	if !ok {
+		return ")"
+	}
+	return strings.TrimSuffix(strings.TrimPrefix(fn.String(), "(fn ("), ")")
 }
 
 func StructAllowPrivateCtx(ctx context.Context) context.Context {

@@ -2,7 +2,10 @@ package runtime
 
 import (
 	"context"
-	"os"
+	"errors"
+	"fmt"
+	"io/fs"
+	"strings"
 	"sync"
 
 	"github.com/nubolang/nubo/events"
@@ -11,6 +14,7 @@ import (
 	"github.com/nubolang/nubo/internal/debug"
 	"github.com/nubolang/nubo/internal/interpreter"
 	"github.com/nubolang/nubo/internal/packages"
+	"github.com/nubolang/nubo/internal/source"
 	"github.com/nubolang/nubo/language"
 	"github.com/nubolang/nubo/packer"
 	"go.uber.org/zap"
@@ -33,12 +37,21 @@ type Runtime struct {
 
 	builtins map[string]language.Object
 	packages map[string]language.Object
+	modules  map[string]*module
+	loads    map[*moduleLoad]map[*moduleLoad]int
 	packer   *packer.Packer
+	source   *source.Loader
+	host     *Runtime
+	native   language.Object
 
 	ctx context.Context
 }
 
 func New(pubsubProvider events.Provider) *Runtime {
+	return NewWithFS(pubsubProvider, nil)
+}
+
+func NewWithFS(pubsubProvider events.Provider, files fs.FS) *Runtime {
 	rt := &Runtime{
 		pubsubProvider: pubsubProvider,
 		iid:            0,
@@ -47,10 +60,17 @@ func New(pubsubProvider events.Provider) *Runtime {
 		returnMap:      make(map[uint]language.Object),
 		builtins:       builtin.GetBuiltins(),
 		packages:       make(map[string]language.Object),
+		modules:        make(map[string]*module),
+		loads:          make(map[*moduleLoad]map[*moduleLoad]int),
 		ctx:            context.Background(),
+		source:         source.New(files),
 	}
 	zap.L().Info("runtime.new", zap.Bool("eventsEnabled", pubsubProvider != nil))
 	return rt
+}
+
+func (r *Runtime) Source() *source.Loader {
+	return r.source
 }
 
 func (r *Runtime) Context() context.Context {
@@ -64,13 +84,42 @@ func (r *Runtime) WithContext(ctx context.Context) *Runtime {
 }
 
 func (r *Runtime) GetBuiltin(name string) (language.Object, bool) {
+	if r.host != nil {
+		return r.host.GetBuiltin(name)
+	}
+
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	obj, ok := r.builtins[name]
 	return obj, ok
 }
 
+func (r *Runtime) AddFunction(name string, fn *language.Function) error {
+	if fn == nil {
+		return fmt.Errorf("function %q is nil", name)
+	}
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	switch name {
+	case "ref", "_id", "_callsite", "__id__", "__entry__", "__dir__", "__file__", "__concurrent__":
+		return fmt.Errorf("function name %q is reserved", name)
+	}
+
+	if _, exists := r.builtins[name]; exists {
+		return fmt.Errorf("function %q is already registered", name)
+	}
+
+	r.builtins[name] = fn
+	return nil
+}
+
 func (r *Runtime) GetPacker() (*packer.Packer, error) {
+	if !r.source.Disk() {
+		return nil, fmt.Errorf("the disk package registry is unavailable with a custom source filesystem")
+	}
+
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -103,35 +152,89 @@ func (r *Runtime) ProvidePackage(name string, pkg language.Object) {
 	zap.L().Debug("runtime.package.provide", zap.String("name", name))
 }
 
-func (r *Runtime) ImportPackage(name string, dg *debug.Debug) (language.Object, bool) {
+func (r *Runtime) AddPackage(name string, pkg language.Object) error {
+	if pkg == nil {
+		return fmt.Errorf("package %q is nil", name)
+	}
+
+	if packages.IsBuiltin(name) {
+		return fmt.Errorf("package %q is built-in", name)
+	}
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if _, exists := r.packages[name]; exists {
+		return fmt.Errorf("package %q is already registered", name)
+	}
+	if _, exists := r.modules[name]; exists {
+		return fmt.Errorf("package %q is already registered", name)
+	}
+
+	r.packages[name] = pkg
+	return nil
+}
+
+func (r *Runtime) ImportPackage(ctx context.Context, name string, dg *debug.Debug) (language.Object, bool, error) {
+	if name == "@native" {
+		if r.native == nil {
+			return nil, true, fmt.Errorf("@native is only available inside a registered source package")
+		}
+
+		return r.native, true, nil
+	}
+
+	if r.host != nil {
+		return r.host.ImportPackage(ctx, name, dg)
+	}
+
 	r.mu.RLock()
-	defer r.mu.RUnlock()
 	pkg, ok := r.packages[name]
+	module := r.modules[name]
+	r.mu.RUnlock()
+
 	if ok {
 		zap.L().Debug("runtime.package.cached", zap.String("name", name))
-		return pkg, true
+		return pkg, true, nil
+	}
+
+	if name == "@std" {
+		pkg, err := r.importStandard(ctx, dg)
+		return pkg, true, err
+	}
+
+	if packages.IsBuiltin(name) && !packages.Allowed(strings.TrimPrefix(name, packages.BuiltInModulePrefix)) {
+		return nil, false, nil
+	}
+
+	if module != nil {
+		pkg, err := r.loadModule(ctx, module)
+		return pkg, true, err
+	}
+
+	if definition, ok := packages.SourcePackage(name); ok {
+		pkg, err := r.importSourceBuiltin(ctx, name, definition)
+		return pkg, true, err
 	}
 
 	zap.L().Debug("runtime.package.import", zap.String("name", name))
-	return packages.ImportPackage(name, dg)
+	pkg, ok = packages.ImportPackage(name, dg)
+	return pkg, ok, nil
 }
 
 func (r *Runtime) Interpret(file string, nodes []*astnode.Node) (language.Object, error) {
 	zap.L().Info("runtime.interpret.start", zap.String("file", file), zap.Int("nodeCount", len(nodes)))
-	wd, err := os.Getwd()
+	wd, err := r.source.Workdir()
 	if err != nil {
 		zap.L().Error("runtime.interpret.cwd", zap.String("file", file), zap.Error(err))
 		return nil, err
 	}
 
-	var (
-		info        os.FileInfo
-		hasFileInfo bool
-	)
+	var hasFileInfo bool
 
-	info, err = os.Stat(file)
+	_, err = r.source.Stat(file)
 	if err != nil {
-		if !os.IsNotExist(err) {
+		if !errors.Is(err, fs.ErrNotExist) {
 			zap.L().Error("runtime.interpret.stat", zap.String("file", file), zap.Error(err))
 			return nil, err
 		}
@@ -144,8 +247,7 @@ func (r *Runtime) Interpret(file string, nodes []*astnode.Node) (language.Object
 	if hasFileInfo {
 		r.mu.RLock()
 		for path, id := range r.filemap {
-			existingInfo, err := os.Stat(path)
-			if err == nil && os.SameFile(existingInfo, info) {
+			if r.source.SameFile(path, file) {
 				if ret, ok := r.returnMap[id]; ok {
 					r.mu.RUnlock()
 					zap.L().Info("runtime.interpret.cachedReturn", zap.Uint("id", id), zap.String("file", file))
@@ -182,6 +284,10 @@ func (r *Runtime) Interpret(file string, nodes []*astnode.Node) (language.Object
 }
 
 func (r *Runtime) NewID() uint {
+	if r.host != nil {
+		return r.host.NewID()
+	}
+
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.iid++
@@ -214,7 +320,7 @@ func (r *Runtime) RemoveInterpreter(id uint) {
 }
 
 func (r *Runtime) FindInterpreter(file string) (*interpreter.Interpreter, bool) {
-	info, err := os.Stat(file)
+	_, err := r.source.Stat(file)
 	if err != nil {
 		return nil, false
 	}
@@ -228,8 +334,7 @@ func (r *Runtime) FindInterpreter(file string) (*interpreter.Interpreter, bool) 
 			continue
 		}
 
-		existingInfo, err := os.Stat(path)
-		if err == nil && os.SameFile(existingInfo, info) {
+		if r.source.SameFile(path, file) {
 			zap.L().Debug("runtime.interpreter.find", zap.Uint("id", id), zap.String("file", file))
 			return instance, true
 		}

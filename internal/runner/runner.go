@@ -4,6 +4,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/nubolang/nubo/internal/ast/astnode"
 	"github.com/nubolang/nubo/internal/exception"
 	"github.com/nubolang/nubo/internal/runtime"
 	"github.com/nubolang/nubo/language"
@@ -24,7 +25,15 @@ func Execute(path string, r *runtime.Runtime, parseTime bool) (result language.O
 		start = time.Now()
 	}
 
-	nodes, err := parseFile(path)
+	var nodes []*astnode.Node
+	if r.Source().Disk() {
+		nodes, err = parseFile(path)
+	} else {
+		path, err = r.Source().Resolve(".", path)
+		if err == nil {
+			nodes, err = r.Source().Nodes(path)
+		}
+	}
 
 	if parseTime {
 		elapsed := time.Since(start)

@@ -1,0 +1,9 @@
+import native from "@native"
+
+fn encode(value: string) string {
+    return native.encode(value)
+}
+
+fn decode(value: string) string {
+    return native.decode(value)
+}

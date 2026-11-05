@@ -47,6 +47,7 @@ type Function struct {
 	debug      *debug.Debug
 	proto      *FunctionPrototype
 	ver        fnVersion
+	strictArgs bool
 }
 
 func NewFunction(data func(context.Context, []Object) (Object, error), debug *debug.Debug) *Function {
@@ -59,6 +60,14 @@ func NewFunction(data func(context.Context, []Object) (Object, error), debug *de
 }
 
 func NewTypedFunction(argTypes []FnArg, returnType *Type, data func(context.Context, []Object) (Object, error), debug *debug.Debug) *Function {
+	return newTypedFunction(argTypes, returnType, data, debug, false)
+}
+
+func NewStrictFunction(argTypes []FnArg, returnType *Type, data func(context.Context, []Object) (Object, error), debug *debug.Debug) *Function {
+	return newTypedFunction(argTypes, returnType, data, debug, true)
+}
+
+func newTypedFunction(argTypes []FnArg, returnType *Type, data func(context.Context, []Object) (Object, error), debug *debug.Debug, strict bool) *Function {
 	args := make([]*Type, len(argTypes))
 	for i, arg := range argTypes {
 		args[i] = arg.Type()
@@ -71,6 +80,10 @@ func NewTypedFunction(argTypes []FnArg, returnType *Type, data func(context.Cont
 	}
 
 	fn := func(ctx context.Context, args []Object) (Object, error) {
+		if strict && len(args) != len(argTypes) {
+			return nil, fmt.Errorf("expected %d arguments, got %d", len(argTypes), len(args))
+		}
+
 		provideArgs := make([]Object, len(argTypes))
 		for i, argType := range argTypes {
 			var arg Object
@@ -116,12 +129,43 @@ func NewTypedFunction(argTypes []FnArg, returnType *Type, data func(context.Cont
 		typ:        typ,
 		debug:      debug,
 		ver:        fnVersionTyped,
+		strictArgs: strict,
 	}
 }
 
 func (i *Function) Call(ctx context.Context, args []Object, namedArgs ...map[string]Object) (Object, error) {
 	if i.ver == fnVersionBase {
 		return i.Data(ctx, args)
+	}
+
+	if i.strictArgs {
+		if len(namedArgs) > 1 {
+			return nil, fmt.Errorf("expected one named argument map")
+		}
+
+		if len(args) > len(i.ArgTypes) {
+			return nil, fmt.Errorf("expected %d arguments, got %d", len(i.ArgTypes), len(args))
+		}
+
+		for _, named := range namedArgs {
+			for name := range named {
+				found := false
+				for index, arg := range i.ArgTypes {
+					if arg.Name() == name {
+						if index < len(args) {
+							return nil, fmt.Errorf("argument %q was provided twice", name)
+						}
+
+						found = true
+						break
+					}
+				}
+
+				if !found {
+					return nil, fmt.Errorf("unknown argument %q", name)
+				}
+			}
+		}
 	}
 
 	var realArgs = make([]Object, len(i.ArgTypes))
@@ -217,5 +261,6 @@ func (i *Function) Clone() Object {
 		typ:        i.typ,
 		debug:      i.debug,
 		ver:        i.ver,
+		strictArgs: i.strictArgs,
 	}
 }

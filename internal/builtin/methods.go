@@ -39,9 +39,11 @@ func GetBuiltins() map[string]language.Object {
 		"typecheck": n.Function(n.Describe(n.Arg("typ", n.TAny), n.Arg("value", n.TAny)).Returns(n.TBool), typecheckFn),
 
 		// Errors
-		"panic":  n.Function(n.Describe(n.Arg("message", n.TString)), failFn),
-		"expect": n.Function(n.Describe(n.Arg("condition", n.TBool), n.Arg("message", n.TString, n.String("expectation failed"))), expectFn),
-		"isNil":  n.Function(n.Describe(n.Arg("obj", n.TAny)).Returns(n.TBool), isNilFn),
+		"Error":          language.ErrorStruct(),
+		"SourceLocation": language.SourceLocationStruct(),
+		"panic":          n.Function(n.Describe(n.Arg("message", n.TAny)), failFn),
+		"expect":         n.Function(n.Describe(n.Arg("condition", n.TBool), n.Arg("message", n.TString, n.String("expectation failed"))), expectFn),
+		"isNil":          n.Function(n.Describe(n.Arg("obj", n.TAny)).Returns(n.TBool), isNilFn),
 
 		// Types
 		"string": native.NewTypedFunction(ctx, native.OneArg("obj", language.TypeAny), language.TypeString, stringFn),

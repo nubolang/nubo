@@ -26,6 +26,9 @@ func showConsoleCodeError(path string, line int) (string, bool) {
 	var lines []string
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
+		if err := scanner.Err(); err != nil {
+			return "", false
+		}
 		lines = append(lines, scanner.Text())
 	}
 
@@ -74,6 +77,9 @@ func showHtmlCodeError(path string, line int) (string, string, bool) {
 	var lines []string
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
+		if err := scanner.Err(); err != nil {
+			return "", "", false
+		}
 		lines = append(lines, scanner.Text())
 	}
 

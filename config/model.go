@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"gopkg.in/yaml.v3"
@@ -167,9 +168,14 @@ var (
 	Current *Config
 	Base    string
 	Nubo    string
+
+	defaultsMu sync.Mutex
 )
 
 func Verify() {
+	defaultsMu.Lock()
+	defer defaultsMu.Unlock()
+
 	if Current == nil {
 		cfg := &Config{}
 		cfg.ApplyDefaults()

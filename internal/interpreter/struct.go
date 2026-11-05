@@ -52,7 +52,10 @@ func (i *Interpreter) handleStructCreation(obj language.Object, node *astnode.No
 		return nil, err
 	}
 
-	var args = make([]language.Object, len(node.Args))
+	var (
+		args      = make([]language.Object, 0, len(node.Args))
+		namedArgs = make(map[string]language.Object)
+	)
 	for j, arg := range node.Args {
 		value, err := i.evalValue(arg)
 		if err != nil {
@@ -64,7 +67,15 @@ func (i *Interpreter) handleStructCreation(obj language.Object, node *astnode.No
 			return nil, wrapRunExc(err, arg.Debug)
 		}
 
-		args[j] = bound
+		if arg.Kind == "NAMED_ARG" {
+			if _, exists := namedArgs[arg.ArgName]; exists {
+				return nil, typeError("argument %q was provided twice", arg.ArgName).WithDebug(arg.Debug)
+			}
+
+			namedArgs[arg.ArgName] = bound
+		} else {
+			args = append(args, bound)
+		}
 	}
 
 	instance, err := definition.NewInstance()
@@ -81,30 +92,15 @@ func (i *Interpreter) handleStructCreation(obj language.Object, node *astnode.No
 			return nil, err
 		}
 
-		var args = make([]language.Object, len(node.Args))
-		for j, arg := range node.Args {
-			value, err := i.evalValue(arg)
-			if err != nil {
-				zap.L().Error("interpreter.struct.create.initArgEval", zap.Uint("id", i.ID), zap.Int("index", j), zap.Error(err))
-				return nil, wrapRunExc(err, arg.Debug)
-			}
-			bound, err := i.cloneBinding(value)
-			if err != nil {
-				return nil, wrapRunExc(err, arg.Debug)
-			}
-
-			args[j] = bound
-		}
-
 		var inst language.Object
 		if language.TypeCheck(instance.Type(), fn.ReturnType) {
-			inst, err = fn.Data(language.StructAllowPrivateCtx(i.ctx), args)
+			inst, err = fn.Call(language.StructAllowPrivateCtx(i.ctx), args, namedArgs)
 			if err != nil {
 				zap.L().Error("interpreter.struct.create.initExec", zap.Uint("id", i.ID), zap.Error(err))
 				return nil, wrapRunExc(err, node.Debug)
 			}
 		} else if language.TypeCheck(language.TypeVoid, fn.ReturnType) {
-			_, err = fn.Data(language.StructAllowPrivateCtx(i.ctx), args)
+			_, err = fn.Call(language.StructAllowPrivateCtx(i.ctx), args, namedArgs)
 			if err != nil {
 				zap.L().Error("interpreter.struct.create.initExec", zap.Uint("id", i.ID), zap.Error(err))
 				return nil, wrapRunExc(err, node.Debug)

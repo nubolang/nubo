@@ -50,7 +50,10 @@ func Create(format string, args ...any) *Expection {
 func From(err error, dg *debug.Debug, otherwise ...string) *Expection {
 	var exception *Expection
 	if errors.As(err, &exception) {
-		return exception.WithDebug(dg)
+		wrapped := *exception
+		wrapped.trace = append([]*debug.Debug(nil), exception.trace...)
+
+		return wrapped.WithDebug(dg)
 	}
 
 	if err == nil {

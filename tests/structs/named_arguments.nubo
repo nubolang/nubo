@@ -1,0 +1,72 @@
+let calls = 0
+
+fn nextValue() int {
+    calls++
+    return calls
+}
+
+struct NamedConfig {
+    x: int
+    y: string
+}
+
+impl NamedConfig {
+    fn init(self: NamedConfig, x: int = 0, y: string = "") void {
+        self.x = x
+        self.y = y
+    }
+}
+
+let named = NamedConfig(y: "X")
+expect(named.x == 0 && named.y == "X", "named constructor should preserve defaults")
+
+let reordered = NamedConfig(y: "Y", x: 7)
+expect(reordered.x == 7 && reordered.y == "Y", "constructor argument order mismatch")
+
+let mixed = NamedConfig(3, y: "Z")
+expect(mixed.x == 3 && mixed.y == "Z", "mixed constructor arguments mismatch")
+
+let positional = NamedConfig(nextValue(), y: "once")
+expect(calls == 1 && positional.x == 1, "positional constructor arguments should run once")
+
+let namedOnce = NamedConfig(y: "twice", x: nextValue())
+expect(calls == 2 && namedOnce.x == 2, "named constructor arguments should run once")
+
+let defaults = NamedConfig()
+expect(defaults.x == 0 && defaults.y == "", "constructor defaults mismatch")
+
+catch invalid {
+    let value = NamedConfig(y: 17)
+}
+expect(!isNil(invalid), "named constructor arguments should be type checked")
+
+struct SharedConfig {
+    value: int
+}
+
+let shared: SharedConfig? = nil
+
+impl SharedConfig {
+    fn init(self: SharedConfig, value: int = 0) SharedConfig {
+        if !isNil(shared) {
+            return shared
+        }
+
+        self.value = value
+        shared = self
+        return self
+    }
+}
+
+let first = SharedConfig(value: 7)
+let second = SharedConfig(value: 9)
+expect(_id(first) == _id(second), "named constructor should preserve returned instances")
+expect(second.value == 7, "returned constructor instance mismatch")
+
+let location = SourceLocation(line: 10, file: "example.nubo", column: 3)
+let problem = Error("msg", metaData: location)
+expect(problem.message == "msg", "named Error constructor lost its message")
+expect(problem.metaData.file == "example.nubo", "named Error constructor lost its location")
+expect(isNil(problem.base), "named Error constructor should preserve the default cause")
+
+return true
