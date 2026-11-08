@@ -63,10 +63,15 @@ func New(ctx context.Context, currentFile string, runtime Runtime, dependent boo
 
 	zap.L().Debug("interpreter.new", zap.Uint("id", ir.ID), zap.String("file", ir.currentFile))
 
+	file := ir.currentFile
+	if !filepath.IsAbs(file) {
+		file = filepath.Join(wd, file)
+	}
+
 	ir.Declare("__id__", language.NewInt(int64(ir.ID), nil), language.TypeInt, false)
 	ir.Declare("__entry__", language.NewBool(ir.ID == 1 && !dependent, nil), language.TypeBool, false)
-	ir.Declare("__dir__", language.NewString(filepath.Join(wd, filepath.Dir(ir.currentFile)), nil), language.TypeString, false)
-	ir.Declare("__file__", language.NewString(filepath.Join(wd, ir.currentFile), nil), language.TypeString, false)
+	ir.Declare("__dir__", language.NewString(filepath.Dir(file), nil), language.TypeString, false)
+	ir.Declare("__file__", language.NewString(file, nil), language.TypeString, false)
 	ir.Declare("__concurrent__", language.NewBool(false, nil), language.TypeBool, false)
 
 	return ir
