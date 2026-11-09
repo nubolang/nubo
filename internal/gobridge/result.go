@@ -20,6 +20,19 @@ func result(value reflect.Value, depth int) (language.Object, error) {
 		return result(value.Elem(), depth+1)
 	}
 
+	if value.Type() == goHandleType {
+		if value.IsNil() {
+			return language.Nil, nil
+		}
+
+		gh, ok := value.Interface().(*language.GoHandle)
+		if !ok {
+			return nil, fmt.Errorf("invalid GoHandle")
+		}
+
+		return gh, nil
+	}
+
 	if (value.Kind() == reflect.Slice || value.Kind() == reflect.Map) && value.IsNil() {
 		return language.Nil, nil
 	}

@@ -37,11 +37,20 @@ func argument(obj language.Object, typ reflect.Type, active map[any]bool, depth 
 	case *language.Any:
 		return argument(value.Data, typ, active, depth+1)
 	case *language.NilObj:
-		if typ.Kind() == reflect.Slice || typ.Kind() == reflect.Map || (typ.Kind() == reflect.Interface && typ.NumMethod() == 0) {
+		if typ == goHandleType || typ.Kind() == reflect.Slice || typ.Kind() == reflect.Map || (typ.Kind() == reflect.Interface && typ.NumMethod() == 0) {
 			return reflect.Zero(typ), nil
 		}
 
 		return reflect.Value{}, fmt.Errorf("nil is not valid for %s", typ)
+	}
+
+	if typ == goHandleType {
+		handle, ok := obj.(*language.GoHandle)
+		if !ok {
+			return reflect.Value{}, fmt.Errorf("expected native.GoHandle")
+		}
+
+		return reflect.ValueOf(handle), nil
 	}
 
 	switch typ.Kind() {
@@ -142,6 +151,8 @@ func argument(obj language.Object, typ reflect.Type, active map[any]bool, depth 
 
 func dynamicType(obj language.Object) reflect.Type {
 	switch value := obj.(type) {
+	case *language.GoHandle:
+		return goHandleType
 	case *language.Int:
 		return reflect.TypeFor[int64]()
 	case *language.Float:

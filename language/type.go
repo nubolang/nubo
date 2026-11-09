@@ -48,6 +48,7 @@ var (
 	TypeHtml             = &Type{BaseType: ObjectTypeHtml, Content: "html"}
 	TypeIface            = Nullable(&Type{BaseType: ObjectTypeIface, Content: "iface"})
 	TypeTypeObj          = &Type{BaseType: ObjectTypeType, Content: "<type>"}
+	TypeGoHandle         = &Type{BaseType: ObjectTypeGoHandle, Content: "native.GoHandle"}
 )
 
 func NewFunctionType(returnType *Type, argsType ...*Type) *Type {
@@ -196,6 +197,7 @@ func (t *Type) Compare(other *Type) bool {
 			t.BaseType == ObjectTypeDict ||
 			t.BaseType == ObjectTypeStructInstance ||
 			t.BaseType == ObjectTypeStructDefinition ||
+			t.BaseType == ObjectTypeGoHandle ||
 			t.BaseType == ObjectTypeFunction
 		if !ok {
 			return t.NextMatch(other)

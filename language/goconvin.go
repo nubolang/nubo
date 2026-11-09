@@ -15,6 +15,13 @@ func FromValue(data any, voidNil bool, dg ...*debug.Debug) (Object, error) {
 	}
 
 	switch value := data.(type) {
+	case *GoHandle:
+		if value == nil {
+			return Nil, nil
+		}
+
+		return value, nil
+
 	case Object:
 		return value, nil
 

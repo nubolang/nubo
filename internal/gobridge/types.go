@@ -12,8 +12,13 @@ const maxDepth = 256
 var listType = reflect.TypeFor[[]any]()
 var stringMapType = reflect.TypeFor[map[string]any]()
 var mapType = reflect.TypeFor[map[any]any]()
+var goHandleType = reflect.TypeFor[*language.GoHandle]()
 
 func valueType(typ reflect.Type, active map[reflect.Type]bool) (*language.Type, error) {
+	if typ == goHandleType {
+		return language.TypeGoHandle, nil
+	}
+
 	if active[typ] {
 		return language.TypeAny, nil
 	}

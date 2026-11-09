@@ -75,6 +75,17 @@ func newModule(name string, native language.Object, code string, files fs.FS) (*
 		return nil, fmt.Errorf("cannot register source package %q: %w", name, err)
 	}
 
+	proto := native.GetPrototype()
+	if proto == nil {
+		return nil, fmt.Errorf("package %q has no native namespace", name)
+	}
+	if _, exists := proto.GetObject(context.Background(), "GoHandle"); exists {
+		return nil, fmt.Errorf("native binding GoHandle is reserved")
+	}
+	if err := proto.SetObject(context.Background(), "GoHandle", language.NewTypeObject(language.TypeGoHandle, nil)); err != nil {
+		return nil, err
+	}
+
 	return &module{name: name, source: loader, nodes: nodes, native: native}, nil
 }
 
