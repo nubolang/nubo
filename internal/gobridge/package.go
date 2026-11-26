@@ -27,7 +27,7 @@ func WrapPackage(name string, funcs map[string]any) (*n.Package, error) {
 	pkg := n.NewPackage(module, nil)
 	proto := pkg.GetPrototype()
 	for _, member := range slices.Sorted(maps.Keys(funcs)) {
-		wrapped, err := WrapNamed(member, funcs[member])
+		wrapped, err := wrapNamed(member, funcs[member], true)
 		if err != nil {
 			return nil, fmt.Errorf("cannot register Go package %q: %w", name, err)
 		}

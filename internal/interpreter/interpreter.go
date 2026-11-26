@@ -3,12 +3,15 @@ package interpreter
 import (
 	"context"
 	"errors"
+	"fmt"
 	"path/filepath"
+	"slices"
 	"sync"
 
 	"github.com/nubolang/nubo/events"
 	"github.com/nubolang/nubo/internal/ast/astnode"
 	"github.com/nubolang/nubo/internal/exception"
+	"github.com/nubolang/nubo/internal/execution"
 	"github.com/nubolang/nubo/language"
 	"go.uber.org/zap"
 )
@@ -127,14 +130,21 @@ func NewWithCustomFileParent(parent *Interpreter, scope Scope, file string, name
 }
 
 func (i *Interpreter) Run(nodes []*astnode.Node) (obj language.Object, err error) {
+	if err := execution.Check(i.ctx); err != nil {
+		return nil, err
+	}
+	base := len(i.deferred)
+	defer i.Detach()
 	defer func() {
-		err = errors.Join(err, i.runDeferred())
-		i.Detach()
+		err = errors.Join(err, i.runDeferred(base))
 	}()
 
 	zap.L().Debug("interpreter.run.start", zap.Uint("id", i.ID), zap.Int("count", len(nodes)))
 
 	for _, node := range nodes {
+		if err := execution.Check(i.ctx); err != nil {
+			return nil, err
+		}
 		obj, err := i.handleNode(node)
 		if err != nil {
 			zap.L().Error("interpreter.run.handleNode", zap.Uint("id", i.ID), zap.Error(err))
@@ -160,21 +170,29 @@ func (i *Interpreter) Run(nodes []*astnode.Node) (obj language.Object, err error
 	return nil, nil
 }
 
-func (i *Interpreter) runDeferred() error {
-	zap.L().Debug("interpreter.deferred.run", zap.Uint("id", i.ID), zap.Int("count", len(i.deferred)))
-
-	for d := len(i.deferred) - 1; d >= 0; d-- {
-		deferred := i.deferred[d]
-
-		for n := len(deferred) - 1; n >= 0; n-- {
-			if _, err := i.eval(deferred[n]); err != nil {
-				return err
-			}
-
+func (i *Interpreter) runDeferred(base int) (err error) {
+	if len(i.deferred) == base {
+		return nil
+	}
+	cleanup := NewWithParent(i, ScopeBlock, "defer")
+	cleanup.ctx = execution.Cleanup(i.ctx)
+	pending := i.deferred[base:]
+	i.deferred = i.deferred[:base]
+	
+	for _, deferred := range slices.Backward(pending) {
+		for _, node := range slices.Backward(deferred) {
+			func() {
+				defer func() {
+					if v := recover(); v != nil {
+						err = errors.Join(err, fmt.Errorf("deferred function panicked: %v", v))
+					}
+				}()
+				_, e := cleanup.eval(node)
+				err = errors.Join(err, e)
+			}()
 		}
 	}
-
-	return nil
+	return err
 }
 
 func (i *Interpreter) Detach() {
@@ -229,7 +247,7 @@ func (i *Interpreter) isChildOf(scope Scope, name string) bool {
 			return current.scope == scope && current.name == name
 		}
 
-		if current.parent == nil {
+		if current.scope == ScopeFunction || current.parent == nil {
 			return false
 		}
 		current = current.parent

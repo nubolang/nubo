@@ -2,6 +2,7 @@ package time
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/araddon/dateparse"
@@ -9,6 +10,8 @@ import (
 	"github.com/nubolang/nubo/language"
 	"github.com/nubolang/nubo/native/n"
 )
+
+var monotonicOrigin = time.Now()
 
 var timeStruct *language.Struct
 
@@ -33,6 +36,26 @@ func NewTime(dg *debug.Debug) language.Object {
 	proto.SetObject(ctx, "parse", n.Function(n.Describe(n.Arg("format", n.TString), n.Arg("value", n.TString)).Returns(timeStruct.Type()), fnParse))
 	proto.SetObject(ctx, "parseAny", n.Function(n.Describe(n.Arg("time", n.TUnion(n.TString, n.TInt))).Returns(timeStruct.Type()), fnFrom))
 
+	proto.SetObject(ctx, "monotonicNs", n.Function(n.Describe().Returns(n.TInt), func(a *n.Args) (any, error) { return time.Since(monotonicOrigin).Nanoseconds(), nil }))
+	for _, name := range []string{"sleepNs", "sleepUntil"} {
+		argument := "duration"
+		if name == "sleepUntil" {
+			argument = "deadline"
+		}
+		proto.SetObject(ctx, name, n.Function(n.Describe(n.Arg(argument, n.TInt)), func(a *n.Args) (any, error) {
+			ns := a.Get(0).Value().(int64)
+			if ns < 0 {
+				return nil, fmt.Errorf("%s requires nonnegative nanoseconds", name)
+			}
+			if name == "sleepUntil" {
+				ns -= time.Since(monotonicOrigin).Nanoseconds()
+			}
+			if ns > 0 {
+				time.Sleep(time.Duration(ns))
+			}
+			return nil, nil
+		}))
+	}
 	return t
 }
 

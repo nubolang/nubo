@@ -32,9 +32,22 @@ func NewIOStream(r io.Reader, optWriter ...io.Writer) language.Object {
 		w = optWriter[0]
 	}
 
+	mc := &multiCloser{}
+	if rc, ok := r.(io.Closer); ok {
+		mc.closers = append(mc.closers, rc)
+	}
+	if wc, ok := w.(io.Closer); ok {
+		mc.closers = append(mc.closers, wc)
+	}
+
+	instance, _ := newIOStream(r, w, mc)
+	return instance
+}
+
+func newIOStream(r io.Reader, w io.Writer, closer io.Closer) (language.Object, error) {
 	instance, err := streamStruct.NewInstance()
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	proto := instance.GetPrototype().(*language.StructPrototype)
@@ -48,11 +61,6 @@ func NewIOStream(r io.Reader, optWriter ...io.Writer) language.Object {
 	proto.SetObject(ctx, "readLine", native.NewTypedFunction(ctx, nil, language.TypeString, streamReadLineFn(r)))
 	proto.SetObject(ctx, "readLines", native.NewTypedFunction(ctx, nil, n.TTList(n.TString), streamReadLinesFn(r)))
 
-	mc := &multiCloser{}
-	if rc, ok := r.(io.Closer); ok {
-		mc.closers = append(mc.closers, rc)
-	}
-
 	if w != nil {
 		proto.SetObject(ctx, "write", native.NewTypedFunction(ctx, []language.FnArg{
 			&language.BasicFnArg{TypeVal: language.TypeString, NameVal: "content"},
@@ -60,15 +68,11 @@ func NewIOStream(r io.Reader, optWriter ...io.Writer) language.Object {
 		proto.SetObject(ctx, "writeByte", native.NewTypedFunction(ctx, []language.FnArg{
 			&language.BasicFnArg{TypeVal: language.TypeByte, NameVal: "content"},
 		}, language.TypeInt, streamWriteByteFn(w)))
-
-		if wc, ok := w.(io.Closer); ok {
-			mc.closers = append(mc.closers, wc)
-		}
 	}
 
-	proto.SetObject(ctx, "close", native.NewTypedFunction(ctx, nil, language.TypeVoid, streamCloseFn(mc)))
+	proto.SetObject(ctx, "close", native.NewTypedFunction(ctx, nil, language.TypeVoid, streamCloseFn(closer)))
 
-	return instance
+	return instance, nil
 }
 
 func streamReadFn(r io.Reader) native.FunctionWrapper {

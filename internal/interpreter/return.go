@@ -31,5 +31,5 @@ func (i *Interpreter) handleReturn(node *astnode.Node) (language.Object, error) 
 	}
 
 	zap.L().Debug("interpreter.return.empty", zap.Uint("id", i.ID))
-	return nil, nil
+	return language.NewSignal("return", node.Debug), nil
 }

@@ -1,0 +1,41 @@
+let calls: []int = []
+
+fn early() void {
+    defer fn() {
+        calls.push(3)
+    }()
+    for item in [1] {
+        defer fn() {
+            calls.push(2)
+        }()
+        while true {
+            defer fn() {
+                calls.push(1)
+            }()
+            return
+        }
+    }
+}
+early()
+expect(len(calls) == 3, "early return must run all cleanup")
+expect(calls[0] == 1 && calls[1] == 2 && calls[2] == 3, "cleanup order must follow scope exit")
+
+let iterations = 0
+for item in [1, 2, 3] {
+    defer fn() {
+        iterations++
+    }()
+}
+expect(iterations == 3, "loop cleanup must run exactly once per iteration")
+let exits = 0
+for item in [1, 2, 3] {
+    defer fn() {
+        exits++
+    }()
+    if item == 1 {
+        continue
+    }
+    break
+}
+expect(exits == 2, "continue and break must both run scope cleanup")
+return true

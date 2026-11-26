@@ -112,10 +112,11 @@ func Keywords() []TokenType {
 		TokenLet,
 		TokenConst,
 
-		TokenEvent,
+		// TODO: removed events from current nubo version
+		// TokenEvent,
 
-		TokenPub,
-		TokenSub,
+		// TokenPub,
+		// TokenSub,
 
 		TokenImport,
 		TokenFrom,

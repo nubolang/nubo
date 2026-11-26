@@ -49,6 +49,8 @@ let tests: []string = [
     "control_flow/for_list",
     "control_flow/for_dict",
     "control_flow/break_continue",
+    "control_flow/loop_returns",
+    "control_flow/nested_break_continue",
 
     // functions
     "functions/return_values",
@@ -105,6 +107,7 @@ let tests: []string = [
 
     // packages
     "packages/hex",
+    "packages/interactive_primitives",
 
     // reflect
     "reflect/values",
@@ -119,6 +122,8 @@ let tests: []string = [
 
     // defer
     "defer/defer_order",
+    "defer/early_exit",
+    "defer/runtime_errors",
 
     // concurrency
     "concurrency/spawn_smoke",

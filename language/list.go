@@ -61,9 +61,9 @@ func (i *List) String() string {
 }
 
 func (i *List) stringWithContext(ctx context.Context) string {
-	var itemsString []string
-	for _, item := range i.Data {
-		itemsString = append(itemsString, Stringify(ctx, item))
+	itemsString := make([]string, len(i.Data))
+	for index, item := range i.Data {
+		itemsString[index] = Stringify(ctx, item)
 	}
 
 	return fmt.Sprintf("[%s]", strings.Join(itemsString, ", "))

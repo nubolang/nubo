@@ -1,0 +1,29 @@
+let cleaned = 0
+catch failure {
+    defer fn() {
+        cleaned++
+    }()
+    defer fn() {
+        panic("cleanup failed")
+    }()
+    panic("body failed")
+}
+expect(!isNil(failure), "runtime failure must propagate")
+expect(cleaned == 1, "a failing defer must not skip remaining cleanup")
+expect(string(failure).includes("body failed"), "preserve original failure")
+expect(string(failure).includes("cleanup failed"), "preserve cleanup failure")
+
+let finished = 0
+fn nestedCatch() void {
+    defer fn() {
+        finished++
+    }()
+    catch handled {
+        panic("handled")
+    }
+    expect(!isNil(handled), "catch must retain its failure")
+    expect(finished == 0, "nested catch must not run outer deferred calls")
+}
+nestedCatch()
+expect(finished == 1, "outer defer must run once on function exit")
+return true

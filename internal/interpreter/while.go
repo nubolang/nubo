@@ -54,6 +54,9 @@ func (i *Interpreter) handleWhile(node *astnode.Node) (language.Object, error) {
 		}
 		if ob != nil {
 			if ob.Type().Base() == language.ObjectTypeSignal {
+				if ob.String() == "return" {
+					return ob, nil
+				}
 				if ob.String() == "break" {
 					zap.L().Debug("interpreter.while.break", zap.Uint("id", i.ID), zap.Int("iteration", iterations))
 					break

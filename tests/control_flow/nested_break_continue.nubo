@@ -1,0 +1,29 @@
+let total = 0
+for item in [1, 2, 3] {
+    if item == 1 {
+        continue
+    }
+    for inner in [1, 2, 3] {
+        if inner == 1 {
+            continue
+        }
+        total++
+        break
+    }
+}
+expect(total == 2, "break and continue must affect only the nearest loop")
+
+let outer = 0
+let visits = 0
+while outer < 3 {
+    outer++
+    if outer == 1 {
+        continue
+    }
+    while true {
+        visits++
+        break
+    }
+}
+expect(visits == 2, "nested while break must preserve the outer loop")
+return true

@@ -1,6 +1,7 @@
 package io
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -70,7 +71,13 @@ func openFn(ctx native.FnCtx) (language.Object, error) {
 		writer = file
 	}
 
-	return NewIOStream(reader, writer), nil
+	// The reader and writer can share a file, and a decoder may hide its
+	// Close method. Give the stream the underlying file as its sole closer.
+	stream, err := newIOStream(reader, writer, file)
+	if err != nil {
+		return nil, errors.Join(err, file.Close())
+	}
+	return stream, nil
 }
 
 func getEncoding(name string) (encoding.Encoding, error) {

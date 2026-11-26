@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/nubolang/nubo/internal/packages/hex"
+	"github.com/nubolang/nubo/internal/packages/terminal"
 )
 
 type SourceDefinition struct {
@@ -20,6 +21,8 @@ func SourcePackage(name string) (SourceDefinition, bool) {
 	}
 
 	switch name {
+	case "terminal":
+		return SourceDefinition{Source: terminal.Source, Funcs: terminal.Functions()}, true
 	case "hex":
 		return SourceDefinition{Source: hex.Source, Funcs: hex.Functions()}, true
 	}
