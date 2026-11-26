@@ -1,0 +1,74 @@
+fn forValue() int {
+    for item in [1, 2] {
+        return item
+    }
+    return 0
+}
+
+fn whileValue() int {
+    while true {
+        return 42
+    }
+    return 0
+}
+
+fn forVoid() void {
+    for item in [1, 2] {
+        return
+    }
+    panic("for return did not exit the function")
+}
+
+fn whileVoid() void {
+    while true {
+        return
+    }
+    panic("while return did not exit the function")
+}
+
+fn nestedValue() int {
+    for item in [1, 2] {
+        while true {
+            if item == 1 {
+                return 42
+            }
+        }
+    }
+    return 0
+}
+
+fn nestedVoid() void {
+    while true {
+        for item in [1] {
+            if item == 1 {
+                return
+            }
+        }
+    }
+    panic("nested return did not exit the function")
+}
+
+expect(forValue() == 1, "return a value from for")
+expect(whileValue() == 42, "return a value from while")
+expect(nestedValue() == 42, "return through nested loops and conditional")
+forVoid()
+whileVoid()
+nestedVoid()
+fn noop() void {}
+fn returnVoidCall() void {
+    for item in [1] {
+        return noop()
+    }
+    panic("returning a void call must still exit")
+}
+returnVoidCall()
+fn caughtReturn() int {
+    catch ignored {
+        for item in [42] {
+            return item
+        }
+    }
+    return 0
+}
+expect(caughtReturn() == 42, "catch must propagate successful return")
+return true

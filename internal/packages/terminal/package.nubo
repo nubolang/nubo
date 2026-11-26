@@ -1,0 +1,78 @@
+import native from "@native"
+
+struct TerminalSession {
+    private core: native.GoHandle
+}
+
+impl TerminalSession {
+    fn init(self: TerminalSession) void {
+        self.core = native.open()
+    }
+
+    fn close(self: TerminalSession) void {
+        native.close(self.core)
+    }
+
+    fn pollKey(self: TerminalSession, timeoutMs: int = 0) any {
+        return native.pollKey(self.core, timeoutMs)
+    }
+
+    fn setKeyEvents(self: TerminalSession, enabled: bool) bool {
+        return native.setKeyEvents(self.core, enabled)
+    }
+
+    fn isKeyDown(self: TerminalSession, key: string) bool {
+        return native.isKeyDown(self.core, key)
+    }
+
+    fn onCtrlC(self: TerminalSession, handler: any) void {
+        native.onCtrlC(self.core, handler)
+    }
+
+    fn size(self: TerminalSession) any {
+        return native.size(self.core)
+    }
+
+    fn pollResize(self: TerminalSession) any {
+        return native.pollResize(self.core)
+    }
+
+    fn setRaw(self: TerminalSession, enabled: bool) void {
+        native.setRaw(self.core, enabled)
+    }
+
+    fn setAlternateScreen(self: TerminalSession, enabled: bool) void {
+        native.setAlternateScreen(self.core, enabled)
+    }
+
+    fn setCursorVisible(self: TerminalSession, enabled: bool) void {
+        native.setCursorVisible(self.core, enabled)
+    }
+
+    fn write(self: TerminalSession, text: string) void {
+        native.write(self.core, text)
+    }
+
+    fn flush(self: TerminalSession) void {
+        self.write("")
+    }
+
+    fn clear(self: TerminalSession) void {
+        self.write("\x1b[2J\x1b[H")
+    }
+
+    fn setCursorPosition(self: TerminalSession, column: int, row: int) void {
+        if column < 1 || row < 1 {
+            panic("cursor coordinates must be positive")
+        }
+        self.write("\x1b[" + string(row) + ";" + string(column) + "H")
+    }
+}
+
+fn isInputTerminal() bool {
+    return native.isInputTerminal()
+}
+
+fn isOutputTerminal() bool {
+    return native.isOutputTerminal()
+}

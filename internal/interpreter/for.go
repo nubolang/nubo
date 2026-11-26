@@ -108,8 +108,12 @@ func (i *Interpreter) handleFor(node *astnode.Node) (language.Object, error) {
 		if ob != nil {
 			if ob.Type().Base() == language.ObjectTypeSignal {
 				switch ob.String() {
+				case "return":
+					zap.L().Debug("interpreter.for.return", zap.Uint("id", i.ID), zap.Int("iteration", iterations))
+					return ob, nil
 				case "break":
 					zap.L().Debug("interpreter.for.break", zap.Uint("id", i.ID), zap.Int("iteration", iterations))
+					return nil, nil
 				case "continue":
 					zap.L().Debug("interpreter.for.continue", zap.Uint("id", i.ID), zap.Int("iteration", iterations))
 					continue

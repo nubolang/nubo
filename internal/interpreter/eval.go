@@ -222,7 +222,7 @@ func (i *Interpreter) evaluateExpression(node *astnode.Node) (language.Object, e
 }
 
 func isNotEvaluable(typ language.ObjectType) bool {
-	return typ == language.ObjectTypeDict || typ == language.ObjectTypeFunction || typ == language.ObjectTypeStructInstance || typ == language.ObjectTypeList
+	return typ == language.ObjectTypeDict || typ == language.ObjectTypeFunction || typ == language.ObjectTypeStructInstance || typ == language.ObjectTypeList || typ == language.ObjectTypeGoHandle
 }
 
 func (i *Interpreter) exprEvalHumanError(children []*astnode.Node, debug *debug.Debug, isErr ...error) error {

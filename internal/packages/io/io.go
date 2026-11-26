@@ -24,6 +24,7 @@ func NewIO(dg *debug.Debug) language.Object {
 	}
 
 	ctx := context.Background()
+	proto.SetObject(ctx, "StringBuilder", n.Function(n.Describe(n.Arg("capacity", n.TInt, n.Int(0, nil))).Returns(n.TAny), newBuilder))
 	proto.SetObject(ctx, "Stream", streamStruct)
 	proto.SetObject(ctx, "read", native.NewTypedFunction(ctx, []language.FnArg{
 		&language.BasicFnArg{TypeVal: language.TypeString, NameVal: "text", DefaultVal: language.NewString("", nil)},

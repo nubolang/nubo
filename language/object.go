@@ -27,6 +27,7 @@ const (
 	ObjectTypeHtml
 	ObjectTypeIface
 	ObjectTypeType
+	ObjectTypeGoHandle
 )
 
 func (ot ObjectType) String() string {
@@ -67,6 +68,8 @@ func (ot ObjectType) String() string {
 		return "iface"
 	case ObjectTypeType:
 		return "type"
+	case ObjectTypeGoHandle:
+		return "native.GoHandle"
 	default:
 		return "unknown"
 	}

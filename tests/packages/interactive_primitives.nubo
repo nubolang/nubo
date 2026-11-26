@@ -1,0 +1,45 @@
+import thread from "@std/thread"
+import time from "@std/time"
+import io from "@std/io"
+
+let portal = thread.Portal(2)
+let empty = portal.tryReceive()
+expect(!empty.ok && !empty.closed, "empty portal must not throw")
+expect(portal.trySend(nil), "nil is a legitimate message")
+let message = portal.tryReceive()
+expect(message.ok && isNil(message.value), "nil must differ from empty")
+expect(portal.trySend("a"), "first send")
+expect(portal.trySend("b"), "second send")
+expect(!portal.trySend("full"), "full portal must not throw")
+expect(portal.length() == 2, "queue snapshot")
+portal.close()
+portal.close()
+expect(portal.isClosed(), "closed snapshot")
+let drained = portal.drain()
+expect(len(drained) == 2 && drained[0] == "a" && drained[1] == "b", "drain closed queue in order")
+let closed = portal.tryReceive()
+expect(closed.closed, "closed and drained")
+
+let builder = io.StringBuilder(32)
+builder.append("Hello")
+builder.appendChar(char('!'))
+builder.appendByte(10)
+let snapshot = builder.string()
+expect(snapshot == "Hello!\n", "builder contents")
+let capacity = builder.capacity()
+builder.reset()
+builder.append("replacement")
+expect(snapshot == "Hello!\n", "snapshots must survive reset and reuse")
+expect(builder.capacity() == capacity, "reset retains capacity")
+builder.grow(128)
+expect(builder.capacity() >= builder.length() + 128, "explicit growth")
+
+let before = time.monotonicNs()
+time.sleepNs(1000000)
+expect(time.monotonicNs() >= before + 1000000, "nanosecond sleep")
+time.sleepUntil(before)
+catch negative {
+    time.sleepNs(-1)
+}
+expect(!isNil(negative), "negative duration must fail")
+return true

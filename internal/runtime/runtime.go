@@ -12,6 +12,7 @@ import (
 	"github.com/nubolang/nubo/internal/ast/astnode"
 	"github.com/nubolang/nubo/internal/builtin"
 	"github.com/nubolang/nubo/internal/debug"
+	"github.com/nubolang/nubo/internal/execution"
 	"github.com/nubolang/nubo/internal/interpreter"
 	"github.com/nubolang/nubo/internal/packages"
 	"github.com/nubolang/nubo/internal/source"
@@ -222,7 +223,14 @@ func (r *Runtime) ImportPackage(ctx context.Context, name string, dg *debug.Debu
 	return pkg, ok, nil
 }
 
-func (r *Runtime) Interpret(file string, nodes []*astnode.Node) (language.Object, error) {
+func (r *Runtime) Interpret(file string, nodes []*astnode.Node) (output language.Object, resultErr error) {
+	ctx := r.ctx
+	if execution.From(ctx) == nil {
+		var resources *execution.Resources
+		ctx, resources = execution.New(ctx)
+		defer func() { resultErr = errors.Join(resultErr, resources.Close()) }()
+	}
+
 	zap.L().Info("runtime.interpret.start", zap.String("file", file), zap.Int("nodeCount", len(nodes)))
 	wd, err := r.source.Workdir()
 	if err != nil {
@@ -261,7 +269,7 @@ func (r *Runtime) Interpret(file string, nodes []*astnode.Node) (language.Object
 		r.mu.RUnlock()
 	}
 
-	interpreter := interpreter.New(r.ctx, file, r, false, wd)
+	interpreter := interpreter.New(ctx, file, r, false, wd)
 	zap.L().Info("runtime.interpret.spawn", zap.Uint("id", interpreter.ID), zap.String("file", file))
 
 	r.mu.Lock()

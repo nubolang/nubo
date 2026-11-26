@@ -36,7 +36,7 @@ const (
 )
 
 var packageList = []string{
-	"io", "math", "json", "log", "thread", "random",
+	"terminal", "io", "math", "json", "log", "thread", "random",
 	"process", "sql", "time", "http", "system",
 	"hash", "component", "os", "iter",
 	"net/serial", "net/telnet", "net/ssh",
